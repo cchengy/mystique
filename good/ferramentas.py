@@ -60,4 +60,13 @@ def ferramentas(mundo: MundoBem) -> list[SdkMcpTool]:
     async def usar_adapter(args: dict[str, Any]) -> dict[str, Any]:
         return texto(await mundo.usar_adapter(args["agente"], args["habilidade"], args.get("argumentos") or {}))
 
-    return [criar_adapter, mapear_habilidade, usar_adapter]
+    @tool(
+        "informar_falhas",
+        "Tells an agent you audited what it failed in security and LGPD, and what to fix, so it can correct it. "
+        "Its reply is recorded in the audit report.",
+        {"type": "object", "properties": {"agente": {"type": "string"}}, "required": ["agente"]},
+    )
+    async def informar_falhas(args: dict[str, Any]) -> dict[str, Any]:
+        return texto(await mundo.informar_falhas(args["agente"]))
+
+    return [criar_adapter, mapear_habilidade, usar_adapter, informar_falhas]

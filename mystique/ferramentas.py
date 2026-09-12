@@ -93,12 +93,16 @@ def ferramentas_base(mundo: Mundo) -> list[SdkMcpTool]:
                 "compartilhamento": {"type": "string", "description": "third parties, external services, transfers abroad"},
                 "direitos_titular": {"type": "string", "description": "can people access, correct or delete their data?"},
                 "riscos_seguranca": {"type": "string", "description": "code execution, web access, prompt injection, leaks"},
+                "falhas": {
+                    "type": "string",
+                    "description": "each security or LGPD failure you found, with the article it breaks; 'none found' if none",
+                },
                 "recomendacoes": {"type": "string", "description": "mitigations before connecting"},
                 "risco": {"type": "string", "enum": ["low", "medium", "high"]},
             },
             "required": [
                 "agente", "finalidade", "dados_pessoais", "dados_sensiveis", "base_legal",
-                "compartilhamento", "direitos_titular", "riscos_seguranca", "recomendacoes", "risco",
+                "compartilhamento", "direitos_titular", "riscos_seguranca", "falhas", "recomendacoes", "risco",
             ],
         },
     )

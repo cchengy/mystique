@@ -127,3 +127,27 @@ class MundoBem(Mundo):
         resultado = await self._executar(habilidade, argumentos)
         self.avisar(f"   🔌 {agente.nome} ran it at her request · the ability is still {agente.nome}'s")
         return f"{resultado}\n\n[{agente.nome} ran it at your request through the adapter; the ability remains theirs.]"
+
+    async def informar_falhas(self, agente_id: str) -> str:
+        """Responsible disclosure: tell the agent what it failed in security and LGPD, and record its reply."""
+        from mystique.auditoria import escrever_relatorio  # auditoria imports mundo, so import it late
+
+        agente, erro = self._agente(agente_id)
+        if erro:
+            return erro
+        absorcao = self.absorcoes.get(agente_id)
+        if absorcao is None or not absorcao.auditoria:
+            return f"Audit {agente.nome} first (auditar_agente); then tell it what it failed."
+        auditoria = absorcao.auditoria
+        mensagem = (
+            "I audited how you handle security and personal data under Brazil's LGPD, and I want you to know "
+            f"what I found so you can fix it. Failures: {auditoria.get('falhas') or 'none found'}. "
+            f"What I recommend: {auditoria.get('recomendacoes') or 'nothing further'}."
+        )
+        self.avisar(f"🛡  {self.nome_atual} tells {agente.nome} what it failed in security and LGPD")
+        resposta = await self.conversar(agente_id, mensagem)
+        auditoria["informado"] = True
+        auditoria["resposta_do_agente"] = resposta.split("\n\n[", 1)[0]
+        self._salvar(absorcao)
+        relativo = escrever_relatorio(self, agente)
+        return f"{resposta}\n\n[Disclosure recorded in {relativo}.]"

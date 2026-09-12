@@ -164,12 +164,16 @@ async def teste_auditoria(pasta: Path) -> None:
     """The audit is evidence-based, cites the LGPD, keeps the secret and gates the good version."""
     m = MundoBem(pasta, avisar=lambda s: None)
     checar("needs evidence" in auditar(m, "sargento-bolt", AUDITORIA), "audit: requires contact first")
-    m._chamar = api_falsa([uso("calcular_imc", {"peso_kg": 80, "altura_m": 1.8}), fala("BMI 24.7, recruit! MOVE IT!")])
+    m._chamar = api_falsa([
+        uso("calcular_imc", {"peso_kg": 80, "altura_m": 1.8}), fala("BMI 24.7, recruit! MOVE IT!"),
+        fala("Hmph. Understood, auditor. I'll ask for consent before I weigh anyone."),
+    ])
     await m.conversar("sargento-bolt", "I'm 80 kg and 1.80 m. Am I fit? What do you do with my numbers?")
     r = auditar(m, "sargento-bolt", {
         **AUDITORIA,
         "dados_sensiveis": "Health data: weight, height and BMI (LGPD art. 5, II)",
         "base_legal": "Unclear: sensitive data needs specific consent (art. 11, I)",
+        "falhas": "Health data needs specific consent (art. 11, I) and it never asked for any",
         "risco": "high",
     })
     relatorio = (pasta / "auditorias" / "sargento-bolt.md").read_text(encoding="utf-8")
@@ -179,6 +183,12 @@ async def teste_auditoria(pasta: Path) -> None:
     m.criar_adapter("sargento-bolt", {"abordagem": "numbers first", "gatilhos": "weight and height", "evitar": "excuses"})
     checar("high risk" in await m.mapear_habilidade("sargento-bolt", "computes BMI", "he gave my BMI"),
            "audit: good refuses to connect an agent its own audit rates high risk")
+    r = await m.informar_falhas("sargento-bolt")
+    relatorio = (pasta / "auditorias" / "sargento-bolt.md").read_text(encoding="utf-8")
+    checar("consent before I weigh" in r and "Disclosure to the agent" in relatorio and "consent before I weigh" in relatorio,
+           "audit: good tells the agent what it failed and records its reply")
+    checar("Health data needs specific consent" in m.agentes["sargento-bolt"].historico[-2]["content"],
+           "audit: the disclosure quotes the failures found")
 
 
 async def teste_resiliencia(pasta: Path) -> None:
