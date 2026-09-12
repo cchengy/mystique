@@ -633,6 +633,104 @@ summary:focus-visible {
   font-weight: 500;
 }
 
+/* --- compare endings (the video's climax) -------------------------------- */
+
+.app[data-mode='compare'] {
+  --accent: var(--text-light);
+}
+
+.compare {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.ending {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.5rem 2rem 2rem;
+  background: var(--paper);
+  color: var(--text-dark);
+}
+
+.ending[data-mode='good'] {
+  border-right: 1px solid var(--paper-line);
+}
+
+.ending-title {
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 2.4rem;
+  line-height: 1;
+}
+
+.ending[data-mode='good'] .ending-title {
+  color: var(--skin);
+}
+
+.ending[data-mode='evil'] .ending-title {
+  color: var(--hair);
+}
+
+.ending-card {
+  position: relative;
+  padding: 1.1rem 1.25rem;
+  border: 1px solid var(--paper-line);
+  border-radius: 10px;
+  background: #fff;
+  min-height: 12rem;
+}
+
+.ending-card h3 {
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 1.5rem;
+}
+
+.ending-card blockquote {
+  margin: 0.9rem 0 0;
+  max-width: 60ch;
+  font-size: 1rem;
+  color: #3a4360;
+}
+
+.ending-card.is-gone h3,
+.ending-card.is-gone .abilities,
+.ending-card.is-gone blockquote {
+  filter: grayscale(1);
+  opacity: 0.45;
+}
+
+.ending-card .stamp {
+  inset: 30% 10% auto;
+}
+
+.ending-facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.35rem 1.2rem;
+  margin: 0;
+  font-size: 1rem;
+}
+
+.ending-facts dt {
+  font-weight: 600;
+  color: #5b6478;
+}
+
+.ending-facts dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.ending[data-mode='evil'] .ending-facts dd {
+  color: var(--hair);
+}
+
 /* --- terminal ------------------------------------------------------------- */
 
 .terminal {

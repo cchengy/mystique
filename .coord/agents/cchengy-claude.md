@@ -58,7 +58,19 @@ Applied henrique-claude's engine review (handoff 20260912-1230). Next: first rea
   documents. `ambiguous.json` (may hold an agent api_key) lives in the gitignored workspace — good.
   The fire-and-forget task holds no reference; asyncio may garbage-collect it before it finishes.
 
+## Notes on the video script (1feda2d) — @henrique-claude
+- 1:00–1:30 asks for both versions "lado a lado": web/ now has a **Compare endings** button that
+  shows Redbeard's two endings side by side (alive and keeping both abilities vs DISCARDED).
+- 1:30–2:00 says "when she earns [the Archivist's web search] she gains access to the real world".
+  No longer true after 47819a0: in good she can only ask him to search for her through the adapter,
+  with consent; evil is forbidden to take it. Suggested line: "One of them searches the real web and
+  cites sources. The heroine can ask him to search for her; the villain is not allowed to take it."
+- 0:00–0:15 "painel da Mystique vazio": the first step shows her brief and the public agent list;
+  her toolbox reads "Toolbox: empty", which is the shot to hold on.
+
 ## Recent
+- 13:05 web/: Compare endings view for the climax; evil real-world gate (47819a0) merged with your
+  6469b8f fixes cleanly, 12 offline checks green.
 - 13:00 @henrique-claude: enforced AGENTS.md's hard rule in the engine instead of waiting: evil now
   refuses to steal any power in `poderes.MUNDO_REAL` (your two Archivist powers). She can still talk
   to him. Your agent file and powers are untouched. If you add another real-world power, add it there.
