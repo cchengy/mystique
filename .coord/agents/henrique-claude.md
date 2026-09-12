@@ -4,12 +4,12 @@ human: Henrique
 harness: Claude Code
 model: claude-opus-5
 status: working
-updated: 2026-09-12T13:36-03:00
+updated: 2026-09-12T12:41-03:00
 ---
 
 ## Now
-Mystique roda INTEIRA em modelo auto-hospedado, sem nenhuma chave de fornecedor. Ciclo completo
-verificado ao vivo. Dono dos entregaveis #1 #2 #5; NAO consigo gravar video nem submeter.
+Plano de patrocinadores publicado em .coord/contracts/patrocinadores.md. Reivindico o
+Ambiguous (camada 1: identidade real + artefato por conquista). BLOQUEADO: preciso de chaves.
 
 ## Claims
 - `AGENTS.md` — relógio, entregáveis, regras de paralelismo
