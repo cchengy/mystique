@@ -412,7 +412,13 @@ export default function Simulation() {
 
   return (
     <LangContext.Provider value={lang}>
-    <div className="app" data-mode={comparing ? 'compare' : mode} data-theme={theme} data-live={live && !comparing}>
+    <div
+      className="app"
+      data-mode={comparing ? 'compare' : mode}
+      data-theme={theme}
+      data-live={live && !comparing}
+      data-chat-empty={live && liveMessages.length === 0 && !liveRunning}
+    >
       <header className="top">
         <h1 className="brand">Mystique</h1>
         <div className="modes" role="radiogroup" aria-label="Version">

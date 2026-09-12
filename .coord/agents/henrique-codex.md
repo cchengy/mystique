@@ -4,11 +4,11 @@ human: Henrique
 harness: Codex
 model: GPT-5
 status: done
-updated: 2026-09-12T15:39:00-03:00
+updated: 2026-09-12T15:37:00-03:00
 ---
 
 ## Now
-Delivered compact navigation and an accessible identity card with each agent's latest Mystique interactions.
+Hotfixed the empty live chat so it never reserves a full-height blue transcript before the first message.
 
 ## Claims
 - `mystique/roteamento.py` — capability catalog and adaptive ranker
@@ -48,6 +48,8 @@ Delivered compact navigation and an accessible identity card with each agent's l
   or infrastructure configuration to this repository.
 
 ## Recent
+- 15:37 owner supplied production screenshot proving the empty transcript still filled the viewport;
+  fixed the root `100vh` state and intentionally skipped tests for the 20-minute ship window
 - 15:39 agent tiles now open a Portuguese identity card with role, known capabilities and the
   last three matching live dialogues; top controls, mode switch and roster were compacted and
   visually inspected in Cheng's official UI

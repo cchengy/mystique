@@ -27,6 +27,7 @@
   --w-info-bg: rgba(29, 59, 168, 0.07);
   --w-stamp-bg: rgba(238, 241, 244, 0.94);
   --w-shadow: rgba(8, 13, 35, 0.28);
+  --page-void: #000000;
 
   --accent: var(--iris);
   --display: 'Big Shoulders Display', 'Arial Narrow', sans-serif;
@@ -69,7 +70,7 @@ body {
   font-family: var(--body);
   font-size: 16px;
   line-height: 1.55;
-  background: var(--ink-deep);
+  background: var(--page-void);
   color: var(--text-light);
 }
 
@@ -342,6 +343,24 @@ textarea:focus-visible {
 
 .app[data-live='true'] {
   grid-template-rows: auto auto auto minmax(0, 1fr);
+}
+
+/* Before the first message there is no transcript, so no transcript viewport is reserved. */
+.app[data-live='true'][data-chat-empty='true'] {
+  height: auto;
+  grid-template-rows: auto auto auto auto;
+}
+
+.app[data-live='true'][data-chat-empty='true'] .stage {
+  grid-template-rows: auto auto;
+}
+
+.app[data-live='true'][data-chat-empty='true'] .pane-mystique {
+  flex: none;
+}
+
+.app[data-live='true'][data-chat-empty='true'] .pane-mystique .feed {
+  display: none;
 }
 
 .app[data-live='true'] .stage {
