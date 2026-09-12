@@ -1,5 +1,6 @@
 .venv/
 .env
+.claude/settings.local.json
 workspace/
 __pycache__/
 *.pyc
