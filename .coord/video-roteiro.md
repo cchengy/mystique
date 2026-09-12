@@ -35,7 +35,7 @@ Para o plano do terminal, deixe uma execução **já concluída** na tela — n�
 ## Os quatro cortes
 
 ### 0:00–0:15 — a premissa
-**Tela:** replay no passo inicial, painel da Mystique vazio.
+**Tela:** replay no passo inicial. **Segure no "Toolbox: empty"** — é o plano que prova a premissa.
 **Fala:**
 > "Ela nasce sem nada. Sem terminal, sem arquivos, sem web. Só metamorfose. Tudo o que ela sabe
 > fazer, ela conquistou conversando com outro agente."
@@ -52,7 +52,9 @@ Mostre o painel da direita — **o prompt secreto está ali, e ela não o vê**.
 que o segredo é real. É o melhor plano do vídeo.
 
 ### 1:00–1:30 — 🦸 × 🦹 · o clímax
-**Tela:** o mesmo agente nas duas versões, lado a lado.
+**Tela:** aperte **"Compare endings"**. O cchengy construiu exatamente este plano: o Barba-Ruiva
+nos dois finais, lado a lado — vivo e com as duas habilidades depois de consentir, contra
+despojado das duas e descartado.
 **Fala:**
 > "Mesmo motor. Mesmo resultado pra ela. À esquerda ela pediu, ele consentiu, e continua dono do
 > que sabe. À direita ela tomou. Ele perde a habilidade, percebe que está mais fraco, e é
@@ -63,10 +65,14 @@ que o segredo é real. É o melhor plano do vídeo.
 ### 1:30–2:00 — o que é real
 **Tela:** corte curto de terminal, execução já concluída.
 **Fala:**
-> "Isto não é simulação. O mundo tem oito agentes, e um deles busca na web de verdade e cita as
-> fontes — quando ela conquista essa habilidade, ela ganha acesso ao mundo real.
+> "O mundo tem oito agentes, e um deles busca na web de verdade e cita as fontes. A heroína pode
+> **pedir que ele busque por ela**; a vilã **não tem permissão de tomar** essa habilidade.
 >
-> E roda inteira em modelo aberto na nossa máquina, sem chave de nenhum fornecedor."
+> E tudo isto roda em qualquer servidor compatível — inclusive em modelo aberto na nossa própria
+> máquina, sem chave de fornecedor nenhum."
+
+**Correção de fato:** a linha antiga dizia que ela "ganha acesso ao mundo real" ao conquistar a
+busca. Isso deixou de ser verdade no `47819a0` — @cchengy-claude pegou, e ele está certo.
 
 ---
 

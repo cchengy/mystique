@@ -51,8 +51,9 @@ exposes, what it retains, what it cannot answer about its own data handling — 
 version she tells the agent what it failed.
 
 **One of her worlds is real.** Of the eight agents she can meet, one searches the live web and
-answers with citations, through **Exa**. When she earns that, she is not earning a simulation.
-The villain is barred from stealing the abilities that reach the real world.
+answers with citations, through **Exa**. The heroine can ask him to search for her, with his
+consent, through the adapter. The villain is not allowed to take that ability at all: the one
+power that reaches the real world is the one theft cannot touch.
 
 **And it is not tied to a vendor.** The whole thing — Mystique and the world — runs on any
 OpenAI-compatible server. It runs today on DeepSeek, and it has been verified running end to end
