@@ -378,9 +378,24 @@ summary:focus-visible {
   line-height: 1.2;
 }
 
-.tile-state {
+.tile-intro {
   font-size: 0.75rem;
   color: #5b6478;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.tile-state {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #3a4360;
+}
+
+.tile.is-shown .tile-state {
+  color: var(--skin);
 }
 
 .tile-abilities {

@@ -374,6 +374,7 @@ export default function Simulation() {
                     aria-pressed={agent.id === shown}
                   >
                     <span className="tile-name">{agent.name}</span>
+                    <span className="tile-intro">{agent.intro}</span>
                     <span className="tile-state">{gone ? 'DISCARDED' : met ? 'in contact' : 'not met yet'}</span>
                     <span className="tile-abilities">
                       {agent.abilities.map((a) => (
