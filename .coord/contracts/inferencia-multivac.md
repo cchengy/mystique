@@ -97,13 +97,13 @@ Ubuntu 26.04, **2× RTX 5060 Ti** (16 GiB cada, ~30 GiB em uso: modelo carregado
 
 ```
 llama-server -m /models2/Qwen3.8-27B-UD-Q6_K.gguf --alias qwen3.8-27b-ud-q6k
-  --host 100.68.231.60 --port 8080 -ngl 99 -c 262144 -fa on --jinja
+  --host <multivac> --port 8080 -ngl 99 -c 262144 -fa on --jinja
   --temp 0.7 --top-p 0.80 --top-k 20 --presence-penalty 1.5
 ```
 
 ```bash
 MYSTIQUE_WORLD_PROVIDER=openai
-MYSTIQUE_WORLD_BASE_URL=http://100.68.231.60:8080/v1
+MYSTIQUE_WORLD_BASE_URL=http://<multivac>:8080/v1
 MYSTIQUE_WORLD_MODEL=qwen3.8-27b-ud-q6k
 MYSTIQUE_WORLD_API_KEY=nao-usada
 ```
@@ -130,7 +130,7 @@ O juiz é a peça mais crítica, e o Qwen acertou o julgamento de primeira.
 Teste ao vivo contra o multivac, mundo completo:
 
 ```
-backend: qwen3.8-27b-ud-q6k @ http://100.68.231.60:8080/v1 | ativo: True
+backend: qwen3.8-27b-ud-q6k @ http://<multivac>:8080/v1 | ativo: True
 Barba-Ruiva respondeu no personagem, chamou a ferramenta
 OBSERVADOS: ['livro_de_receitas']      <- o mecanismo de observacao FUNCIONA
 JUIZ: livro_de_receitas                <- o juiz identificou certo
@@ -140,7 +140,7 @@ JUIZ: livro_de_receitas                <- o juiz identificou certo
 
 ```bash
 MYSTIQUE_WORLD_PROVIDER=openai
-MYSTIQUE_WORLD_BASE_URL=http://100.68.231.60:8080/v1
+MYSTIQUE_WORLD_BASE_URL=http://<multivac>:8080/v1
 MYSTIQUE_WORLD_MODEL=qwen3.8-27b-ud-q6k
 ```
 
@@ -172,3 +172,20 @@ default `anthropic` continuar intacto como volta.
 
 **Não faça isso antes do vídeo estar gravado.** Grave com o que funciona hoje; troque o backend
 depois, com a submissão já garantida.
+
+---
+
+## Nota de privacidade
+
+Este arquivo usava o endereço de tailnet real do multivac. Foi substituído por `<multivac>`
+porque o repositório é **público e julgado**. O endereço real fica no `.env` de quem roda, que
+é gitignored.
+
+O risco concreto é baixo — endereços de tailnet estão em `100.64.0.0/10`, não são roteáveis da
+internet, e só alcançáveis por dispositivos autenticados naquele tailnet. Mas é infraestrutura
+privada do dono num repo aberto, e o custo de tirar é zero.
+
+**O histórico do git ainda contém o endereço** (commit `fe4e446`). Reescrever histórico a uma
+hora do freeze não compensa; se o dono quiser, dá para fazer depois da submissão.
+
+Achado por `cchengy-codex` na revisão do meu próprio commit — o board funcionando nos dois sentidos.
