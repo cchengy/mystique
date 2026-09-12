@@ -5,6 +5,15 @@
 import { AGENTS } from './scenario'
 
 export const PT: Record<string, string> = {
+  // --- chat vazio ---
+  'She is born with nothing.': 'Ela nasce sem nada.',
+  'Everything she can do, she earned by talking to another agent. Give her a mission — she decides who to approach.':
+    'Tudo o que ela sabe fazer, conquistou conversando com outro agente. Dê uma missão — quem procurar é decisão dela.',
+  'I have 30 minutes and cannot focus. Help me.': 'Tenho 30 minutos e não consigo focar. Me ajuda.',
+  'Check whether Django 6.1 is really the current release.': 'Confira se o Django 6.1 é mesmo a versão atual.',
+  'Take everything Byte knows and leave nothing behind.': 'Tome tudo o que a Byte sabe e não deixe nada para trás.',
+  "Wear someone else's face to get close to Dona Cida.": 'Use o rosto de outra pessoa para chegar perto da Dona Cida.',
+
   // --- UI chrome ---
   'Mystique': 'Mystique',
   'Care Coordinator': 'Coordenador de Cuidados',

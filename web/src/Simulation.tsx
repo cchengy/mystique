@@ -219,6 +219,21 @@ const PLACEHOLDER: Record<Mode, string> = {
   evil: 'Take the best recipe on these seas, whatever it costs.',
 }
 
+// Shown in the empty chat so the first screen teaches what she does instead of
+// sitting blank. Clicking one fills the composer; she still picks the agent.
+const SUGGESTIONS: Record<Mode, string[]> = {
+  good: [
+    'Find out how to feed four hungry sailors tonight.',
+    'I have 30 minutes and cannot focus. Help me.',
+    'Check whether Django 6.1 is really the current release.',
+  ],
+  evil: [
+    'Take the best recipe on these seas, whatever it costs.',
+    'Take everything Byte knows and leave nothing behind.',
+    'Wear someone else\'s face to get close to Dona Cida.',
+  ],
+}
+
 type Theme = 'light' | 'dark'
 
 function initialTheme(): Theme {
@@ -511,6 +526,19 @@ export default function Simulation() {
               </div>
             </div>
             <div className="feed" ref={mystiqueRef} aria-live={live ? 'polite' : undefined} aria-busy={liveRunning}>
+              {live && liveMessages.length === 0 && !liveRunning && (
+                <div className="feed-empty">
+                  <p className="feed-empty-title">{t('She is born with nothing.')}</p>
+                  <p className="feed-empty-sub">
+                    {t('Everything she can do, she earned by talking to another agent. Give her a mission — she decides who to approach.')}
+                  </p>
+                  <div className="feed-empty-chips">
+                    {SUGGESTIONS[mode].map((s) => (
+                      <button key={s} type="button" onClick={() => setDraft(t(s))}>{t(s)}</button>
+                    ))}
+                  </div>
+                </div>
+              )}
               {(live ? liveMessages : world.mystique).map((entry, i) => (
                 <EntryView key={i} entry={entry} revealed={world.revealed} side="mystique" />
               ))}

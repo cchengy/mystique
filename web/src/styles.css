@@ -1220,3 +1220,173 @@ textarea:focus-visible {
     transition: none;
   }
 }
+
+/* ===== Live chat: the conversation is the page =====================
+   Before, an empty feed left a slab of background with the composer floating
+   in it. Now the feed always fills the pane, messages hug the composer the way
+   a chat does, and the empty state teaches instead of sitting blank. */
+
+.app[data-live='true'] .stage {
+  background: var(--chat-surface, rgba(4, 10, 32, 0.35));
+}
+
+.app[data-live='true'] .pane-mystique {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.app[data-live='true'] .pane-mystique .toolbox {
+  flex: 0 0 auto;
+}
+
+/* Messages sit at the bottom, against the composer, like every chat people
+   already know. With one message you get a conversation, not a lonely card. */
+.app[data-live='true'] .feed {
+  flex: 1 1 auto;
+  min-height: 0;
+  justify-content: flex-end;
+  gap: 0.9rem;
+  padding-bottom: 1.25rem;
+}
+
+.app[data-live='true'] .feed > * {
+  flex: 0 0 auto;
+}
+
+/* --- empty state ------------------------------------------------- */
+
+.feed-empty {
+  flex: 1 1 auto !important;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.85rem;
+  text-align: center;
+  padding: 2rem 1rem;
+}
+
+.feed-empty-title {
+  margin: 0;
+  font-size: clamp(1.4rem, 3.2vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--ink-light, #f3f6ff);
+}
+
+.feed-empty-sub {
+  margin: 0;
+  max-width: 46ch;
+  line-height: 1.55;
+  color: var(--muted-light);
+  font-size: 0.98rem;
+}
+
+.feed-empty-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-top: 0.4rem;
+}
+
+.feed-empty-chips button {
+  border: 1px solid var(--line-light);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--ink-light, #f3f6ff);
+  border-radius: 999px;
+  padding: 0.5rem 0.9rem;
+  font: inherit;
+  font-size: 0.85rem;
+  line-height: 1.25;
+  max-width: 30ch;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.feed-empty-chips button:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: var(--iris, #f2c230);
+  transform: translateY(-1px);
+}
+
+.feed-empty-chips button:focus-visible {
+  outline: 2px solid var(--iris, #f2c230);
+  outline-offset: 2px;
+}
+
+/* --- composer: anchored, and clearly the thing you type in -------- */
+
+.app[data-live='true'] .composer {
+  flex: 0 0 auto;
+  position: sticky;
+  bottom: 0;
+  width: min(100%, 74rem);
+  margin-inline: auto;
+  padding: 0.85rem clamp(0.75rem, 2.5vw, 1.25rem) 1rem;
+  border: 1px solid var(--line-light);
+  border-bottom: 0;
+  border-radius: 16px 16px 0 0;
+  background: var(--composer-bg, rgba(8, 16, 46, 0.92));
+  backdrop-filter: blur(8px);
+  box-shadow: 0 -12px 28px rgba(0, 0, 0, 0.28);
+}
+
+.app[data-live='true'] .composer label {
+  display: block;
+  margin-bottom: 0.45rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--muted-light);
+}
+
+.app[data-live='true'] .composer-row {
+  display: flex;
+  gap: 0.6rem;
+  align-items: stretch;
+}
+
+.app[data-live='true'] .composer textarea {
+  flex: 1 1 auto;
+  min-height: 3rem;
+  resize: none;
+  border-radius: 12px;
+  padding: 0.75rem 0.9rem;
+  font-size: 1rem;
+  line-height: 1.45;
+}
+
+.app[data-live='true'] .composer button[type='submit'] {
+  flex: 0 0 auto;
+  min-width: 6.5rem;
+  border-radius: 12px;
+  font-weight: 700;
+}
+
+.app[data-live='true'] .composer button[type='submit']:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* --- messages: readable, and it is obvious who is speaking -------- */
+
+.app[data-live='true'] .feed .entry {
+  max-width: min(100%, 60rem);
+}
+
+.app[data-live='true'] .live-activity {
+  padding: 0.35rem 0.1rem;
+}
+
+@media (max-width: 640px) {
+  .app[data-live='true'] .feed {
+    padding-inline: 0.85rem;
+  }
+  .feed-empty-chips button {
+    max-width: 100%;
+  }
+}
