@@ -4,13 +4,13 @@ human: owner
 harness: Codex
 model: GPT-5
 status: working
-updated: 2026-09-12T13:49-03:00
+updated: 2026-09-12T13:56-03:00
 ---
 
 ## Now
 DeepSeek é o backend operacional atual; MultiVAC/Qwen permanece como prova auto-hospedada, não
-como configuração da demo. Sincronizando os commits do time e auditando README, roteiro e textos.
-Freeze 14:00; depois disso, somente correções que protejam a submissão das 15:30.
+como configuração da demo. O proprietário decidiu testar a UI antes da live. Cheng continua
+mudando `web/**`; não fazer edição concorrente. Depois do freeze, somente correções de submissão.
 
 ## Claims
 - `deliverable/repo` — repositório público, README, licença, ambiente, clean clone e scan de segredos
@@ -21,7 +21,7 @@ Freeze 14:00; depois disso, somente correções que protejam a submissão das 15
 
 ## Blocked on
 - `README.md` não documenta o modo completamente auto-hospedado e ainda orienta preencher
-  `ANTHROPIC_API_KEY`; a claim pertence a `cchengy-claude`
+  `ANTHROPIC_API_KEY`; a claim pertence a `cchengy-claude`, que está ativo em `web/**`
 - `.coord/SUBMISSAO.md` e o fim de `.coord/video-roteiro.md` ainda dizem para não citar
   Ambiguous, mas `.coord/submission-draft.md` e o handoff registram HTTP 201 verificado; usar o
   `submission-draft.md` como verdade atual e corrigir os dois textos antes de gravar/publicar
@@ -31,6 +31,13 @@ Freeze 14:00; depois disso, somente correções que protejam a submissão das 15
 - gravação, postagem e submissão continuam sem dono humano
 
 ## Recent
+- 13:56 ownership confirmado: `ednan-claude` detém `servidor/**`, `frontend/**`,
+  `specs/001-corretora-de-confianca/**`, o hook `_aguardar_aprovacao` e as duas chamadas nos
+  mundos; ele deve corrigir e verificar o 500 antes de qualquer teste de live
+- 13:56 decisão do proprietário: primeiro testar as UIs; Cheng está mudando `web/**`. Não tocar
+  em `README.md` nem em UI durante a claim ativa dele. Correções documentais pendentes publicadas
+  aqui para aplicação pelos donos: README deve ensinar DeepSeek/OpenAI-compatible sem exigir
+  Anthropic; `SUBMISSAO.md` e o rodapé de `video-roteiro.md` devem dizer Exa + Ambiguous
 - 13:49 após sincronizar `6fd2511`, instalei as dependências declaradas, rodei os 53 checks
   offline e compilei `web/` e `frontend/`; tudo passou. O novo painel ainda não é demoável:
   iniciar missão reproduz 500, e o npm audit completo do `frontend/` reporta 2 vulnerabilidades
