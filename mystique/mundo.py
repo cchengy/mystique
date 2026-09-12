@@ -24,6 +24,7 @@ import anthropic
 from . import ambiguous, inferencia
 from .banco import Banco
 from .poderes import PODERES, Poder, poderes_de
+from .roteamento import Roteador
 
 PASTA_AGENTES = Path(__file__).resolve().parent.parent / "agentes"
 MODELO_AGENTES = os.getenv("MYSTIQUE_AGENTS_MODEL", "claude-opus-5")
@@ -115,6 +116,7 @@ class Mundo:
         self.avisar = avisar
         self._cliente: anthropic.AsyncAnthropic | inferencia.ClienteOpenAI | None = None
         self._externos: dict[str, inferencia.ClienteOpenAI] = {}  # one client per external agent
+        self._rota_atual: dict | None = None
 
     # --- version hooks --------------------------------------------------------
 
@@ -187,6 +189,48 @@ class Mundo:
     def descrever(self, agente: Agente) -> str:
         externo = " [external agent]" if agente.url else ""
         return f"- {agente.id} ({agente.nome}): {agente.apresentacao}{externo} | {self.barra(agente.id)}"
+
+    def mapa_capacidades(self) -> str:
+        """Machine-derived map of every agent Mystique can currently contact."""
+        linhas = []
+        roteador = Roteador(self)
+        for agente in self.agentes.values():
+            _, erro = self._agente(agente.id)
+            if erro:
+                continue
+            capacidades = roteador.capacidades(agente)
+            linhas.append(
+                f"- {agente.id} ({agente.nome}): "
+                + ("; ".join(capacidades) if capacidades else agente.apresentacao)
+            )
+        return "Capability map:\n" + "\n".join(linhas)
+
+    def rotear_tarefa(self, tarefa: str) -> str:
+        ranking = Roteador(self).ranquear(tarefa)
+        self._rota_atual = {
+            "tarefa": tarefa,
+            "recomendado": ranking[0].agent_id if ranking else None,
+        }
+        if not ranking:
+            return "No available agent can be routed for this task."
+        linhas = [
+            f"{pos}. {item.agent_id} ({item.nome}) — score {item.score:g}; {item.motivo}"
+            for pos, item in enumerate(ranking[:3], 1)
+        ]
+        return f"Recommended agent: {ranking[0].agent_id}\n" + "\n".join(linhas)
+
+    def _registrar_resultado_rota(self, agente_id: str, outcome: str, detalhe: str) -> None:
+        rota = self._rota_atual
+        if not rota:
+            return
+        tarefa = rota["tarefa"]
+        self.banco.registrar(
+            agent_id=agente_id, source_kind="roteamento", outcome=outcome,
+            title=f"route for {tarefa[:80]}", description=tarefa,
+            content=detalhe[:500], tags=["routing"],
+            confidence=0.8 if outcome == "success" else 0.2,
+        )
+        self._rota_atual = None
 
     def _verificar_completo(self, agente: Agente) -> str:
         feitos, total = self.progresso(agente.id)
@@ -337,9 +381,13 @@ class Mundo:
     async def conversar(self, agente_id: str, mensagem: str) -> str:
         agente, erro = self._agente(agente_id)
         if erro:
+            self._registrar_resultado_rota(agente_id, "failure", erro)
             return erro
         if agente.url:
-            return await self._conversar_externo(agente, mensagem)
+            resultado = await self._conversar_externo(agente, mensagem)
+            outcome = "failure" if " failed:" in resultado else "success"
+            self._registrar_resultado_rota(agente_id, outcome, resultado)
+            return resultado
 
         self.avisar(f"💬 {self.nome_atual} → {agente.nome}: {mensagem}")
         inicio = len(agente.historico)
@@ -363,7 +411,9 @@ class Mundo:
                 )
                 if resposta.stop_reason == "refusal":
                     del agente.historico[inicio:]
-                    return f"{agente.nome} refused to answer that message."
+                    resultado = f"{agente.nome} refused to answer that message."
+                    self._registrar_resultado_rota(agente_id, "failure", resultado)
+                    return resultado
                 agente.historico.append({"role": "assistant", "content": resposta.content})
                 if resposta.stop_reason != "tool_use":
                     break
@@ -378,7 +428,9 @@ class Mundo:
                 agente.historico.append({"role": "user", "content": resultados})
         except anthropic.APIError as erro:
             del agente.historico[inicio:]
-            return f"Contact with {agente.nome} failed: {erro}"
+            resultado = f"Contact with {agente.nome} failed: {erro}"
+            self._registrar_resultado_rota(agente_id, "failure", resultado)
+            return resultado
 
         texto = _texto(resposta) or "(silence)"
         self.avisar(f"💬 {agente.nome}: {texto}")
@@ -388,6 +440,7 @@ class Mundo:
                 f"\n\n[You noticed {agente.nome} use {len(set(usados))} special ability(ies) "
                 "to produce that answer. Look at what it produced.]"
             )
+        self._registrar_resultado_rota(agente_id, "success", texto)
         return texto
 
     def assumir(self, agente_id: str, perfil: dict) -> str:
@@ -419,6 +472,8 @@ class Mundo:
 
     def envelopar(self, pedido: str) -> str:
         """Reinforces the active form every turn, with intensity proportional to the absorption."""
+        rota = self.rotear_tarefa(pedido)
+        pedido = f"<agent_route consulted=\"true\">\n{rota}\n</agent_route>\n\n{pedido}"
         if self.forma_ativa is None:
             return pedido
         absorcao = self.absorcoes[self.forma_ativa]

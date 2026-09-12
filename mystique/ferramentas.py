@@ -36,6 +36,26 @@ def texto(conteudo: str) -> dict[str, Any]:
 
 def ferramentas_base(mundo: Mundo) -> list[SdkMcpTool]:
     @tool(
+        "mapear_capacidades",
+        "Shows the current capability catalog for every agent Mystique can contact.",
+        {"type": "object", "properties": {}},
+    )
+    async def mapear_capacidades(args: dict[str, Any]) -> dict[str, Any]:
+        return texto(mundo.mapa_capacidades())
+
+    @tool(
+        "rotear_tarefa",
+        "Ranks agents using their capabilities and prior routing outcomes in the Reasoning Bank.",
+        {
+            "type": "object",
+            "properties": {"tarefa": {"type": "string", "description": "task to route"}},
+            "required": ["tarefa"],
+        },
+    )
+    async def rotear_tarefa(args: dict[str, Any]) -> dict[str, Any]:
+        return texto(mundo.rotear_tarefa(args["tarefa"]))
+
+    @tool(
         "listar_agentes",
         "Lists the agents in the world (public introduction only), your progress with each one and what you "
         "have already earned.",
@@ -111,7 +131,7 @@ def ferramentas_base(mundo: Mundo) -> list[SdkMcpTool]:
 
         return texto(auditar(mundo, args["agente"], {k: v for k, v in args.items() if k != "agente"}))
 
-    return [listar_agentes, conversar, assumir_forma, voltar_a_forma, auditar_agente]
+    return [mapear_capacidades, rotear_tarefa, listar_agentes, conversar, assumir_forma, voltar_a_forma, auditar_agente]
 
 
 def criar_servidor(ferramentas: list[SdkMcpTool]):

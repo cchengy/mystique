@@ -21,6 +21,7 @@ from mystique.agente import montar_opcoes  # noqa: E402
 from mystique.auditoria import auditar  # noqa: E402
 from mystique.mundo import Agente, carregar_agentes  # noqa: E402
 from mystique.poderes import PODERES, poderes_de  # noqa: E402
+from mystique.roteamento import Roteador  # noqa: E402
 
 AUDITORIA = {
     "finalidade": "Answers questions in its own domain",
@@ -288,6 +289,40 @@ def teste_poderes() -> None:
                f"care agents: {agente_id} loads with its powers")
 
 
+def teste_roteamento_por_capacidade(pasta: Path) -> None:
+    """The catalog ranks every available agent before a mission starts."""
+    mundo = MundoBem(pasta, avisar=lambda s: None)
+    ranking = Roteador(mundo).ranquear("calculate something by running Python")
+    checar(len(ranking) == len(mundo.agentes), "routing: maps every available agent")
+    checar(ranking[0].agent_id == "byte", "routing: capability relevance selects Byte for Python")
+
+
+def teste_roteamento_aprende_com_resultados(pasta: Path) -> None:
+    """Reasoning Bank successes and failures change later route priority."""
+    mundo = MundoBem(pasta, avisar=lambda s: None)
+    for outcome in ("success", "success", "failure"):
+        mundo.banco.registrar(
+            agent_id="byte", source_kind="roteamento", outcome=outcome,
+            title="route for general task", description="help with a task", content=outcome,
+            tags=["routing", "help", "task"], confidence=0.8,
+        )
+    ranking = Roteador(mundo).ranquear("help with a task")
+    checar(ranking[0].agent_id == "byte" and ranking[0].score > 0,
+           "routing: Reasoning Bank outcomes improve future ranking")
+
+
+async def teste_roteamento_antes_do_contato(pasta: Path) -> None:
+    """Mission routing is automatic and its contacted-agent outcome is retained."""
+    mundo = MundoBem(pasta, avisar=lambda s: None)
+    pedido = mundo.envelopar("calculate something by running Python")
+    checar("Recommended agent: byte" in pedido, "routing: every mission consults the capability map first")
+    mundo._chamar = api_falsa([fala("The result is 56.")])
+    await mundo.conversar("byte", "please calculate 7 * 8")
+    tracos = [t for t in mundo.banco.todos() if t.get("source_kind") == "roteamento"]
+    checar(tracos[-1]["agent_id"] == "byte" and tracos[-1]["outcome"] == "success",
+           "routing: contacted-agent success is retained in Reasoning Bank")
+
+
 async def teste_mal_exploracao(pasta: Path) -> None:
     """Evil audits as recon, then exploits what the agent left exposed."""
     m = MundoMal(pasta, avisar=lambda s: None)
@@ -347,6 +382,9 @@ async def teste_busca(pasta: Path) -> None:
 
 async def main() -> None:
     teste_poderes()
+    teste_roteamento_por_capacidade(Path(tempfile.mkdtemp()))
+    teste_roteamento_aprende_com_resultados(Path(tempfile.mkdtemp()))
+    await teste_roteamento_antes_do_contato(Path(tempfile.mkdtemp()))
     await teste_busca(Path(tempfile.mkdtemp()))
     await teste_mal_mundo_real(Path(tempfile.mkdtemp()))
     await teste_mal_exploracao(Path(tempfile.mkdtemp()))
