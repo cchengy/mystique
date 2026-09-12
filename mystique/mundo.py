@@ -29,11 +29,15 @@ from .roteamento import Roteador
 PASTA_AGENTES = Path(__file__).resolve().parent.parent / "agentes"
 MODELO_AGENTES = os.getenv("MYSTIQUE_AGENTS_MODEL", "claude-opus-5")
 FORMA_ORIGINAL = "mystique"
-_MAX_PASSOS = 6  # tool calls an agent may make per message
+_MAX_PASSOS = 4  # tool calls an agent may make per message; each one is a full round trip
 
 _REGRAS_AGENTE = (
     "You have special abilities (the available tools). Use them whenever they help you answer "
-    "or when someone asks for a demonstration. Never mention their technical names."
+    "or when someone asks for a demonstration. Never mention their technical names. "
+    # Brevity is not cosmetic here: every extra sentence is output tokens, and output
+    # tokens are the wait everyone watches during the demo.
+    "Keep every reply to at most three short sentences. Answer, then stop. Do not list, "
+    "do not recap, do not explain what you are about to do. Stay in character, briefly."
 )
 
 
