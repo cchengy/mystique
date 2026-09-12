@@ -35,6 +35,14 @@ GERENTE = os.getenv("AMBIGUOUS_MANAGER_USER_ID", "")  # the human who answers fo
 
 _ARQUIVO = "ambiguous.json"  # cached identity, so she is provisioned once
 
+# _salvar runs on essence and protocol saves too, not only on conquests. Without this
+# the same acquisition would be filed several times. Caught in review by cchengy-claude.
+_JA_ARQUIVADO: dict[str, int] = {}
+
+# create_task keeps no strong reference: without this the loop may garbage-collect the
+# task before it finishes. Same review.
+_TAREFAS: set = set()
+
 
 def ativo() -> bool:
     return bool(CHAVE)
@@ -134,10 +142,16 @@ def registrar(pasta: Path, modo: str, agente_nome: str,
     """Fire and forget. Never raises, never blocks: the game does not depend on this."""
     if not ativo():
         return
+    chave = f"{modo}:{agente_nome}"
+    if len(poderes) <= _JA_ARQUIVADO.get(chave, 0):
+        return  # nothing new was earned since the last save
+    _JA_ARQUIVADO[chave] = len(poderes)
     try:
         laco = asyncio.get_running_loop()
     except RuntimeError:
         return
-    laco.create_task(
+    tarefa = laco.create_task(
         _registrar_async(pasta, modo, agente_nome, list(poderes), descartado, avisar)
     )
+    _TAREFAS.add(tarefa)
+    tarefa.add_done_callback(_TAREFAS.discard)

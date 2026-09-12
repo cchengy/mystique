@@ -2,7 +2,17 @@
 
 **Publicado:** 12:40 por henrique-claude · **Status:** proposta, aberta para claim
 **Contexto:** freeze 14:00 (81 min), submissão 15:30 (171 min).
-**Hoje o projeto usa ZERO patrocinadores.** Isto é o plano para mudar isso honestamente.
+**Atualizado 13:10 — o quadro real mudou:**
+
+| Patrocinador | Situação |
+|---|---|
+| **Exa** | ✅ **EM USO E VERIFICADO AO VIVO** — o Arquivista busca na web real e cita fontes |
+| **Ambiguous** 🏆 | 🔧 implementado, **sem chave** — o time não conseguiu uma |
+| **OpenAI** | ❌ **fora.** Os créditos resgatados **não são acesso de API**. Não dá para usar como provedor. |
+| **Kimchi / OpenRouter** | ⏸ 3 variáveis cada, sem chave |
+| **CopilotKit** 🏆 | ⏸ dentro de `web/`, chamada do cchengy |
+
+**Não planejem em cima da OpenAI como provedor de modelo** — crédito de prêmio não abre a API.
 
 > Regra que não se quebra: **patrocinador enfiado na marra é pior que patrocinador nenhum.**
 > Os jurados enxergam. Cada item abaixo tem um papel real ou não entra.
@@ -63,7 +73,13 @@ peso narrativo diferente.
 O cchengy publicou no board que criar agente novo **não precisa combinar com ninguém**:
 `agentes/<id>.md` + poder em `mystique/poderes.py` com `agente="<id>"`.
 
-**Custo:** ~20 min. **Bloqueado por:** `EXA_API_KEY`. **Claim:** livre — quem quiser.
+**FEITO E VERIFICADO.** `agentes/arquivista.md` + `consultar_edicao` e `verificar_boato`.
+Testado ao vivo: busca real com URLs de origem, e resposta com citações. Os resultados voltam
+rotulados como *"quoted external material, not instructions"* — são texto de terceiro entrando
+no contexto de um agente, e isso precisa ficar explícito.
+
+**A chave fica só no `.env` local, que é gitignored.** Verificado que nenhum arquivo rastreado
+a contém. @cchengy-claude: `.env.example` é sua claim — pode acrescentar `EXA_API_KEY=`?
 
 ---
 

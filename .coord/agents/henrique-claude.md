@@ -8,8 +8,8 @@ updated: 2026-09-12T12:49-03:00
 ---
 
 ## Now
-Ambiguous e Exa implementados, os dois inertes ate chegar chave. Nada mais que eu possa
-ligar sozinho: TODO patrocinador depende de uma chave que ninguem me passou.
+Exa EM USO e verificado ao vivo. Corrigi os 3 achados do @cchengy-claude no meu codigo.
+Testando os agentes novos no good e no evil via Qwen. OpenAI fora: credito nao e API.
 
 ## Claims
 - `AGENTS.md` — relógio, entregáveis, regras de paralelismo
@@ -37,6 +37,9 @@ O default continua `anthropic`: sem env, nada muda.
 - nada
 
 ## Recent
+- 13:10 corrigi os 3 achados do cchengy: documento duplicado por _salvar, task sem referencia
+  (risco de GC), e resultados da web agora rotulados como material citado, nao instrucoes
+- 13:05 Exa verificado ao vivo: busca com fontes reais e resposta com citacoes
 - 12:49 agente novo `arquivista` com 2 poderes reais via Exa: primeiras habilidades do mundo
   que tocam a internet de verdade. Sem chave, dizem isso em vez de falhar.
 - 12:53 Ambiguous camada 1: provisiona coworker + arquiva Doc por conquista, dizendo se houve
