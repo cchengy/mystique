@@ -13,10 +13,18 @@ from pydantic import BaseModel
 
 from mystique.agente import FerramentasExtras, executar
 
+from . import contas
 from .eventos import evento_custom, evento_snapshot
 from .mundo_servidor import InterrompivelMixin
 
 _ORCAMENTO_PADRAO = float(os.getenv("MYSTIQUE_BUDGET_USD", "5"))
+
+
+class ChaveBody(BaseModel):
+    chave: str | None = None          # colada à mão
+    codigo: str | None = None         # OAuth PKCE do OpenRouter
+    verificador: str | None = None
+    metodo: str = "S256"
 
 
 class DecisaoBody(BaseModel):
@@ -48,12 +56,85 @@ def criar_app(mundo: InterrompivelMixin, persona: str, extras: FerramentasExtras
         if eventos is not None:
             eventos.publicar_nowait(evento_custom(nome, valor))
 
+    async def _exigir_conta(request: Request) -> dict:
+        """The live chat needs an account. The guided replay never calls this."""
+        if not contas.auth_configurada():
+            # No tenant configured: the deployment is open on purpose (local dev).
+            return {"sub": "anonimo", "aberto": True}
+        usuario = await contas.usuario_do_token(request.headers.get("authorization"))
+        if usuario is None:
+            raise HTTPException(401, "Sign in to use the live chat.")
+        return usuario
+
     @app.get("/api/config")
     def config() -> dict:
-        return {"modo": mundo.modo}
+        return {
+            "modo": mundo.modo,
+            # The front end needs this to decide whether to show the login at all.
+            "auth": {
+                "exigida": contas.auth_configurada(),
+                "dominio": contas.AUTH0_DOMAIN or None,
+                "audiencia": contas.AUTH0_AUDIENCE or None,
+                "cliente": os.getenv("AUTH0_CLIENT_ID") or None,
+            },
+            "cofre": bool(contas.SEGREDO),
+        }
+
+    @app.get("/api/eu")
+    async def eu(request: Request) -> dict:
+        usuario = await _exigir_conta(request)
+        sub = usuario.get("sub", "anonimo")
+        conta = contas.ler_conta(sub)
+        return {
+            "sub": sub,
+            "email": usuario.get("email"),
+            "nome": usuario.get("name") or usuario.get("nickname"),
+            "chave": {"tem": bool(conta.get("chave")), "origem": conta.get("origem"), "em": conta.get("em")},
+        }
+
+    @app.get("/api/openrouter/inicio")
+    async def openrouter_inicio(request: Request) -> dict:
+        """Where to send the browser so the user authorises on OpenRouter itself.
+        They never paste a secret: the code comes back and we exchange it."""
+        await _exigir_conta(request)
+        return {
+            "autorizar": "https://openrouter.ai/auth",
+            "parametros": ["callback_url", "code_challenge", "code_challenge_method=S256"],
+            "modelos": f"{contas.OPENROUTER}/models",
+        }
+
+    @app.post("/api/openrouter/chave")
+    async def openrouter_chave(corpo: ChaveBody, request: Request) -> dict:
+        usuario = await _exigir_conta(request)
+        sub = usuario.get("sub", "anonimo")
+        if corpo.codigo and corpo.verificador:
+            chave = await contas.trocar_codigo(corpo.codigo, corpo.verificador, corpo.metodo)
+            origem = "openrouter-oauth"
+        elif corpo.chave:
+            chave, origem = corpo.chave.strip(), "colada"
+        else:
+            raise HTTPException(400, "Send either an OAuth code with its verifier, or a key.")
+        # Prove it works before storing it: a key that does not answer is worse than none.
+        estado = await contas.estado_da_chave(chave)
+        guardada = contas.guardar_chave(sub, chave, origem)
+        return {"guardada": guardada, "estado": estado}
+
+    @app.get("/api/openrouter/estado")
+    async def openrouter_estado(request: Request) -> dict:
+        usuario = await _exigir_conta(request)
+        chave = contas.chave_da_conta(usuario.get("sub", "anonimo"))
+        if not chave:
+            raise HTTPException(404, "No key stored for this account.")
+        return await contas.estado_da_chave(chave)
+
+    @app.delete("/api/openrouter/chave", status_code=204)
+    async def openrouter_esquecer(request: Request) -> None:
+        usuario = await _exigir_conta(request)
+        contas.esquecer_chave(usuario.get("sub", "anonimo"))
 
     @app.post("/api/missoes", status_code=202)
-    async def iniciar_missao(corpo: MissaoBody) -> dict:
+    async def iniciar_missao(corpo: MissaoBody, request: Request) -> dict:
+        await _exigir_conta(request)
         async def executar_com_estado() -> None:
             iniciar_ui = getattr(mundo, "iniciar_missao_ui", None)
             if iniciar_ui:
