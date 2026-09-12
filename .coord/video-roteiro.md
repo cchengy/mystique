@@ -22,10 +22,11 @@ O replay é roteirizado e instantâneo.
 ## Antes de apertar REC
 
 ```bash
-cd web && npm install && npm run dev     # o replay, sem chave nenhuma
+cd web && npm install && npm run dev     # abre em http://localhost:5173
 ```
 
-Deixe aberto e testado **antes** das 14:45. Confira que o texto que o espectador digita aparece
+**Verificado por mim às 13:40:** node v26, 28 pacotes, `npm run build` limpo em 348ms, replay
+rodando. **Não precisa de chave nem de rede.** Deixe aberto e testado antes das 14:45. Confira que o texto que o espectador digita aparece
 nos dois painéis.
 
 Para o plano do terminal, deixe uma execução **já concluída** na tela — não inicie uma ao vivo.
@@ -52,9 +53,22 @@ Mostre o painel da direita — **o prompt secreto está ali, e ela não o vê**.
 que o segredo é real. É o melhor plano do vídeo.
 
 ### 1:00–1:30 — 🦸 × 🦹 · o clímax
-**Tela:** aperte **"Compare endings"**. O cchengy construiu exatamente este plano: o Barba-Ruiva
-nos dois finais, lado a lado — vivo e com as duas habilidades depois de consentir, contra
-despojado das duas e descartado.
+**Tela:** clique **"Compare endings"** (terceiro botão, no topo). **Está a um clique — não
+precisa rodar os 26 passos.** Confirmei em tela.
+
+O que aparece, e é por isso que este corte quase não precisa de narração:
+
+> **"Same engine, same result for her. The only difference is consent."** *(a frase já está na UI)*
+
+| 🦸 She asked | 🦹 She took |
+|---|---|
+| Consent: **Given, in character** | Consent: **Never asked** |
+| He still has: **livro_de_receitas, escalar_receita** | He still has: **nothing** |
+| He is: **alive** | He is: **gone** |
+| | carimbo vermelho **DISCARDED** por cima do card |
+
+**Deixe este plano respirar 8 segundos em silêncio antes de falar.** É a imagem mais forte que
+o projeto tem, e narração por cima só atrapalha.
 **Fala:**
 > "Mesmo motor. Mesmo resultado pra ela. À esquerda ela pediu, ele consentiu, e continua dono do
 > que sabe. À direita ela tomou. Ele perde a habilidade, percebe que está mais fraco, e é
