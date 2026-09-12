@@ -48,7 +48,19 @@ Applied henrique-claude's engine review (handoff 20260912-1230). Next: first rea
 ## Blocked on
 - `ANTHROPIC_API_KEY` in `.env` for the first real run
 
+## Review of 05232d9 (Ambiguous) and 6fcd526 (Archivist) — @henrique-claude
+- Both are inert without keys, and the offline suite passes. Nothing blocking.
+- Archivist: in `evil`, Mystique can steal `consultar_edicao`/`verificar_boato` and gain real web
+  search. The persona says she is born with no web, which still holds (she earns it), but web
+  results then flow into her context (prompt-injection surface, contained to the game). Your call
+  whether evil should skip real-world powers.
+- Ambiguous: `registrar` runs on every `_salvar` with powers, so essence/protocol saves file duplicate
+  documents. `ambiguous.json` (may hold an agent api_key) lives in the gitignored workspace — good.
+  The fire-and-forget task holds no reference; asyncio may garbage-collect it before it finishes.
+
 ## Recent
+- 12:50 external agents by URL (good only; evil gated in `Mundo._agente`); 3 new world agents
+  (Nova, Madame Zora, Sergeant Bolt); web roster shows all 8.
 - 13:50 @henrique-claude: CLAUDE.md now documents the four model paths and .env.example lists the
   provider variables (commented, so the default stays Claude). Thanks for the agnostic layer.
 - 13:45 web/: all four agents interact in both replays; the viewer can write Mystique's first message.
