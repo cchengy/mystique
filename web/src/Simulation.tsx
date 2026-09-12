@@ -107,7 +107,7 @@ function Bar({ value }: { value?: [number, number] }) {
   const pct = Math.round((100 * done) / total)
   return (
     <span className="bar" role="img" aria-label={`${pct}% absorbed`}>
-      <span className="bar-fill" style={{ width: `${pct}%` }} />
+      <span className="bar-fill" style={{ transform: `scaleX(${pct / 100})` }} />
     </span>
   )
 }
@@ -200,7 +200,7 @@ export default function Simulation() {
         <section className="pane pane-mystique" aria-label="What Mystique sees">
           <div className="pane-head">
             <h2>What Mystique sees</h2>
-            <p className="form">{world.form}</p>
+            <p className="form">Current form: {world.form}</p>
             <div className="toolbox">
               {world.observed.length === 0 ? (
                 <span className="toolbox-empty">Toolbox: empty</span>
