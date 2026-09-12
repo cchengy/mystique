@@ -45,16 +45,19 @@ Offline test (no key, no API spend):
 
 ## See both points of view
 
-`web/` is a React replay of two scripted sessions (good and evil) built from the engine's real
-messages: Mystique's view on the left, the world's side on the right (all four agents, plus the
-focused agent's own view with its secret prompt). It needs no API key and no network.
+`web/` is the official React interface. **Live chat** is the default: it sends missions to the
+configured model endpoint and streams Mystique's real narration back over AG-UI. If the backend is
+disconnected, the interface reports it and never substitutes a scripted answer.
+
+**Guided replay** remains available as a separate, deterministic presentation mode built from real
+engine messages. Its Play, Pause, Back and Next controls never run while Live chat is active.
 
 ```bash
 cd web && npm install && npm run dev
 ```
 
-Space plays and pauses, the arrow keys step, and the top toggle switches between good, evil and
-**Compare endings**, which puts the same agent's two endings side by side.
+In Guided replay, Space plays and pauses, the arrow keys step, and the top toggle switches between
+good, evil and **Compare endings**, which puts the same agent's two endings side by side.
 
 ## The world's agents
 

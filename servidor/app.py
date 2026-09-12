@@ -13,7 +13,7 @@ from pydantic import BaseModel
 
 from mystique.agente import FerramentasExtras, executar
 
-from .eventos import evento_snapshot
+from .eventos import evento_custom, evento_snapshot
 from .mundo_servidor import InterrompivelMixin
 
 _ORCAMENTO_PADRAO = float(os.getenv("MYSTIQUE_BUDGET_USD", "5"))
@@ -43,15 +43,25 @@ def criar_app(mundo: InterrompivelMixin, persona: str, extras: FerramentasExtras
     # this set just keeps one until it finishes.
     tarefas_em_curso: set[asyncio.Task] = set()
 
+    def publicar(nome: str, valor: dict) -> None:
+        eventos = getattr(mundo, "_eventos", None)
+        if eventos is not None:
+            eventos.publicar_nowait(evento_custom(nome, valor))
+
     @app.get("/api/config")
     def config() -> dict:
         return {"modo": mundo.modo}
 
     @app.post("/api/missoes", status_code=202)
     async def iniciar_missao(corpo: MissaoBody) -> dict:
-        tarefa = asyncio.create_task(
-            executar(corpo.mensagem, mundo, corpo.orcamento or _ORCAMENTO_PADRAO, False, persona, extras)
-        )
+        async def executar_com_estado() -> None:
+            publicar("missao_iniciada", {"mensagem": corpo.mensagem})
+            try:
+                await executar(corpo.mensagem, mundo, corpo.orcamento or _ORCAMENTO_PADRAO, False, persona, extras)
+            finally:
+                publicar("missao_finalizada", {})
+
+        tarefa = asyncio.create_task(executar_com_estado())
         tarefas_em_curso.add(tarefa)
         tarefa.add_done_callback(tarefas_em_curso.discard)
         return {"ok": True}

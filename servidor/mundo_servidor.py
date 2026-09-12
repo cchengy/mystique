@@ -69,6 +69,13 @@ class InterrompivelMixin:
     def __init__(self, *args, eventos: BarramentoEventos, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self._eventos = eventos
+        saida_original = self.avisar
+
+        def narrar(texto: str) -> None:
+            saida_original(texto)
+            self._eventos.publicar_nowait(evento_custom("narracao", {"texto": texto}))
+
+        self.avisar = narrar
         self._pendentes: dict[str, "asyncio.Future[bool]"] = {}
         self._ultimos_vereditos: dict[tuple[str, str], tuple[bool, str]] = {}
         self._ja_descartados: set[str] = {

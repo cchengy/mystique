@@ -27,6 +27,17 @@ export const PT: Record<string, string> = {
   Dark: 'Escuro',
 
   // --- live missions (AG-UI) ---
+  '● Live chat': '● Chat ao vivo',
+  '▶ Guided replay': '▶ Replay guiado',
+  'Backend connected': 'Motor conectado',
+  'Backend disconnected': 'Motor desconectado',
+  '● LIVE · DeepSeek is working through AG-UI': '● AO VIVO · DeepSeek trabalhando via AG-UI',
+  '● LIVE · Ready for a DeepSeek mission': '● AO VIVO · pronto para uma missão no DeepSeek',
+  'Working…': 'Processando…',
+  'Messages go to the real configured model. Mystique chooses and routes the best agent.':
+    'As mensagens vão para o modelo real configurado. A Mystique escolhe e encaminha para o melhor agente.',
+  'Live backend is disconnected. Your message was not sent or replayed.':
+    'O motor ao vivo está desconectado. Sua mensagem não foi enviada nem substituída por um replay.',
   '● LIVE · DeepSeek mission running through AG-UI': '● AO VIVO · missão DeepSeek rodando via AG-UI',
   'Live backend disconnected': 'Motor ao vivo desconectado',
   'Trust receipt': 'Recibo de confiança',

@@ -28,6 +28,8 @@ type LiveHandlers = {
   receipt: (value: LiveReceipt) => void
   resolved: (id: string) => void
   connected: (value: boolean) => void
+  narration: (value: string) => void
+  mission: (running: boolean, message?: string) => void
 }
 
 export function connectLive(handlers: LiveHandlers): () => void {
@@ -46,6 +48,13 @@ export function connectLive(handlers: LiveHandlers): () => void {
     if (event.type === 'CUSTOM' && event.name === 'recibo_resolvido') {
       handlers.resolved((event.value as { recibo_id: string }).recibo_id)
     }
+    if (event.type === 'CUSTOM' && event.name === 'narracao') {
+      handlers.narration((event.value as { texto: string }).texto)
+    }
+    if (event.type === 'CUSTOM' && event.name === 'missao_iniciada') {
+      handlers.mission(true, (event.value as { mensagem: string }).mensagem)
+    }
+    if (event.type === 'CUSTOM' && event.name === 'missao_finalizada') handlers.mission(false)
   }
   return () => source.close()
 }

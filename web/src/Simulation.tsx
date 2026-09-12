@@ -222,11 +222,13 @@ export default function Simulation() {
   const [pinned, setPinned] = useState<string | null>(null)
   const [opening, setOpening] = useState<string | null>(null)
   const [draft, setDraft] = useState('')
-  const [live, setLive] = useState(false)
+  const [live, setLive] = useState(true)
   const [liveConnected, setLiveConnected] = useState(false)
   const [liveSnapshot, setLiveSnapshot] = useState<LiveSnapshot | null>(null)
   const [liveReceipts, setLiveReceipts] = useState<LiveReceipt[]>([])
   const [liveError, setLiveError] = useState<string | null>(null)
+  const [liveMessages, setLiveMessages] = useState<Entry[]>([])
+  const [liveRunning, setLiveRunning] = useState(false)
   const scenario = SCENARIOS[mode]
   const last = scenario.steps.length
   const world = useMemo(() => replay(scenario, count, opening), [scenario, count, opening])
@@ -246,19 +248,24 @@ export default function Simulation() {
         receipt: (receipt) => setLiveReceipts((current) => [...current, receipt]),
         resolved: (id) => setLiveReceipts((current) => current.filter((receipt) => receipt.recibo_id !== id)),
         connected: setLiveConnected,
+        narration: (text) => setLiveMessages((current) => [...current, { kind: 'message', from: 'Mystique', text, self: true }]),
+        mission: (running, message) => {
+          setLiveRunning(running)
+          if (message) setLiveMessages((current) => [...current, { kind: 'system', tone: 'info', text: `🎯 ${message}` }])
+        },
       }),
     [],
   )
 
   useEffect(() => {
-    if (!playing) return
+    if (!playing || live) return
     if (count >= last) {
       setPlaying(false)
       return
     }
     const timer = window.setTimeout(() => setCount((c) => c + 1), 2600)
     return () => window.clearTimeout(timer)
-  }, [playing, count, last])
+  }, [playing, count, last, live])
 
   const restart = () => {
     setPlaying(false)
@@ -270,6 +277,7 @@ export default function Simulation() {
     const onKey = (event: KeyboardEvent) => {
       if (event.target instanceof HTMLTextAreaElement || event.target instanceof HTMLInputElement) return
       if (event.target instanceof HTMLButtonElement && event.key === ' ') return
+      if (live) return
       if (event.key === ' ') {
         event.preventDefault()
         setPlaying((p) => !p)
@@ -283,7 +291,7 @@ export default function Simulation() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [last])
+  }, [last, live])
 
   const switchMode = (next: Mode) => {
     setComparing(false)
@@ -296,22 +304,18 @@ export default function Simulation() {
     const text = draft.trim()
     if (!text) return
     setLiveError(null)
-    if (liveConnected) {
-      try {
-        await startLiveMission(text)
-        setLive(true)
-        setOpening(text)
-        setDraft('')
-        setPlaying(false)
-      } catch (error) {
-        setLiveError(error instanceof Error ? error.message : String(error))
-      }
+    if (!liveConnected) {
+      setLiveError('Live backend is disconnected. Your message was not sent or replayed.')
       return
     }
-    setOpening(text)
-    setDraft('')
-    setCount(2)
-    setPlaying(true)
+    try {
+      setLive(true)
+      setPlaying(false)
+      await startLiveMission(text)
+      setDraft('')
+    } catch (error) {
+      setLiveError(error instanceof Error ? error.message : String(error))
+    }
   }
 
   const [lang, setLang] = useState<Lang>(() => {
@@ -376,7 +380,7 @@ export default function Simulation() {
         >
           {theme === 'dark' ? `☀ ${t('Light')}` : `☾ ${t('Dark')}`}
         </button>
-        {!comparing && (
+        {!comparing && !live && (
           <div className="controls">
             <button onClick={restart}>{t('Restart')}</button>
             <button onClick={() => setCount((c) => Math.max(1, c - 1))} disabled={count <= 1}>
@@ -395,10 +399,20 @@ export default function Simulation() {
         )}
       </header>
 
+      {!comparing && (
+        <nav className="experience-switch" aria-label="Experience mode">
+          <button aria-pressed={live} onClick={() => { setLive(true); setPlaying(false) }}>{t('● Live chat')}</button>
+          <button aria-pressed={!live} onClick={() => setLive(false)}>{t('▶ Guided replay')}</button>
+          <span role="status" className={liveConnected ? 'is-connected' : 'is-disconnected'}>
+            {t(liveConnected ? 'Backend connected' : 'Backend disconnected')}
+          </span>
+        </nav>
+      )}
+
       <p className="caption" aria-live="polite">
         {live
           ? liveConnected
-            ? t('● LIVE · DeepSeek mission running through AG-UI')
+            ? t(liveRunning ? '● LIVE · DeepSeek is working through AG-UI' : '● LIVE · Ready for a DeepSeek mission')
             : t('Live backend disconnected')
           : comparing
             ? t('Same engine, same result for her. The only difference is consent.')
@@ -440,12 +454,12 @@ export default function Simulation() {
                 )}
               </div>
             </div>
-            <div className="feed" ref={mystiqueRef}>
-              {world.mystique.map((entry, i) => (
+            <div className="feed" ref={mystiqueRef} aria-live={live ? 'polite' : undefined} aria-busy={liveRunning}>
+              {(live ? liveMessages : world.mystique).map((entry, i) => (
                 <EntryView key={i} entry={entry} revealed={world.revealed} side="mystique" />
               ))}
             </div>
-            {count === 1 && (
+            {(live || count === 1) && (
               <form
                 className="composer"
                 onSubmit={(event) => {
@@ -468,12 +482,12 @@ export default function Simulation() {
                       }
                     }}
                   />
-                  <button type="submit" disabled={!draft.trim()}>
-                    {t('Send')}
+                  <button type="submit" disabled={!draft.trim() || !liveConnected || liveRunning}>
+                    {liveRunning ? t('Working…') : t('Send')}
                   </button>
                 </div>
                 <p className="composer-hint">
-                  {t('You never pick the agent: she works out who does what. Or press Play and let her choose her own mission.')}
+                  {live ? t('Messages go to the real configured model. Mystique chooses and routes the best agent.') : t('You never pick the agent: she works out who does what. Or press Play and let her choose her own mission.')}
                 </p>
               </form>
             )}
@@ -563,7 +577,7 @@ export default function Simulation() {
       <footer className="terminal" aria-label="Terminal narration">
         {!comparing && (
           <div className="terminal-lines" ref={terminalRef}>
-            {world.terminal.map((line, i) => (
+            {(live ? liveMessages.map((entry) => entry.kind === 'message' ? entry.text : entry.kind === 'system' ? entry.text : '') : world.terminal).map((line, i) => (
               <div key={i}>{t(line)}</div>
             ))}
           </div>

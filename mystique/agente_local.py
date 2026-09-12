@@ -62,9 +62,9 @@ async def executar(missao, mundo: Mundo, orcamento: float, verbose: bool, person
     sistema = f"{BASE}\n\n{persona}"
 
     conquistas = sum(len(a.poderes) for a in mundo.absorcoes.values())
-    print(
+    mundo.avisar(
         f"{_EMOJI.get(mundo.modo, '🦎')} Mystique ({mundo.modo}) · {MODELO} @ {BASE_URL} · "
-        f"{len(mundo.agentes)} agents · {conquistas} abilities in memory · self-hosted, no vendor API"
+        f"{len(mundo.agentes)} agents · {conquistas} abilities in memory · OpenAI-compatible endpoint"
     )
 
     historico: list[dict] = []
@@ -89,7 +89,7 @@ async def executar(missao, mundo: Mundo, orcamento: float, verbose: bool, person
                 historico.append({"role": "assistant", "content": resposta.content})
                 for bloco in resposta.content:
                     if bloco.type == "text" and bloco.text.strip():
-                        print(f"\n[{mundo.nome_atual}] {bloco.text}")
+                        mundo.avisar(f"[{mundo.nome_atual}] {bloco.text}")
                 if resposta.stop_reason != "tool_use":
                     break
                 resultados = []
@@ -101,7 +101,7 @@ async def executar(missao, mundo: Mundo, orcamento: float, verbose: bool, person
                         saida = f"Unknown tool: {bloco.name}"
                     else:
                         if verbose:
-                            print(f"   🔧 {bloco.name}({json.dumps(bloco.input, ensure_ascii=False)[:120]})")
+                            mundo.avisar(f"🔧 {bloco.name}({json.dumps(bloco.input, ensure_ascii=False)[:120]})")
                         try:
                             saida = _texto_do_resultado(await ferramenta.handler(bloco.input))
                         except Exception as erro:  # a broken tool must not kill the session
@@ -111,9 +111,9 @@ async def executar(missao, mundo: Mundo, orcamento: float, verbose: bool, person
                     )
                 historico.append({"role": "user", "content": resultados})
             else:
-                print(f"\n⚠ stopped after {_MAX_PASSOS} steps without a final answer.")
+                mundo.avisar(f"⚠ stopped after {_MAX_PASSOS} steps without a final answer.")
         except Exception as erro:
-            print(f"\n⚠ mission interrupted: {erro}")
+            mundo.avisar(f"⚠ mission interrupted: {erro}")
 
         if missao is not None:
             break

@@ -77,15 +77,49 @@ button {
 }
 
 button:focus-visible,
-summary:focus-visible {
+summary:focus-visible,
+textarea:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
+.experience-switch {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.25rem;
+  background: var(--ink-deep);
+  border-bottom: 1px solid var(--line-light);
+}
+
+.experience-switch button {
+  min-height: 44px;
+  border: 1px solid var(--line-light);
+  border-radius: 999px;
+  padding: 0.55rem 1rem;
+  background: transparent;
+  color: var(--text-light);
+  font-weight: 700;
+}
+
+.experience-switch button[aria-pressed='true'] {
+  background: var(--text-light);
+  color: var(--ink-deep);
+}
+
+.experience-switch span {
+  margin-left: auto;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.experience-switch .is-connected { color: #79e5b9; }
+.experience-switch .is-disconnected { color: #ffaaa3; }
+
 .app {
   height: 100vh;
   display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto auto minmax(0, 1fr) auto;
   background: var(--ink-deep);
 }
 
@@ -472,7 +506,7 @@ summary:focus-visible {
 }
 
 .tile-intro {
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   color: var(--w-muted);
   line-height: 1.35;
   display: -webkit-box;
@@ -482,7 +516,7 @@ summary:focus-visible {
 }
 
 .tile-state {
-  font-size: 0.75rem;
+  font-size: 0.825rem;
   font-weight: 600;
   color: var(--w-muted);
 }
@@ -916,7 +950,7 @@ summary:focus-visible {
   scrollbar-width: thin;
   scrollbar-color: rgba(220, 227, 255, 0.2) transparent;
   font-family: var(--code);
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   line-height: 1.6;
   color: #bac6f0;
   white-space: pre-wrap;
@@ -924,7 +958,7 @@ summary:focus-visible {
 
 .disclaimer {
   margin: 0.4rem 0 0;
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   color: var(--muted-light);
 }
 
@@ -961,6 +995,8 @@ summary:focus-visible {
   .controls {
     margin-left: 0;
   }
+  .experience-switch { flex-wrap: wrap; }
+  .experience-switch span { width: 100%; margin-left: 0; }
   .compare {
     grid-template-columns: 1fr;
   }
