@@ -1246,9 +1246,15 @@ textarea:focus-visible {
 .app[data-live='true'] .feed {
   flex: 1 1 auto;
   min-height: 0;
-  justify-content: flex-end;
   gap: 0.9rem;
   padding-bottom: 1.25rem;
+}
+
+/* Messages hug the composer without breaking scroll-up. Do NOT use
+   justify-content: flex-end here: in an overflow container it puts the earlier
+   messages above the scrollable area, where they cannot be reached. */
+.app[data-live='true'] .feed > *:first-child {
+  margin-top: auto;
 }
 
 .app[data-live='true'] .feed > * {
@@ -1388,5 +1394,31 @@ textarea:focus-visible {
   }
   .feed-empty-chips button {
     max-width: 100%;
+  }
+}
+
+
+/* ===== Agent profile: an overlay that cannot be mispositioned ==========
+   It was absolutely positioned against the roster strip, so in live mode it
+   landed outside the visible area and clicking a card looked like nothing
+   happened on a page of empty colour. Fixed positioning does not care what
+   the surrounding layout does. */
+
+.app[data-live='true'] .agent-profile {
+  position: fixed;
+  inset: auto 1rem 1rem auto;
+  top: auto;
+  z-index: 60;
+  width: min(30rem, calc(100vw - 2rem));
+  max-height: min(32rem, calc(100vh - 6rem));
+  overflow: auto;
+  box-shadow: 0 1.5rem 3rem rgba(0, 0, 0, 0.45);
+}
+
+@media (max-width: 720px) {
+  .app[data-live='true'] .agent-profile {
+    inset: auto 0.75rem 0.75rem 0.75rem;
+    width: auto;
+    max-height: 70vh;
   }
 }
