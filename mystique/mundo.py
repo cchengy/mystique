@@ -58,6 +58,7 @@ class Absorcao:
     poderes: list[str] = field(default_factory=list)  # mapped (good) or stolen (evil)
     protocolo: dict | None = None  # adapter (good)
     descartado: bool = False  # (evil)
+    auditoria: dict | None = None  # security and LGPD audit (see auditoria.py)
 
 
 def _frontmatter(texto: str) -> tuple[dict[str, str], str]:

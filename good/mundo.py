@@ -63,6 +63,13 @@ class MundoBem(Mundo):
         absorcao = self._absorcao(agente)
         if not absorcao.protocolo:
             return f"First build the adapter for {agente.nome} (criar_adapter) with what you learned about them."
+        if not absorcao.auditoria:
+            return f"Audit {agente.nome} first (auditar_agente): security and LGPD before connecting anything."
+        if absorcao.auditoria.get("risco") == "high":
+            return (
+                f"Your own audit rated {agente.nome} high risk. Address its recommendations and audit again "
+                "before connecting an ability."
+            )
 
         poder, motivo = await self._identificar(agente, absorcao, descricao, evidencia)
         if poder is None:

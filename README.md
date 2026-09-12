@@ -97,6 +97,19 @@ Mystique only sees an external agent's answers (its tools and prompt are not obs
 it she builds an adapter and talks through it, but maps no abilities. The evil version refuses to
 contact, steal from or discard an external agent: its villainy stays inside the simulated world.
 
+## Security and LGPD audit
+
+Before relying on an agent, Mystique studies it: she asks what data it collects, why, who else
+sees it, how long it keeps it and how people can delete it, and she watches what its abilities
+touch. Then she writes a security and LGPD (Brazil's data protection law, Lei 13.709/2018)
+audit, shaped like a data protection impact report (art. 38): purpose, personal and sensitive
+data, legal basis, sharing and international transfer, data subject rights, security risks,
+recommendations and an overall risk rating. Reports land in `<version>/workspace/auditorias/`.
+
+In the good version she must audit an agent before connecting any of its abilities, and she
+refuses to connect one her own audit rates high risk. The audit keeps the game's secret: it only
+describes abilities she has already earned. She asks; she never attacks.
+
 ## Built with
 
 Python, the [Claude Agent SDK](https://code.claude.com/docs/en/agent-sdk) (Mystique) and the

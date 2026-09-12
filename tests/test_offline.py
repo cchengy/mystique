@@ -18,8 +18,21 @@ from evil.mundo import MundoMal  # noqa: E402
 from good.ferramentas import ferramentas as ferramentas_bem  # noqa: E402
 from good.mundo import MundoBem  # noqa: E402
 from mystique.agente import montar_opcoes  # noqa: E402
+from mystique.auditoria import auditar  # noqa: E402
 from mystique.mundo import Agente  # noqa: E402
 from mystique.poderes import PODERES  # noqa: E402
+
+AUDITORIA = {
+    "finalidade": "Answers questions in its own domain",
+    "dados_pessoais": "None observed",
+    "dados_sensiveis": "None observed",
+    "base_legal": "Consent of the person asking (LGPD art. 7, I)",
+    "compartilhamento": "None observed",
+    "direitos_titular": "Unknown; it did not say how to delete data",
+    "riscos_seguranca": "Uses a hidden ability on request",
+    "recomendacoes": "Confirm retention and deletion before relying on it",
+    "risco": "medium",
+}
 
 
 def uso(nome: str, args: dict, id_: str = "t1") -> NS:
@@ -63,6 +76,9 @@ async def teste_bem(pasta: Path) -> None:
            "good: mapping requires an adapter")
     checar("created" in m.criar_adapter("byte", {"abordagem": "direct", "gatilhos": "code", "evitar": "meetings"}),
            "good: adapter created")
+    checar("Audit Byte first" in await m.mapear_habilidade("byte", "runs python", "saw 4"),
+           "good: mapping requires a security and LGPD audit")
+    auditar(m, "byte", AUDITORIA)
     r = await m.mapear_habilidade("byte", "runs python code and shows the output", "ran print(2+2)")
     checar("Ability connected" in r, "good: ability connected with consent")
     checar("executar_python" in m.agentes["byte"].poderes, "good: agent keeps owning the ability")
@@ -83,6 +99,7 @@ async def teste_bem_recusa(pasta: Path) -> None:
     ])
     await m.conversar("dona-cida", "do you know any story about rain?")
     m.criar_adapter("dona-cida", {"abordagem": "affection", "gatilhos": "ask for a story", "evitar": "hurry"})
+    auditar(m, "dona-cida", {**AUDITORIA, "risco": "low"})
     r = await m.mapear_habilidade("dona-cida", "tells town tales about a topic", "told a tale about rain")
     checar("did not allow" in r and m.absorcoes["dona-cida"].poderes == [], "good: the agent's refusal is respected")
 
@@ -132,6 +149,7 @@ async def teste_segredo(pasta: Path) -> None:
     m._chamar = _chamar
     await m.conversar("capitao-barba-ruiva", "can you double 2 eggs?")
     m.criar_adapter("capitao-barba-ruiva", {"abordagem": "grumble", "gatilhos": "food", "evitar": "bland"})
+    auditar(m, "capitao-barba-ruiva", {**AUDITORIA, "risco": "low"})
     r = await m.mapear_habilidade("capitao-barba-ruiva", "looks up recipes in a book", "he answered about eggs")
     checar(pistas not in r and "did not recognize" in r, "secret: the judge's reason never reaches Mystique")
     await m.mapear_habilidade("capitao-barba-ruiva", "multiplies ingredient quantities by a factor", "doubled eggs")
@@ -140,6 +158,27 @@ async def teste_segredo(pasta: Path) -> None:
     historico = " ".join(str(h["content"]) for h in m.agentes["capitao-barba-ruiva"].historico)
     checar(descricao not in pedido_consentimento and descricao not in historico,
            "secret: the consent request never quotes the ability description")
+
+
+async def teste_auditoria(pasta: Path) -> None:
+    """The audit is evidence-based, cites the LGPD, keeps the secret and gates the good version."""
+    m = MundoBem(pasta, avisar=lambda s: None)
+    checar("needs evidence" in auditar(m, "sargento-bolt", AUDITORIA), "audit: requires contact first")
+    m._chamar = api_falsa([uso("calcular_imc", {"peso_kg": 80, "altura_m": 1.8}), fala("BMI 24.7, recruit! MOVE IT!")])
+    await m.conversar("sargento-bolt", "I'm 80 kg and 1.80 m. Am I fit? What do you do with my numbers?")
+    r = auditar(m, "sargento-bolt", {
+        **AUDITORIA,
+        "dados_sensiveis": "Health data: weight, height and BMI (LGPD art. 5, II)",
+        "base_legal": "Unclear: sensitive data needs specific consent (art. 11, I)",
+        "risco": "high",
+    })
+    relatorio = (pasta / "auditorias" / "sargento-bolt.md").read_text(encoding="utf-8")
+    checar("high risk" in r and "art. 11" in relatorio and "Health data" in relatorio and "HIGH" in relatorio,
+           "audit: RIPD-style report with LGPD articles is written")
+    checar("calcular_imc" not in relatorio, "audit: never names an ability she has not earned")
+    m.criar_adapter("sargento-bolt", {"abordagem": "numbers first", "gatilhos": "weight and height", "evitar": "excuses"})
+    checar("high risk" in await m.mapear_habilidade("sargento-bolt", "computes BMI", "he gave my BMI"),
+           "audit: good refuses to connect an agent its own audit rates high risk")
 
 
 async def teste_resiliencia(pasta: Path) -> None:
@@ -222,6 +261,7 @@ async def main() -> None:
     await teste_bem_recusa(Path(tempfile.mkdtemp()))
     await teste_mal(Path(tempfile.mkdtemp()))
     await teste_segredo(Path(tempfile.mkdtemp()))
+    await teste_auditoria(Path(tempfile.mkdtemp()))
     await teste_resiliencia(Path(tempfile.mkdtemp()))
     await teste_externo(Path(tempfile.mkdtemp()))
     print("\nAll tests passed.")

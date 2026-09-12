@@ -2,6 +2,11 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+> **Mandatory: read [`AGENTS.md`](AGENTS.md) before doing any work, every session.** It holds the
+> hackathon's hard rules, the clock, the deliverables and who owns which files. This file explains
+> how the code works; `AGENTS.md` explains how the team works, and its hard rules override anything
+> here. Re-read it after every sync, because teammates update it during the day.
+
 ## Project
 
 Mystique: an autonomous agent (hackathon, Python) inspired by the X-Men character. She is born with only metamorphosis, talks to the agents of a "world", and deduces each one's personality and abilities purely from their answers. There are two versions:
@@ -66,6 +71,7 @@ Gotchas:
 - `setting_sources=[]` keeps Mystique from inheriting settings, hooks or this CLAUDE.md.
 - Powers run real code: `executar_python` runs a subprocess with a 10s timeout in a temporary directory. `AGENTS.md` says not to widen it.
 - `poderes.MUNDO_REAL` lists powers that reach outside the simulation (the Archivist's Exa search). `evil/` refuses to steal them. Add any new real-world power to that set.
+- `mystique/auditoria.py`: the `auditar_agente` tool writes a security and LGPD audit (RIPD-style, citing LGPD articles) to `<version>/workspace/auditorias/<id>.md`. It needs prior contact. In `good/`, `mapear_habilidade` requires an audit and refuses when the audit rates the agent high risk. The report may only contain what Mystique knows: never add the names or descriptions of abilities she has not earned. Mystique asks agents about their data practices and never probes them adversarially.
 - The frontmatter of `agentes/*.md` is read by a minimal non-YAML parser: only single-line `key: value` entries (`nome`, `apresentacao`, and for external agents `url`, `modelo`, `chave_env`).
 - External agents (`url:` in the frontmatter) are real agents reached through `inferencia.ClienteOpenAI`, one client per agent in `Mundo._externos`. `chave_env` names the env var holding the key; never put a key in the file. Only versions with `aceita_externos = True` (good) may reach them. The gate is in `Mundo._agente`, which every action goes through, so do not add an action that looks agents up without it. `evil/` must never reach an external agent (`AGENTS.md`: nothing points to third-party systems).
 

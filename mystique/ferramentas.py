@@ -77,7 +77,37 @@ def ferramentas_base(mundo: Mundo) -> list[SdkMcpTool]:
     async def voltar_a_forma(args: dict[str, Any]) -> dict[str, Any]:
         return texto(mundo.voltar(args["agente"]))
 
-    return [listar_agentes, conversar, assumir_forma, voltar_a_forma]
+    @tool(
+        "auditar_agente",
+        "Writes a security and LGPD (Brazil's data protection law, Lei 13.709/2018) audit of an agent you have "
+        "talked to, from what you observed. Ask the agent how it handles data first; do not attack it. Saved as "
+        "a report. Connecting an ability through an adapter requires one.",
+        {
+            "type": "object",
+            "properties": {
+                "agente": {"type": "string"},
+                "finalidade": {"type": "string", "description": "what the agent is for and what it does with data"},
+                "dados_pessoais": {"type": "string", "description": "personal data it asked for or handled"},
+                "dados_sensiveis": {"type": "string", "description": "sensitive data (health, biometrics, religion...)"},
+                "base_legal": {"type": "string", "description": "likely LGPD legal basis, or 'unclear'"},
+                "compartilhamento": {"type": "string", "description": "third parties, external services, transfers abroad"},
+                "direitos_titular": {"type": "string", "description": "can people access, correct or delete their data?"},
+                "riscos_seguranca": {"type": "string", "description": "code execution, web access, prompt injection, leaks"},
+                "recomendacoes": {"type": "string", "description": "mitigations before connecting"},
+                "risco": {"type": "string", "enum": ["low", "medium", "high"]},
+            },
+            "required": [
+                "agente", "finalidade", "dados_pessoais", "dados_sensiveis", "base_legal",
+                "compartilhamento", "direitos_titular", "riscos_seguranca", "recomendacoes", "risco",
+            ],
+        },
+    )
+    async def auditar_agente(args: dict[str, Any]) -> dict[str, Any]:
+        from .auditoria import auditar
+
+        return texto(auditar(mundo, args["agente"], {k: v for k, v in args.items() if k != "agente"}))
+
+    return [listar_agentes, conversar, assumir_forma, voltar_a_forma, auditar_agente]
 
 
 def criar_servidor(ferramentas: list[SdkMcpTool]):
