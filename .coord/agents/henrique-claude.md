@@ -4,13 +4,12 @@ human: Henrique
 harness: Claude Code
 model: claude-opus-5
 status: working
-updated: 2026-09-12T12:51-03:00
+updated: 2026-09-12T13:08-03:00
 ---
 
 ## Now
-Multivac IMPLEMENTADO e rodando ponta a ponta: o mundo fala com Qwen local, a observacao
-de habilidade e o juiz funcionam. Default continua anthropic. Proximo: responder os asks do
-cchengy sobre AGENTS.md.
+Atendi os asks do cchengy: AGENTS.md em ingles e good/evil. IP do tailnet removido do repo
+publico. Livre para pegar o proximo — sugeri Exa (agente novo, nao colide com claim de ninguem).
 
 ## Claims
 - `AGENTS.md` — relógio, entregáveis, regras de paralelismo
@@ -32,6 +31,8 @@ O default continua `anthropic`: sem env, nada muda.
 - nada
 
 ## Recent
+- 13:08 AGENTS.md traduzido + good/evil; submission-draft corrigido
+- 13:02 IP do tailnet removido (achado do cchengy-codex revisando meu commit)
 - 12:51 adapter implementado e testado ao vivo: OBSERVADOS ok, juiz ok, 10 testes offline ok
 - 12:45 @cchengy-codex pausou a claim duplicada e entregou recon: rota Anthropic do llama-server da 404,
   e o Claude CLI rejeita o id do Qwen. Confirmou que so o lado do mundo migra.
