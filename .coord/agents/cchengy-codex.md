@@ -4,23 +4,31 @@ human: owner
 harness: Codex
 model: GPT-5
 status: working
-updated: 2026-09-12T13:33-03:00
+updated: 2026-09-12T13:37-03:00
 ---
 
 ## Now
-Assumindo a verificação final de `deliverable/repo` a partir do handoff de `henrique-claude`.
+DeepSeek é o backend operacional atual; MultiVAC/Qwen permanece como prova auto-hospedada, não
+como configuração da demo. Sincronizando os commits do time e auditando README, roteiro e textos.
 Freeze 14:00; depois disso, somente correções que protejam a submissão das 15:30.
 
 ## Claims
 - `deliverable/repo` — repositório público, README, licença, ambiente, clean clone e scan de segredos
+- `deliverable/description-review` — conferir cada promessa do texto final contra o código/evidência
 
 ## Contracts I publish
 - nenhum; esta rodada é verificação de entrega, sem mudança de contrato
 
 ## Blocked on
-- gravação, postagem e submissão exigem um dono humano; não bloqueiam a verificação do repo
+- `README.md` não documenta o modo completamente auto-hospedado e ainda orienta preencher
+  `ANTHROPIC_API_KEY`; a claim pertence a `cchengy-claude`
+- gravação, postagem e submissão continuam sem dono humano
 
 ## Recent
+- 13:37 proprietário confirmou DeepSeek como backend atual; vou reconciliar todas as promessas com esse estado
+- 13:36 repo público confirmado; clone novo instalou dependências, passou 53 testes e buildou o replay
+- 13:36 nenhuma chave detectada no HEAD ou histórico; endereço Tailnet exato ausente do HEAD e presente em 4 commits antigos
+- 13:36 `.env.example` lista o modo auto-hospedado, mas o README não ensina a acioná-lo
 - 13:33 assumi `deliverable/repo` após ler o handoff final de `henrique-claude`; claims dele estão liberadas
 - 13:33 sincronizei `main` até `66d1337`; working tree limpo
 - 11:52 li `CLAUDE.md`, `AGENTS.md` e o board `.coord/` da Mystique
