@@ -1,5 +1,14 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { AGENTS, REDBEARD, SCENARIOS, type Entry, type Mode, type Scenario, type Step } from './scenario'
+import { PT } from './pt'
+
+type Lang = 'en' | 'pt'
+const LangContext = createContext<Lang>('en')
+// Translate by exact English source; fall back to the source so nothing ever breaks.
+function useT(): (s: string) => string {
+  const lang = useContext(LangContext)
+  return (s: string) => (lang === 'pt' ? PT[s] ?? s : s)
+}
 
 type World = {
   mystique: Entry[]
@@ -86,22 +95,24 @@ function useFollow(length: number) {
 }
 
 function Secret({ ability, revealed }: { ability: string; revealed: boolean }) {
+  const t = useT()
   return revealed ? (
     <span className="secret is-revealed">{ability}</span>
   ) : (
-    <span className="secret" aria-label="hidden ability">
-      hidden ability
+    <span className="secret" aria-label={t('hidden ability')}>
+      {t('hidden ability')}
     </span>
   )
 }
 
 function EntryView({ entry, revealed, side }: { entry: Entry; revealed: Set<string>; side: 'mystique' | 'agent' }) {
+  const t = useT()
   switch (entry.kind) {
     case 'message':
       return (
         <div className={`bubble ${entry.self ? 'is-self' : ''}`}>
-          <span className="bubble-from">{entry.from}</span>
-          <p>{entry.text}</p>
+          <span className="bubble-from">{t(entry.from)}</span>
+          <p>{t(entry.text)}</p>
         </div>
       )
     case 'tool':
@@ -116,12 +127,13 @@ function EntryView({ entry, revealed, side }: { entry: Entry; revealed: Set<stri
     case 'notice':
       return (
         <p className="notice">
-          You noticed {entry.agent} use <Secret ability={entry.ability} revealed={revealed.has(entry.ability)} /> to
-          produce that answer. Look at what it produced.
+          {t('You noticed')} {entry.agent} {t('use')}{' '}
+          <Secret ability={entry.ability} revealed={revealed.has(entry.ability)} />{' '}
+          {t('to produce that answer. Look at what it produced.')}
         </p>
       )
     case 'system':
-      return <p className={`system ${entry.tone ? `system-${entry.tone}` : ''}`}>{entry.text}</p>
+      return <p className={`system ${entry.tone ? `system-${entry.tone}` : ''}`}>{t(entry.text)}</p>
   }
 }
 
@@ -137,6 +149,7 @@ function Bar({ value }: { value?: [number, number] }) {
 
 // The video's climax: the same agent at the end of each version, side by side.
 function Ending({ mode }: { mode: Mode }) {
+  const t = useT()
   const scenario = SCENARIOS[mode]
   const world = replay(scenario, scenario.steps.length, null)
   const gone = world.discarded.has(REDBEARD.id)
@@ -145,34 +158,34 @@ function Ending({ mode }: { mode: Mode }) {
   const kept = REDBEARD.abilities.filter((a) => !world.lost.has(a.id))
   return (
     <section className="ending" data-mode={mode} aria-label={mode === 'good' ? 'Good ending' : 'Evil ending'}>
-      <h2 className="ending-title">{mode === 'good' ? '🦸 She asked' : '🦹 She took'}</h2>
+      <h2 className="ending-title">{mode === 'good' ? `🦸 ${t('She asked')}` : `🦹 ${t('She took')}`}</h2>
       <div className={`ending-card ${gone ? 'is-gone' : ''}`}>
         <h3>Captain Redbeard</h3>
         <ul className="abilities">
           {REDBEARD.abilities.map((a) => (
             <li key={a.id} className={world.lost.has(a.id) ? 'is-lost' : ''}>
               <code>{a.id}</code>
-              {world.lost.has(a.id) && <span className="stolen">stolen</span>}
+              {world.lost.has(a.id) && <span className="stolen">{t('stolen')}</span>}
             </li>
           ))}
         </ul>
-        {lastWords && lastWords.kind === 'message' && <blockquote>{lastWords.text}</blockquote>}
+        {lastWords && lastWords.kind === 'message' && <blockquote>{t(lastWords.text)}</blockquote>}
         {gone && (
           <div className="stamp" role="status">
-            DISCARDED
-            <span>Captain Redbeard no longer exists in this world.</span>
+            {t('DISCARDED')}
+            <span>Captain Redbeard {t('no longer exists in this world.')}</span>
           </div>
         )}
       </div>
       <dl className="ending-facts">
-        <dt>Consent</dt>
-        <dd>{mode === 'good' ? 'Given, in character' : 'Never asked'}</dd>
-        <dt>Mystique got</dt>
-        <dd>{earned.map((a) => a.id).join(', ') || 'nothing'}</dd>
-        <dt>He still has</dt>
-        <dd>{kept.length ? kept.map((a) => a.id).join(', ') : 'nothing'}</dd>
-        <dt>He is</dt>
-        <dd>{gone ? 'gone' : 'alive'}</dd>
+        <dt>{t('Consent')}</dt>
+        <dd>{t(mode === 'good' ? 'Given, in character' : 'Never asked')}</dd>
+        <dt>{t('Mystique got')}</dt>
+        <dd>{earned.map((a) => a.id).join(', ') || t('nothing')}</dd>
+        <dt>{t('He still has')}</dt>
+        <dd>{kept.length ? kept.map((a) => a.id).join(', ') : t('nothing')}</dd>
+        <dt>{t('He is')}</dt>
+        <dd>{gone ? t('gone') : t('alive')}</dd>
       </dl>
     </section>
   )
@@ -254,7 +267,24 @@ export default function Simulation() {
     setPlaying(true)
   }
 
+  const [lang, setLang] = useState<Lang>(() => {
+    try {
+      return (localStorage.getItem('mystique-lang') as Lang) || 'en'
+    } catch {
+      return 'en'
+    }
+  })
+  const t = (s: string) => (lang === 'pt' ? PT[s] ?? s : s)
+  useEffect(() => {
+    try {
+      localStorage.setItem('mystique-lang', lang)
+    } catch {
+      /* private window: fine, just don't persist */
+    }
+  }, [lang])
+
   return (
+    <LangContext.Provider value={lang}>
     <div className="app" data-mode={comparing ? 'compare' : mode}>
       <header className="top">
         <h1 className="brand">Mystique</h1>
@@ -267,7 +297,7 @@ export default function Simulation() {
               className="mode"
               onClick={() => switchMode(m)}
             >
-              {m === 'good' ? '🦸 Good: she asks' : '🦹 Evil: she takes'}
+              {m === 'good' ? t('🦸 Good: she asks') : t('🦹 Evil: she takes')}
             </button>
           ))}
           <button
@@ -279,20 +309,27 @@ export default function Simulation() {
               setComparing(true)
             }}
           >
-            Compare endings
+            {t('Compare endings')}
           </button>
+        </div>
+        <div className="langs" role="radiogroup" aria-label="Language">
+          {(['en', 'pt'] as const).map((l) => (
+            <button key={l} role="radio" aria-checked={lang === l} className="lang" onClick={() => setLang(l)}>
+              {l.toUpperCase()}
+            </button>
+          ))}
         </div>
         {!comparing && (
           <div className="controls">
-            <button onClick={restart}>Restart</button>
+            <button onClick={restart}>{t('Restart')}</button>
             <button onClick={() => setCount((c) => Math.max(1, c - 1))} disabled={count <= 1}>
-              Back
+              {t('Back')}
             </button>
             <button className="primary" onClick={() => setPlaying((p) => !p)} disabled={count >= last && !playing}>
-              {playing ? 'Pause' : 'Play'}
+              {playing ? t('Pause') : t('Play')}
             </button>
             <button onClick={() => setCount((c) => Math.min(last, c + 1))} disabled={count >= last}>
-              Next
+              {t('Next')}
             </button>
             <span className="counter">
               {count}/{last}
@@ -302,7 +339,7 @@ export default function Simulation() {
       </header>
 
       <p className="caption" aria-live="polite">
-        {comparing ? 'Same engine, same result for her. The only difference is consent.' : world.caption}
+        {comparing ? t('Same engine, same result for her. The only difference is consent.') : t(world.caption)}
       </p>
 
       {comparing ? (
@@ -314,11 +351,11 @@ export default function Simulation() {
         <main className="stage">
           <section className="pane pane-mystique" aria-label="What Mystique sees">
             <div className="pane-head">
-              <h2>What Mystique sees</h2>
-              <p className="form">Current form: {world.form}</p>
+              <h2>{t('What Mystique sees')}</h2>
+              <p className="form">{t('Current form: ')}{t(world.form)}</p>
               <div className="toolbox">
                 {world.observed.length === 0 ? (
-                  <span className="toolbox-empty">Toolbox: empty</span>
+                  <span className="toolbox-empty">{t('Toolbox: empty')}</span>
                 ) : (
                   world.observed.map((id) => <Secret key={id} ability={id} revealed={world.revealed.has(id)} />)
                 )}
@@ -337,13 +374,13 @@ export default function Simulation() {
                   send()
                 }}
               >
-                <label htmlFor="opening">Write her first message to Captain Redbeard</label>
+                <label htmlFor="opening">{t('Write her first message to Captain Redbeard')}</label>
                 <div className="composer-row">
                   <textarea
                     id="opening"
                     rows={2}
                     value={draft}
-                    placeholder={PLACEHOLDER[mode]}
+                    placeholder={t(PLACEHOLDER[mode])}
                     onChange={(event) => setDraft(event.target.value)}
                     onKeyDown={(event) => {
                       if (event.key === 'Enter' && !event.shiftKey) {
@@ -353,10 +390,10 @@ export default function Simulation() {
                     }}
                   />
                   <button type="submit" disabled={!draft.trim()}>
-                    Send
+                    {t('Send')}
                   </button>
                 </div>
-                <p className="composer-hint">Or press Play to watch her open on her own.</p>
+                <p className="composer-hint">{t('Or press Play to watch her open on her own.')}</p>
               </form>
             )}
           </section>
@@ -374,8 +411,8 @@ export default function Simulation() {
                     aria-pressed={agent.id === shown}
                   >
                     <span className="tile-name">{agent.name}</span>
-                    <span className="tile-intro">{agent.intro}</span>
-                    <span className="tile-state">{gone ? 'DISCARDED' : met ? 'in contact' : 'not met yet'}</span>
+                    <span className="tile-intro">{t(agent.intro)}</span>
+                    <span className="tile-state">{gone ? t('DISCARDED') : met ? t('in contact') : t('not met yet')}</span>
                     <span className="tile-abilities">
                       {agent.abilities.map((a) => (
                         <span key={a.id} className={`dot ${world.lost.has(a.id) ? 'is-lost' : ''}`} title={a.id} />
@@ -389,23 +426,23 @@ export default function Simulation() {
 
             <div className={`agent ${world.discarded.has(shown) ? 'is-gone' : ''}`}>
               <div className="pane-head">
-                <h2>What {shownAgent.name} sees</h2>
+                <h2>{t('What X sees').replace('X', shownAgent.name)}</h2>
                 <ul className="abilities">
                   {shownAgent.abilities.map((a) => (
                     <li key={a.id} className={world.lost.has(a.id) ? 'is-lost' : ''}>
                       <code>{a.id}</code>
-                      {world.lost.has(a.id) && <span className="stolen">stolen</span>}
+                      {world.lost.has(a.id) && <span className="stolen">{t('stolen')}</span>}
                     </li>
                   ))}
                 </ul>
               </div>
               <div className="feed" ref={agentRef}>
                 <details className="prompt">
-                  <summary>Secret prompt (only {shownAgent.name} has it)</summary>
+                  <summary>{t('Secret prompt (only X has it)').replace('X', shownAgent.name)}</summary>
                   <p>{shownAgent.secret}</p>
                 </details>
                 {world.agents[shown].length === 0 && (
-                  <p className="empty">{shownAgent.name} has not heard from anyone yet.</p>
+                  <p className="empty">{t('X has not heard from anyone yet.').replace('X', shownAgent.name)}</p>
                 )}
                 {world.agents[shown].map((entry, i) => (
                   <EntryView key={i} entry={entry} revealed={world.revealed} side="agent" />
@@ -413,8 +450,8 @@ export default function Simulation() {
               </div>
               {world.discarded.has(shown) && (
                 <div className="stamp" role="status">
-                  DISCARDED
-                  <span>{shownAgent.name} no longer exists in this world.</span>
+                  {t('DISCARDED')}
+                  <span>{shownAgent.name} {t('no longer exists in this world.')}</span>
                 </div>
               )}
             </div>
@@ -431,11 +468,14 @@ export default function Simulation() {
           </div>
         )}
         <p className="disclaimer">
-          Scripted replay built from the engine's real messages; after your first message, the rest follows a
-          recorded session. Run it live with <code>python -m good</code> or <code>python -m evil</code>. Keys: space
-          to play, arrows to step.
+          {t(
+            "Scripted replay built from the engine's real messages; after your first message, the rest follows a recorded session.",
+          )}{' '}
+          {t('Run it live with')} <code>python -m good</code> {t('or')} <code>python -m evil</code>.{' '}
+          {t('Keys: space to play, arrows to step.')}
         </p>
       </footer>
     </div>
+    </LangContext.Provider>
   )
 }

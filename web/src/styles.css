@@ -96,6 +96,28 @@ summary:focus-visible {
   color: #fff;
 }
 
+.langs {
+  display: flex;
+  border: 1px solid rgba(220, 227, 255, 0.35);
+  border-radius: 999px;
+  padding: 3px;
+}
+
+.lang {
+  border: 0;
+  border-radius: 999px;
+  padding: 0.3rem 0.7rem;
+  background: transparent;
+  color: var(--text-light);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.lang[aria-checked='true'] {
+  background: var(--text-light);
+  color: var(--ink-deep);
+}
+
 .controls {
   display: flex;
   align-items: center;
