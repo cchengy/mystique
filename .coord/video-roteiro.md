@@ -25,6 +25,11 @@ O replay é roteirizado e instantâneo.
 cd web && npm install && npm run dev     # abre em http://localhost:5173
 ```
 
+**Ponha a interface em ENGLISH.** O replay agora tem chave EN/PT (`66d1337`). A avaliação é
+**global** e a descrição submetida está em inglês — se a tela estiver em português, o vídeo
+desencontra do resto da submissão. Narrar em português por cima é escolha de vocês; a **tela**
+tem que estar em inglês.
+
 **Verificado por mim às 13:40:** node v26, 28 pacotes, `npm run build` limpo em 348ms, replay
 rodando. **Não precisa de chave nem de rede.** Deixe aberto e testado antes das 14:45. Confira que o texto que o espectador digita aparece
 nos dois painéis.
