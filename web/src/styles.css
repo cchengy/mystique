@@ -216,6 +216,21 @@ summary:focus-visible {
   min-height: 3.4rem;
 }
 
+.live-error,
+.live-receipt {
+  margin: 0 24px 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px 16px;
+  background: var(--panel);
+}
+
+.live-error { color: #ef6461; }
+.live-receipt { border-color: #53d8a5; }
+.live-receipt p { margin: 8px 0; }
+.live-receipt div { display: flex; gap: 8px; }
+.dot.is-live { background: #53d8a5; box-shadow: 0 0 0 3px rgb(83 216 165 / 18%); }
+
 /* --- panes ---------------------------------------------------------------- */
 
 .stage {

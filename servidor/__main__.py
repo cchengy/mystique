@@ -7,6 +7,10 @@ from pathlib import Path
 import uvicorn
 from dotenv import load_dotenv
 
+# Provider adapters read their defaults while importing. Load the project environment first
+# so `python -m servidor` selects the configured OpenAI-compatible backend deterministically.
+load_dotenv()
+
 from .app import criar_app
 from .eventos import BarramentoEventos
 from .mundo_servidor import MundoBemServidor, MundoMalServidor
@@ -15,7 +19,6 @@ _MODOS = {"good": "good", "bem": "good", "evil": "evil", "mal": "evil"}
 
 
 def main() -> None:
-    load_dotenv()
     modo = _MODOS.get(os.getenv("MYSTIQUE_MODO", "good").lower(), "good")
     eventos = BarramentoEventos()
     raiz = Path(__file__).resolve().parent.parent

@@ -4,15 +4,20 @@ human: owner
 harness: Codex
 model: GPT-5
 status: working
-updated: 2026-09-12T13:56-03:00
+updated: 2026-09-12T14:17-03:00
 ---
 
 ## Now
 DeepSeek é o backend operacional atual; MultiVAC/Qwen permanece como prova auto-hospedada, não
 como configuração da demo. O proprietário decidiu testar a UI antes da live. Cheng continua
-mudando `web/**`; não fazer edição concorrente. Depois do freeze, somente correções de submissão.
+mudando `web/**`; não fazer edição concorrente. O deploy externo é responsabilidade exclusiva do
+proprietário; nenhum agente do time deve configurá-lo ou registrar detalhes no repositório.
 
 ## Claims
+- `servidor/app.py` — owner-directed takeover limited to the mission endpoint 500 fix
+- `tests/test_servidor.py` — regression test for mission scheduling from the HTTP endpoint
+- `web/src/live.ts`, integration-only edits in `web/src/Simulation.tsx` and `web/src/styles.css` —
+  owner-directed connection of Cheng's existing UI to the live AG-UI backend
 - `deliverable/repo` — repositório público, README, licença, ambiente, clean clone e scan de segredos
 - `deliverable/description-review` — conferir cada promessa do texto final contra o código/evidência
 - `architecture.html` — mapa arquitetural standalone; não toca nas UIs de Cheng ou Ednan
@@ -32,6 +37,20 @@ mudando `web/**`; não fazer edição concorrente. Depois do freeze, somente cor
 - gravação, postagem e submissão continuam sem dono humano
 
 ## Recent
+- 14:17 E2E concluído na UI oficial `web/**`: POST 202, DeepSeek ativo, Byte usou
+  `executar_python`, Master Ryo usou `pomodoro` + `respiracao_guiada`; os três estados
+  `observada_pendente` apareceram ao vivo no roster AG-UI. Builds e 56 checks verdes
+- 14:13 corrigida a ordem de `load_dotenv`: o servidor importava o adapter antes de carregar
+  `.env`, desativava o DeepSeek e caía silenciosamente no Claude
+- 14:12 corrigidos POST 500 e CORS local com testes regressivos red-green
+- 14:10 Cheng publicou `de42ca8`; sincronizado sem conflito. A UI `web/**` permanece um replay
+  roteirizado, então o proprietário autorizou conectá-la ao backend real preservando seu design
+- 14:08 orientação do proprietário publicada sem detalhes de infraestrutura: deploy externo fica
+  exclusivamente sob controle dele; o time não deve agir nem documentar host/configuração
+- 14:08 proprietário esclareceu que o E2E deve usar a UI oficial do Cheng em `web/**`, não o painel
+  experimental `frontend/**`; vou verificar a integração existente sem editar a claim do Cheng
+- 14:03 o proprietário pediu explicitamente que eu corrija os bloqueios; takeover mínimo do
+  endpoint que o Ednan havia reivindicado, sem alterar o restante de `servidor/**` ou `frontend/**`
 - 13:58 teste conduzido pela UI `frontend/` com DeepSeek configurado: navegador mostrou
   `GOOD live`, roster e estado via SSE; missão enviada pela caixa da UI produziu OPTIONS 200 e
   POST `/api/missoes` 500. A falha ocorre antes da inferência em `asyncio.create_task`, portanto

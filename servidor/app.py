@@ -28,8 +28,14 @@ class MissaoBody(BaseModel):
 
 def criar_app(mundo: InterrompivelMixin, persona: str, extras: FerramentasExtras) -> FastAPI:
     app = FastAPI(title="Mystique — trust broker")
-    origem = os.getenv("FRONTEND_ORIGIN", "http://localhost:5173")
-    app.add_middleware(CORSMiddleware, allow_origins=[origem], allow_methods=["*"], allow_headers=["*"])
+    origens = [
+        origem.strip()
+        for origem in os.getenv(
+            "FRONTEND_ORIGIN", "http://localhost:5173,http://127.0.0.1:5173"
+        ).split(",")
+        if origem.strip()
+    ]
+    app.add_middleware(CORSMiddleware, allow_origins=origens, allow_methods=["*"], allow_headers=["*"])
     encoder = EventEncoder()
     # A fire-and-forget asyncio.Task with no live reference can be garbage-collected mid-run;
     # this set just keeps one until it finishes.
@@ -40,7 +46,7 @@ def criar_app(mundo: InterrompivelMixin, persona: str, extras: FerramentasExtras
         return {"modo": mundo.modo}
 
     @app.post("/api/missoes", status_code=202)
-    def iniciar_missao(corpo: MissaoBody) -> dict:
+    async def iniciar_missao(corpo: MissaoBody) -> dict:
         tarefa = asyncio.create_task(
             executar(corpo.mensagem, mundo, corpo.orcamento or _ORCAMENTO_PADRAO, False, persona, extras)
         )

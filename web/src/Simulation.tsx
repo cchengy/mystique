@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { AGENTS, REDBEARD, SCENARIOS, type Entry, type Mode, type Scenario, type Step } from './scenario'
 import { translate } from './pt'
+import { connectLive, resolveLiveReceipt, startLiveMission, type LiveReceipt, type LiveSnapshot } from './live'
 
 type Lang = 'en' | 'pt'
 const LangContext = createContext<Lang>('en')
@@ -221,6 +222,11 @@ export default function Simulation() {
   const [pinned, setPinned] = useState<string | null>(null)
   const [opening, setOpening] = useState<string | null>(null)
   const [draft, setDraft] = useState('')
+  const [live, setLive] = useState(false)
+  const [liveConnected, setLiveConnected] = useState(false)
+  const [liveSnapshot, setLiveSnapshot] = useState<LiveSnapshot | null>(null)
+  const [liveReceipts, setLiveReceipts] = useState<LiveReceipt[]>([])
+  const [liveError, setLiveError] = useState<string | null>(null)
   const scenario = SCENARIOS[mode]
   const last = scenario.steps.length
   const world = useMemo(() => replay(scenario, count, opening), [scenario, count, opening])
@@ -232,6 +238,17 @@ export default function Simulation() {
   const terminalRef = useFollow(world.terminal.length)
 
   useEffect(() => setPinned(null), [count, mode])
+
+  useEffect(
+    () =>
+      connectLive({
+        snapshot: setLiveSnapshot,
+        receipt: (receipt) => setLiveReceipts((current) => [...current, receipt]),
+        resolved: (id) => setLiveReceipts((current) => current.filter((receipt) => receipt.recibo_id !== id)),
+        connected: setLiveConnected,
+      }),
+    [],
+  )
 
   useEffect(() => {
     if (!playing) return
@@ -275,9 +292,22 @@ export default function Simulation() {
     setDraft('')
   }
 
-  const send = () => {
+  const send = async () => {
     const text = draft.trim()
     if (!text) return
+    setLiveError(null)
+    if (liveConnected) {
+      try {
+        await startLiveMission(text)
+        setLive(true)
+        setOpening(text)
+        setDraft('')
+        setPlaying(false)
+      } catch (error) {
+        setLiveError(error instanceof Error ? error.message : String(error))
+      }
+      return
+    }
     setOpening(text)
     setDraft('')
     setCount(2)
@@ -365,8 +395,28 @@ export default function Simulation() {
       </header>
 
       <p className="caption" aria-live="polite">
-        {comparing ? t('Same engine, same result for her. The only difference is consent.') : t(world.caption)}
+        {live
+          ? liveConnected
+            ? '● LIVE · DeepSeek mission running through AG-UI'
+            : 'Live backend disconnected'
+          : comparing
+            ? t('Same engine, same result for her. The only difference is consent.')
+            : t(world.caption)}
       </p>
+
+      {liveError && <p className="live-error" role="alert">{liveError}</p>}
+      {liveReceipts.map((receipt) => (
+        <article className="live-receipt" key={receipt.recibo_id}>
+          <strong>Trust receipt · {receipt.agente_id}</strong>
+          <p>{receipt.descricao_alegada}</p>
+          <p>{receipt.evidencia}</p>
+          <p>{receipt.veredito.aprovado ? 'Judge approved' : 'Judge rejected'} · {receipt.veredito.motivo}</p>
+          <div>
+            <button disabled={!receipt.veredito.aprovado} onClick={() => resolveLiveReceipt(receipt.recibo_id, 'aprovar')}>Approve</button>
+            <button onClick={() => resolveLiveReceipt(receipt.recibo_id, 'rejeitar')}>Reject</button>
+          </div>
+        </article>
+      ))}
 
       {comparing ? (
         <main className="compare">
@@ -429,8 +479,10 @@ export default function Simulation() {
           <section className="pane pane-world" aria-label="What the agents see">
             <div className="roster">
               {AGENTS.map((agent) => {
-                const gone = world.discarded.has(agent.id)
-                const met = world.contacted.has(agent.id)
+                const liveAgent = liveSnapshot?.agentes.find((item) => item.id === agent.id)
+                const gone = liveAgent?.descartado ?? world.discarded.has(agent.id)
+                const observed = liveAgent?.capacidades.some((ability) => ability.estado !== 'nao_observada') ?? false
+                const met = live ? observed || Boolean(liveAgent?.progresso.feitos) : world.contacted.has(agent.id)
                 return (
                   <button
                     key={agent.id}
@@ -442,11 +494,25 @@ export default function Simulation() {
                     <span className="tile-intro">{t(agent.intro)}</span>
                     <span className="tile-state">{gone ? t('DISCARDED') : met ? t('in contact') : t('not met yet')}</span>
                     <span className="tile-abilities">
-                      {agent.abilities.map((a) => (
-                        <span key={a.id} className={`dot ${world.lost.has(a.id) ? 'is-lost' : ''}`} title={a.id} />
-                      ))}
+                      {agent.abilities.map((a) => {
+                        const state = liveAgent?.capacidades.find((ability) => ability.id === a.id)?.estado
+                        return (
+                          <span
+                            key={a.id}
+                            className={`dot ${world.lost.has(a.id) ? 'is-lost' : ''} ${state && state !== 'nao_observada' ? 'is-live' : ''}`}
+                            title={state ? `${a.id}: ${state}` : a.id}
+                          />
+                        )
+                      })}
                     </span>
-                    <Bar value={world.progress[agent.id] ?? [0, scenario.total]} />
+                    <Bar value={
+                      liveSnapshot?.agentes.find((item) => item.id === agent.id)
+                        ? (() => {
+                            const progress = liveSnapshot.agentes.find((item) => item.id === agent.id)!.progresso
+                            return [progress.feitos, progress.total] as [number, number]
+                          })()
+                        : world.progress[agent.id] ?? [0, scenario.total]
+                    } />
                   </button>
                 )
               })}
@@ -500,7 +566,7 @@ export default function Simulation() {
           </div>
         )}
         <p className="disclaimer">
-          {t(
+          {live ? 'Live state comes from the Mystique engine over AG-UI.' : t(
             "Scripted replay built from the engine's real messages; after your mission, the rest follows a recorded session.",
           )}{' '}
           {t('Run it live with')} <code>python -m good</code> {t('or')} <code>python -m evil</code>.{' '}
