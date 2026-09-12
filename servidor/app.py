@@ -37,6 +37,10 @@ class MissaoBody(BaseModel):
     orcamento: float | None = None
 
 
+class ModeloBody(BaseModel):
+    modelo: str
+
+
 def criar_app(mundos: Mundos, persona: str, extras: FerramentasExtras) -> FastAPI:
     app = FastAPI(title="Mystique — trust broker")
     origens = [
@@ -95,6 +99,7 @@ def criar_app(mundos: Mundos, persona: str, extras: FerramentasExtras) -> FastAP
             "email": usuario.get("email"),
             "nome": usuario.get("name") or usuario.get("nickname"),
             "chave": {"tem": bool(conta.get("chave")), "origem": conta.get("origem"), "em": conta.get("em")},
+            "modelo": contas.modelo_da_conta(sub),
         }
 
     @app.get("/api/openrouter/inicio")
@@ -137,10 +142,28 @@ def criar_app(mundos: Mundos, persona: str, extras: FerramentasExtras) -> FastAP
         usuario = await _exigir_conta(request)
         contas.esquecer_chave(usuario.get("sub", "anonimo"))
 
+    @app.put("/api/openrouter/modelo")
+    async def openrouter_modelo(corpo: ModeloBody, request: Request) -> dict:
+        usuario = await _exigir_conta(request)
+        modelo = corpo.modelo.strip()
+        if not modelo or len(modelo) > 200 or any(c.isspace() for c in modelo):
+            raise HTTPException(400, "Invalid OpenRouter model id.")
+        contas.guardar_modelo(usuario.get("sub", "anonimo"), modelo)
+        return {"modelo": modelo}
+
     @app.post("/api/missoes", status_code=202)
     async def iniciar_missao(corpo: MissaoBody, request: Request) -> dict:
         sub = await _sub_do_pedido(request)
         mundo = mundos.para(sub)
+        chave = contas.chave_da_conta(sub)
+        openai_config = None
+        if chave:
+            openai_config = {
+                "base_url": contas.OPENROUTER,
+                "modelo": contas.modelo_da_conta(sub),
+                "chave": chave,
+            }
+            mundo.configurar_openai(**openai_config)
         async def executar_com_estado() -> None:
             iniciar_ui = getattr(mundo, "iniciar_missao_ui", None)
             if iniciar_ui:
@@ -151,7 +174,10 @@ def criar_app(mundos: Mundos, persona: str, extras: FerramentasExtras) -> FastAP
                     "\n\nToda comunicação visível deve ser em português brasileiro natural. "
                     "Converse com os agentes e entregue a resposta final somente em português brasileiro."
                 )
-                await executar(corpo.mensagem, mundo, corpo.orcamento or _ORCAMENTO_PADRAO, False, persona_pt, extras)
+                await executar(
+                    corpo.mensagem, mundo, corpo.orcamento or _ORCAMENTO_PADRAO, False,
+                    persona_pt, extras, openai_config=openai_config,
+                )
             finally:
                 finalizar_ui = getattr(mundo, "finalizar_missao_ui", None)
                 if finalizar_ui:

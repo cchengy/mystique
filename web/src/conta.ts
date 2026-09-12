@@ -29,6 +29,7 @@ export type Eu = {
   email?: string
   nome?: string
   chave: { tem: boolean; origem?: string; em?: string }
+  modelo: string
 }
 
 export async function lerConfig(): Promise<Config> {
@@ -67,6 +68,15 @@ export async function guardarChave(
 
 export async function esquecerChave(token?: string): Promise<void> {
   await fetch(`${API_BASE}/api/openrouter/chave`, { method: 'DELETE', headers: comToken(token) })
+}
+
+export async function selecionarModelo(modelo: string, token?: string): Promise<void> {
+  const r = await fetch(`${API_BASE}/api/openrouter/modelo`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...(comToken(token) ?? {}) },
+    body: JSON.stringify({ modelo }),
+  })
+  if (!r.ok) throw new Error((await r.text()).slice(0, 200))
 }
 
 // --- OpenRouter PKCE ---------------------------------------------------------

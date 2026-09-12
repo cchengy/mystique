@@ -65,11 +65,14 @@ class Narrador:
 
 
 async def executar(
-    missao: str | None, mundo: Mundo, orcamento: float, verbose: bool, persona: str, extras: FerramentasExtras
+    missao: str | None, mundo: Mundo, orcamento: float, verbose: bool, persona: str,
+    extras: FerramentasExtras, openai_config: dict[str, str] | None = None,
 ) -> None:
     """With a mission: runs once and exits. Without one: interactive mode with session memory."""
-    if agente_local.ativo():  # self-hosted Mystique: see mystique/agente_local.py
-        await agente_local.executar(missao, mundo, orcamento, verbose, persona, extras)
+    if openai_config or agente_local.ativo():  # self-hosted Mystique: see mystique/agente_local.py
+        await agente_local.executar(
+            missao, mundo, orcamento, verbose, persona, extras, openai_config=openai_config,
+        )
         return
 
     narrador = Narrador(mundo, verbose)

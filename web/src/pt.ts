@@ -33,6 +33,9 @@ export const PT: Record<string, string> = {
   'Used': 'Usado',
   'Credits': 'Créditos',
   'See every model the key can reach': 'Ver todos os modelos que a chave alcança',
+  'OpenRouter model': 'Modelo do OpenRouter',
+  'Use model': 'Usar modelo',
+  'Model settings': 'Configurações do modelo',
   'Disconnect and erase my key': 'Desconectar e apagar minha chave',
   'Privacy notice': 'Aviso de privacidade',
   'Cookies and personal data': 'Cookies e dados pessoais',
@@ -122,6 +125,8 @@ export const PT: Record<string, string> = {
   'Backend disconnected': 'Motor desconectado',
   '● LIVE · DeepSeek is working through AG-UI': '● AO VIVO · DeepSeek trabalhando via AG-UI',
   '● LIVE · Ready for a DeepSeek mission': '● AO VIVO · pronto para uma missão no DeepSeek',
+  '● LIVE · Your model is working through AG-UI': '● AO VIVO · seu modelo está trabalhando via AG-UI',
+  '● LIVE · Ready for a mission': '● AO VIVO · pronto para uma missão',
   'Working…': 'Processando…',
   'Messages go to the real configured model. Mystique chooses and routes the best agent.':
     'As mensagens vão para o modelo real configurado. A Mystique escolhe e encaminha para o melhor agente.',

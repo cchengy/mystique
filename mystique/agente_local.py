@@ -52,18 +52,25 @@ def _texto_do_resultado(resultado) -> str:
     return str(resultado)
 
 
-async def executar(missao, mundo: Mundo, orcamento: float, verbose: bool, persona: str, extras) -> None:
+async def executar(
+    missao, mundo: Mundo, orcamento: float, verbose: bool, persona: str, extras,
+    openai_config: dict[str, str] | None = None,
+) -> None:
     from .ferramentas import ferramentas_base
 
     ferramentas = ferramentas_base(mundo) + extras(mundo)
     por_nome = {f.name: f for f in ferramentas}
     definicoes = _definicoes(ferramentas)
-    cliente = inferencia.ClienteOpenAI(BASE_URL, MODELO, inferencia.CHAVE, timeout=180.0)
+    config = openai_config or {}
+    base_url = config.get("base_url", BASE_URL)
+    modelo = config.get("modelo", MODELO)
+    chave = config.get("chave", inferencia.CHAVE)
+    cliente = inferencia.ClienteOpenAI(base_url, modelo, chave, timeout=180.0)
     sistema = f"{BASE}\n\n{persona}"
 
     conquistas = sum(len(a.poderes) for a in mundo.absorcoes.values())
     mundo.avisar(
-        f"{_EMOJI.get(mundo.modo, '🦎')} Mystique ({mundo.modo}) · {MODELO} @ {BASE_URL} · "
+        f"{_EMOJI.get(mundo.modo, '🦎')} Mystique ({mundo.modo}) · {modelo} @ {base_url} · "
         f"{len(mundo.agentes)} agents · {conquistas} abilities in memory · OpenAI-compatible endpoint"
     )
 

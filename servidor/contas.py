@@ -40,6 +40,7 @@ SEGREDO = os.getenv("MYSTIQUE_SECRET", "").strip()
 CONTAS_DIR = Path(os.getenv("MYSTIQUE_CONTAS_DIR", "workspace/contas"))
 
 OPENROUTER = "https://openrouter.ai/api/v1"
+MODELO_PADRAO = os.getenv("MYSTIQUE_OPENROUTER_MODEL", "openrouter/auto").strip()
 
 
 def auth_configurada() -> bool:
@@ -177,6 +178,16 @@ def guardar_chave(sub: str, chave: str, origem: str) -> dict:
 
 def chave_da_conta(sub: str) -> str | None:
     return decifrar(ler_conta(sub).get("chave") or {})
+
+
+def modelo_da_conta(sub: str) -> str:
+    return ler_conta(sub).get("modelo") or MODELO_PADRAO
+
+
+def guardar_modelo(sub: str, modelo: str) -> None:
+    conta = ler_conta(sub)
+    conta["modelo"] = modelo
+    gravar_conta(sub, conta)
 
 
 def esquecer_chave(sub: str) -> None:

@@ -15,6 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from servidor.app import criar_app  # noqa: E402
 from servidor.mundo_servidor import _evento_publico  # noqa: E402
+from mystique.mundo import Mundo  # noqa: E402
 
 
 def test_public_stream_keeps_dialogue_and_redacts_internal_traces() -> None:
@@ -35,8 +36,9 @@ def test_public_stream_keeps_dialogue_and_redacts_internal_traces() -> None:
 
 def test_mission_is_scheduled_on_the_application_event_loop() -> None:
     mundo = SimpleNamespace(modo="good")
+    mundos = SimpleNamespace(modo="good", para=lambda _sub: mundo)
     executar = AsyncMock()
-    app = criar_app(mundo, "persona", lambda _: [])
+    app = criar_app(mundos, "persona", lambda _: [])
 
     with patch("servidor.app.executar", executar), TestClient(app, raise_server_exceptions=False) as client:
         response = client.post("/api/missoes", json={"mensagem": "Meet Byte"})
@@ -47,6 +49,66 @@ def test_mission_is_scheduled_on_the_application_event_loop() -> None:
 
     assert response.status_code == 202
     executar.assert_awaited_once()
+
+
+def test_authenticated_mission_uses_the_accounts_openrouter_key_and_model() -> None:
+    mundo = SimpleNamespace(modo="good", configurar_openai=lambda **_config: None)
+    mundos = SimpleNamespace(modo="good", para=lambda _sub: mundo)
+    executar = AsyncMock()
+    app = criar_app(mundos, "persona", lambda _: [])
+
+    with (
+        patch("servidor.app.contas.auth_configurada", return_value=True),
+        patch("servidor.app.contas.usuario_do_token", AsyncMock(return_value={"sub": "auth0|alice"})),
+        patch("servidor.app.contas.chave_da_conta", return_value="private-key"),
+        patch("servidor.app.contas.modelo_da_conta", return_value="openai/gpt-5-mini"),
+        patch("servidor.app.executar", executar),
+        TestClient(app, raise_server_exceptions=False) as client,
+    ):
+        response = client.post(
+            "/api/missoes",
+            headers={"Authorization": "Bearer access-token"},
+            json={"mensagem": "Meet Byte"},
+        )
+        for _ in range(10):
+            if executar.await_count:
+                break
+            asyncio.run(asyncio.sleep(0.01))
+
+    assert response.status_code == 202
+    assert executar.await_args.kwargs["openai_config"] == {
+        "base_url": "https://openrouter.ai/api/v1",
+        "modelo": "openai/gpt-5-mini",
+        "chave": "private-key",
+    }
+
+
+def test_authenticated_user_can_select_an_openrouter_model() -> None:
+    mundos = SimpleNamespace(modo="good")
+    app = criar_app(mundos, "persona", lambda _: [])
+
+    with (
+        patch("servidor.app.contas.auth_configurada", return_value=True),
+        patch("servidor.app.contas.usuario_do_token", AsyncMock(return_value={"sub": "auth0|alice"})),
+        patch("servidor.app.contas.guardar_modelo") as guardar_modelo,
+        TestClient(app) as client,
+    ):
+        response = client.put(
+            "/api/openrouter/modelo",
+            headers={"Authorization": "Bearer access-token"},
+            json={"modelo": "anthropic/claude-sonnet-4"},
+        )
+
+    assert response.status_code == 200
+    guardar_modelo.assert_called_once_with("auth0|alice", "anthropic/claude-sonnet-4")
+
+
+def test_world_can_use_the_accounts_openrouter_credentials() -> None:
+    mundo = object.__new__(Mundo)
+    mundo._cliente = None
+    mundo.configurar_openai("https://openrouter.ai/api/v1", "openai/gpt-5-mini", "private-key")
+
+    assert mundo._cliente._modelo == "openai/gpt-5-mini"
 
 
 def test_local_frontend_origins_are_allowed_by_default() -> None:

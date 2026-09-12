@@ -119,6 +119,7 @@ class Mundo:
         self.forma_ativa: str | None = None  # id of the agent whose essence is active
         self.avisar = avisar
         self._cliente: anthropic.AsyncAnthropic | inferencia.ClienteOpenAI | None = None
+        self._openai_da_conta = False
         self._externos: dict[str, inferencia.ClienteOpenAI] = {}  # one client per external agent
         self._rota_atual: dict | None = None
 
@@ -254,6 +255,8 @@ class Mundo:
     # --- Claude API calls -----------------------------------------------------
 
     async def _chamar(self, *, output_config: dict | None = None, **kwargs):
+        if self._openai_da_conta:
+            return await self._cliente.chamar(output_config=output_config, **kwargs)
         if inferencia.ativo():  # self-hosted world: see mystique/inferencia.py
             self._cliente = self._cliente or inferencia.ClienteOpenAI(
                 inferencia.BASE_URL, inferencia.MODELO, inferencia.CHAVE)
@@ -268,6 +271,11 @@ class Mundo:
             fallbacks="default",
             **kwargs,
         )
+
+    def configurar_openai(self, base_url: str, modelo: str, chave: str) -> None:
+        """Use one account's gateway without changing process-global credentials."""
+        self._cliente = inferencia.ClienteOpenAI(base_url, modelo, chave)
+        self._openai_da_conta = True
 
     async def _json(self, system: str, pedido: str, schema: dict) -> dict | None:
         """Structured call (judge, consent). None on refusal or any network/parse failure."""

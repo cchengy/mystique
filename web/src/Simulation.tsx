@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { AGENTS, REDBEARD, SCENARIOS, type Entry, type Mode, type Scenario, type Step } from './scenario'
 import { latestAgentInteractions, type AgentDialogue } from './agent-profile'
 import { translate } from './pt'
@@ -298,6 +298,10 @@ export default function Simulation() {
   const [token, setToken] = useState<string | undefined>(undefined)
   const [liveRunning, setLiveRunning] = useState(false)
   const [liveActivity, setLiveActivity] = useState('')
+  const liberarConta = useCallback((ok: boolean, tk?: string) => {
+    setLiberado(ok)
+    setToken(tk)
+  }, [])
   const scenario = SCENARIOS[mode]
   const last = scenario.steps.length
   const world = useMemo(() => replay(scenario, count, opening), [scenario, count, opening])
@@ -398,7 +402,7 @@ export default function Simulation() {
           ])
         },
       }),
-    [],
+    [token],
   )
 
   useEffect(() => {
@@ -547,7 +551,7 @@ export default function Simulation() {
       <p className="caption" aria-live="polite">
         {live
           ? liveConnected
-            ? t(liveRunning ? '● LIVE · DeepSeek is working through AG-UI' : '● LIVE · Ready for a DeepSeek mission')
+            ? t(liveRunning ? '● LIVE · Your model is working through AG-UI' : '● LIVE · Ready for a mission')
             : t('Live backend disconnected')
           : comparing
             ? t('Same engine, same result for her. The only difference is consent.')
@@ -612,8 +616,13 @@ export default function Simulation() {
                 </p>
               )}
             </div>
-            {live && authExigida && !liberado && (
-              <PortaoConta t={t} aoLiberar={(ok, tk) => { setLiberado(ok); setToken(tk) }} />
+            {live && authExigida && (
+              liberado ? (
+                <details className="portao-config">
+                  <summary>{t('Model settings')}</summary>
+                  <PortaoConta t={t} aoLiberar={liberarConta} />
+                </details>
+              ) : <PortaoConta t={t} aoLiberar={liberarConta} />
             )}
 
             {learned && (

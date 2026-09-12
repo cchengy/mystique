@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react'
 import { useAuth0 } from '@auth0/auth0-react'
 import {
   concluirOpenRouter, esquecerChave, estadoDaChave, guardarChave, iniciarOpenRouter,
-  lerEu, type EstadoChave, type Eu,
+  lerEu, selecionarModelo, type EstadoChave, type Eu,
 } from './conta'
 
 const MODELOS = 'https://openrouter.ai/api/v1/models'
@@ -46,6 +46,8 @@ export function PortaoConta({ t, aoLiberar }: { t: (s: string) => string; aoLibe
   const [eu, setEu] = useState<Eu | null>(null)
   const [estado, setEstado] = useState<EstadoChave | null>(null)
   const [colada, setColada] = useState('')
+  const [modelo, setModelo] = useState('openrouter/auto')
+  const [modelos, setModelos] = useState<string[]>([])
   const [erro, setErro] = useState<string | null>(null)
   const [ocupado, setOcupado] = useState(false)
 
@@ -59,6 +61,7 @@ export function PortaoConta({ t, aoLiberar }: { t: (s: string) => string; aoLibe
         const dados = await lerEu(token)
         if (!vivo) return
         setEu(dados)
+        setModelo(dados.modelo)
         // The token goes up with the verdict: Simulation must never call useAuth0
         // itself, because outside a provider that hook throws and the open,
         // no-tenant deployment would stop rendering at all.
@@ -70,6 +73,15 @@ export function PortaoConta({ t, aoLiberar }: { t: (s: string) => string; aoLibe
     })()
     return () => { vivo = false }
   }, [isAuthenticated, getAccessTokenSilently, aoLiberar])
+
+  useEffect(() => {
+    if (!eu?.chave.tem) return
+    fetch(MODELOS)
+      .then((r) => r.ok ? r.json() : Promise.reject(new Error(String(r.status))))
+      .then((body: { data?: { id?: string }[] }) =>
+        setModelos((body.data ?? []).flatMap((item) => item.id ? [item.id] : [])))
+      .catch(() => setModelos([]))
+  }, [eu?.chave.tem])
 
   const comToken = async (fn: (token: string) => Promise<unknown>) => {
     setErro(null); setOcupado(true)
@@ -120,6 +132,23 @@ export function PortaoConta({ t, aoLiberar }: { t: (s: string) => string; aoLibe
               <><dt>{t('Credits')}</dt><dd>{estado.creditos.total_credits}</dd></>
             )}
           </dl>
+          <div className="portao-colar-row">
+            <input
+              list="openrouter-models"
+              value={modelo}
+              aria-label={t('OpenRouter model')}
+              onChange={(e) => setModelo(e.target.value)}
+              autoComplete="off"
+              spellCheck={false}
+            />
+            <datalist id="openrouter-models">
+              {modelos.map((id) => <option key={id} value={id} />)}
+            </datalist>
+            <button disabled={ocupado || !modelo.trim() || modelo === eu.modelo} onClick={() => comToken(async (tk) => {
+              await selecionarModelo(modelo.trim(), tk)
+              setEu({ ...eu, modelo: modelo.trim() })
+            })}>{t('Use model')}</button>
+          </div>
           <p className="portao-nota">
             <a href={MODELOS} target="_blank" rel="noreferrer">{t('See every model the key can reach')}</a>
           </p>
