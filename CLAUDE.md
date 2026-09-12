@@ -80,3 +80,25 @@ Gotchas:
 - Models via env: `MYSTIQUE_MODEL` and `MYSTIQUE_AGENTS_MODEL` (default `claude-opus-5`).
 - Direct calls use `client.beta.messages.create` with `fallbacks="default"`, the `server-side-fallback-2026-07-01` beta, and handle `stop_reason == "refusal"`.
 - Structured output uses `output_config.format` with a `json_schema`; the judge returns `ability`/`reason`, consent returns `allows`/`reply`.
+
+---
+
+## ⛔ REGRA DE BRANCH — vale só para este repositório
+
+**A branch `main` está congelada no estado da submissão do hackathon (`643104d`, 12/09/2026 16:00 -03).**
+
+Os organizadores do AI Tinkerers vão olhar a `main`. Qualquer commit nela com data posterior
+ao deadline pode **desclassificar o time**.
+
+**Todo trabalho a partir de agora vai para a branch `post-hackathon`.**
+
+```bash
+git checkout post-hackathon        # antes de qualquer edição
+git push origin post-hackathon     # nunca `git push origin main`
+```
+
+- **Nunca** commite nem empurre para `main` neste repositório sem o Henrique pedir
+  explicitamente, nem mesmo documentação: um commit de doc também carrega data.
+- Antes de empurrar, confira: `git rev-parse --abbrev-ref HEAD` precisa dizer `post-hackathon`.
+- `post-hackathon` contém todo o histórico, inclusive os commits pós-deadline que saíram da
+  `main`. Nada foi perdido.

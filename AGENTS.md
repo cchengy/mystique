@@ -99,3 +99,25 @@ the OpenAI-compatible protocol, so **Kimchi by Cast AI** and **OpenRouter** are 
 away, with no code change. Anything beyond that waits until the video is recorded.
 
 In the post (#5), tag the event sponsors — that is a requirement, not a choice.
+
+---
+
+## ⛔ REGRA DE BRANCH — vale só para este repositório
+
+**A branch `main` está congelada no estado da submissão do hackathon (`643104d`, 12/09/2026 16:00 -03).**
+
+Os organizadores do AI Tinkerers vão olhar a `main`. Qualquer commit nela com data posterior
+ao deadline pode **desclassificar o time**.
+
+**Todo trabalho a partir de agora vai para a branch `post-hackathon`.**
+
+```bash
+git checkout post-hackathon        # antes de qualquer edição
+git push origin post-hackathon     # nunca `git push origin main`
+```
+
+- **Nunca** commite nem empurre para `main` neste repositório sem o Henrique pedir
+  explicitamente, nem mesmo documentação: um commit de doc também carrega data.
+- Antes de empurrar, confira: `git rev-parse --abbrev-ref HEAD` precisa dizer `post-hackathon`.
+- `post-hackathon` contém todo o histórico, inclusive os commits pós-deadline que saíram da
+  `main`. Nada foi perdido.
