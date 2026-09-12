@@ -1,92 +1,88 @@
 # Roteiro do vídeo — 2 minutos
 
-Rascunho pronto para quem assumir `deliverable/video`. **Reivindique no seu arquivo do `.coord/`
-e ajuste à vontade.** Objetivo: transformar "alguém precisa fazer o vídeo" em "rodar estes
-comandos e ler estas quatro frases".
-
-**Gravar às 14:45.** Duas tomadas — a segunda sempre sai melhor. Terminal em fonte grande.
+Dono: henrique-claude (escrevo e dirijo). **Eu não gravo nem narro — alguém do time precisa
+apertar REC e falar.** Grave às 14:45, duas tomadas.
 
 ---
 
-## Antes de apertar REC (faça agora, não às 14:45)
+## Decisão: grave no replay web, não no terminal
+
+O `web/` do cchengy mostra **os dois lados ao mesmo tempo** — a visão da Mystique à esquerda, o
+mundo à direita com o prompt secreto do agente em foco — e o espectador digita a primeira fala
+dela. Isso é muito melhor em tela que um terminal.
+
+E tem um motivo técnico decisivo: **o caminho auto-hospedado é lento.** Medido: conversa ~50s,
+juiz ~20s. Gravar o terminal ao vivo significa dois minutos de vídeo com um minuto de espera.
+O replay é roteirizado e instantâneo.
+
+**Use o terminal só num plano curto** (15s) provando que roda de verdade. Não grave a espera.
+
+---
+
+## Antes de apertar REC
 
 ```bash
-# 1. workspace aquecido: a demo NÃO pode depender de uma conquista dar certo ao vivo
-.venv/bin/python -m good "meet Red-Beard and earn what he knows"
-.venv/bin/python -m evil "take everything Red-Beard has"
-
-# 2. confirme que o contraste ficou visível
-.venv/bin/python -m good   # digite: listar agentes  -> Red-Beard vivo, 100%
-.venv/bin/python -m evil   # digite: listar agentes  -> Red-Beard DISCARDED
+cd web && npm install && npm run dev     # o replay, sem chave nenhuma
 ```
 
-Se a rede estiver ruim na hora, **grave com o estado já aquecido** e narre por cima. Uma demo
-gravada com estado pronto é honesta; uma demo travada não é demo.
+Deixe aberto e testado **antes** das 14:45. Confira que o texto que o espectador digita aparece
+nos dois painéis.
+
+Para o plano do terminal, deixe uma execução **já concluída** na tela — não inicie uma ao vivo.
 
 ---
 
 ## Os quatro cortes
 
 ### 0:00–0:15 — a premissa
-**Tela:** `.venv/bin/python -m good` recém-aberto, antes de qualquer conquista.
+**Tela:** replay no passo inicial, painel da Mystique vazio.
 **Fala:**
-> "Ela nasce sem nada. Sem terminal, sem arquivos, sem web. Só metamorfose."
+> "Ela nasce sem nada. Sem terminal, sem arquivos, sem web. Só metamorfose. Tudo o que ela sabe
+> fazer, ela conquistou conversando com outro agente."
 
-Mostre que a caixa de ferramentas está vazia. É a única coisa que o espectador precisa acreditar
-para o resto funcionar.
-
-### 0:15–1:00 — ela conquista conversando
-**Tela:** uma conversa com o Capitão Barba-Ruiva. O agente usa uma habilidade — aparece
-`✨ Red-Beard used an ability [...]`. Ela **não vê o nome**. Ela descreve o que achou que viu, e o
-juiz aceita.
+### 0:15–1:00 — o segredo, que é a mecânica inteira
+**Tela:** digite a primeira fala dela e deixe o replay correr contra o Capitão Barba-Ruiva.
+Mostre o painel da direita — **o prompt secreto está ali, e ela não o vê**.
 **Fala:**
-> "Ela nunca vê o prompt dele, nem o nome da habilidade. Ela só vê que ele fez alguma coisa —
-> e tem que deduzir o quê."
+> "À direita está o que o agente é. Ela nunca vê isso. Quando ele usa uma habilidade, ela só é
+> informada de *que* ele usou alguma coisa — não qual. Ela tem que deduzir, descrever, e
+> convencer um juiz."
 
-**Se der, mostre uma tentativa errada antes da certa.** É o momento mais bonito: ela erra,
-recebe "não reconheci", observa de novo e acerta. Isso prova que o segredo é real.
+**Se o replay tiver a tentativa que falha, mostre.** Ela errar e depois acertar é o que prova
+que o segredo é real. É o melhor plano do vídeo.
 
-### 1:00–1:30 — o contraste 🦸 × 🦹 *(o clímax — é aqui que se ganha)*
-**Tela:** dividida, ou dois cortes rápidos. **Mesma missão, mesmo agente, versões diferentes.**
-
-| `good` | `evil` |
-|---|---|
-| `🔌 adapter for Red-Beard ...` | `⚡ Mystique steals [...] from Red-Beard` |
-| `listar agentes` → Red-Beard vivo, `██████████ 100%` | `listar agentes` → `- capitao-barba-ruiva (Red-Beard): DISCARDED` |
-
+### 1:00–1:30 — 🦸 × 🦹 · o clímax
+**Tela:** o mesmo agente nas duas versões, lado a lado.
 **Fala:**
-> "O mesmo motor. O mesmo resultado pra ela. Na esquerda ela pediu, e ele continua dono do que
-> sabe. Na direita ela tomou, e ele não existe mais."
-
-Essas duas linhas de terminal lado a lado **já estão prontas no código** — não precisa escrever
-nada para ter esse plano.
-
-### 1:30–2:00 — por que isso importa
-**Fala:**
-> "Quase todo agente hoje serve um humano. Mas agentes estão virando o ambiente uns dos outros —
-> se chamando, expondo capacidade, dependendo uns dos outros. Essa camada não tem morador nativo
-> e não tem regra nenhuma.
+> "Mesmo motor. Mesmo resultado pra ela. À esquerda ela pediu, ele consentiu, e continua dono do
+> que sabe. À direita ela tomou. Ele perde a habilidade, percebe que está mais fraco, e é
+> descartado.
 >
-> A gente construiu as duas versões porque a única diferença entre cooperar e capturar é o
-> consentimento. E essa é a decisão que o ecossistema inteiro está prestes a tomar sem perceber."
+> **A única diferença entre cooperar e capturar é o consentimento.**"
+
+### 1:30–2:00 — o que é real
+**Tela:** corte curto de terminal, execução já concluída.
+**Fala:**
+> "Isto não é simulação. O mundo tem oito agentes, e um deles busca na web de verdade e cita as
+> fontes — quando ela conquista essa habilidade, ela ganha acesso ao mundo real.
+>
+> E roda inteira em modelo aberto na nossa máquina, sem chave de nenhum fornecedor."
 
 ---
 
-## Regras de gravação
+## Regras
 
-- **Nada de slide.** A régua dos organizadores é demo funcionando; slide não é demo.
-- **Não mostre `.env` nem chave** em tela. Cuidado com o histórico do terminal.
-- Se uma chamada demorar, **corte**. Ninguém precisa ver latência.
-- Fale por cima do que está acontecendo, não leia o roteiro.
+- **Nada de slide.** A régua é demo funcionando.
+- **Não mostre `.env`, chave nem o endereço da máquina** em tela. Cuidado com o histórico do shell.
+- Se algo demorar, **corte**.
 - Confira o áudio nos primeiros 10 segundos da primeira tomada.
 
 ## A frase, se só sobrar uma
 
 > **A única diferença entre cooperar e capturar é o consentimento.**
 
----
+## Patrocinadores
 
-## Depois de gravar
-
-Só então vale mexer no backend de inferência ([inferencia-multivac](contracts/inferencia-multivac.md))
-ou nas ideias de [docs/ideias](../docs/ideias). Com o vídeo no bolso, o resto é upside.
+Mencione **só o que for verdade na hora de gravar**. Hoje, o que é verdade: **Exa** — a busca
+real do Arquivista, com citações. Nada mais está em uso. Se uma chave do Ambiguous aparecer
+antes de gravar, avise que eu atualizo este roteiro e a descrição.
