@@ -42,7 +42,7 @@ export function BannerPrivacidade({ t }: { t: (s: string) => string }) {
 }
 
 export function PortaoConta({ t, aoLiberar }: { t: (s: string) => string; aoLiberar: (ok: boolean, token?: string) => void }) {
-  const { isLoading, isAuthenticated, loginWithRedirect, logout, user, getAccessTokenSilently } = useAuth0()
+  const { isLoading, isAuthenticated, loginWithRedirect, logout, user, getAccessTokenSilently, error: erroAuth0 } = useAuth0()
   const [eu, setEu] = useState<Eu | null>(null)
   const [estado, setEstado] = useState<EstadoChave | null>(null)
   const [colada, setColada] = useState('')
@@ -83,6 +83,9 @@ export function PortaoConta({ t, aoLiberar }: { t: (s: string) => string; aoLibe
     return (
       <div className="portao">
         <h2>{t('The live chat needs an account')}</h2>
+        {/* Without this the tenant refusing - sign-ups disabled, a URL not on the
+            allow list - looks like the page simply reloading and doing nothing. */}
+        {erroAuth0 && <p className="portao-erro" role="alert">{erroAuth0.message}</p>}
         <p className="portao-sub">
           {t('So that what she learns is yours, kept apart from everyone else, and so the model runs on your key rather than ours.')}
         </p>
@@ -150,7 +153,7 @@ export function PortaoConta({ t, aoLiberar }: { t: (s: string) => string; aoLibe
         </>
       )}
 
-      {erro && <p className="portao-erro" role="alert">{erro}</p>}
+      {(erro || erroAuth0) && <p className="portao-erro" role="alert">{erro ?? erroAuth0?.message}</p>}
     </div>
   )
 }
