@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mystique — arquitetura e evidências</title>
+  <style>
+    /* Hallmark · pre-emit critique: P5 H5 E4 S5 R5 V5
+     * Hallmark · genre: atmospheric · macrostructure: Map / Diagram · theme: Midnight
+     * nav: N9 · footer: Ft5 · audience: equipe e jurados técnicos · use: arquitetura e testes
+     */
+    :root {
+      --color-paper: oklch(14% 0.028 276);
+      --color-paper-2: oklch(19% 0.035 276);
+      --color-paper-3: oklch(24% 0.04 276);
+      --color-ink: oklch(94% 0.012 80);
+      --color-muted: oklch(70% 0.025 275);
+      --color-accent: oklch(76% 0.16 70);
+      --color-accent-soft: oklch(44% 0.12 55);
+      --color-bloom: oklch(38% .12 28 / .25);
+      --color-bloom-secondary: oklch(34% .1 295 / .18);
+      --color-ok: oklch(78% 0.16 155);
+      --color-warn: oklch(81% 0.15 85);
+      --color-bad: oklch(68% 0.2 25);
+      --color-rule: oklch(36% 0.045 276);
+      --color-focus: oklch(83% 0.14 70);
+      --color-shadow: oklch(5% 0.02 276 / .35);
+      --color-shadow-strong: oklch(8% .03 276 / .48);
+      --font-display: "Avenir Next", "Segoe UI", system-ui, sans-serif;
+      --font-body: Inter, "Segoe UI", system-ui, sans-serif;
+      --font-mono: "SFMono-Regular", Consolas, monospace;
+      --space-xs: .45rem;
+      --space-sm: .75rem;
+      --space-md: 1.1rem;
+      --space-lg: 1.75rem;
+      --space-xl: 2.8rem;
+      --space-2xl: clamp(3.5rem, 8vw, 7rem);
+      --page-gutter: clamp(1rem, 4vw, 4rem);
+      --radius: 1rem;
+      --shadow: 0 1.4rem 4rem var(--color-shadow);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; overflow-x: clip; background: var(--color-paper); color: var(--color-ink); }
+    body {
+      min-height: 100vh;
+      font-family: var(--font-body);
+      background-image:
+        radial-gradient(circle at 84% 7%, var(--color-bloom), transparent 28rem),
+        radial-gradient(circle at 5% 62%, var(--color-bloom-secondary), transparent 34rem);
+      background-attachment: fixed;
+    }
+    a { color: inherit; }
+    button { font: inherit; }
+    .nav-edge { display: flex; align-items: center; justify-content: space-between; padding: var(--space-lg) var(--page-gutter); }
+    .wordmark { font-family: var(--font-display); font-weight: 700; letter-spacing: -.035em; text-decoration: none; }
+    .nav-status { min-height: 44px; display: inline-flex; align-items: center; gap: var(--space-xs); border: 1px solid var(--color-rule); border-radius: 999px; padding: 0 var(--space-md); color: var(--color-muted); font: .76rem var(--font-mono); white-space: nowrap; }
+    .pulse { width: .55rem; height: .55rem; border-radius: 50%; background: var(--color-warn); box-shadow: 0 0 1rem var(--color-warn); }
+    main { padding: var(--space-xl) var(--page-gutter) var(--space-2xl); }
+    .orientation { max-width: 70rem; margin: 0 auto var(--space-xl); }
+    .eyebrow { margin: 0 0 var(--space-sm); color: var(--color-accent); font: 700 .72rem/1.4 var(--font-mono); letter-spacing: .12em; text-transform: uppercase; }
+    h1 { max-width: 17ch; margin: 0; font-family: var(--font-display); font-style: normal; font-size: clamp(2.4rem, 6vw, 6.4rem); line-height: .92; letter-spacing: -.065em; overflow-wrap: anywhere; min-width: 0; }
+    .lede { max-width: 58ch; margin: var(--space-lg) 0 0; color: var(--color-muted); font-size: clamp(1rem, 1.6vw, 1.22rem); line-height: 1.65; }
+    .map-shell { max-width: 90rem; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr) minmax(16rem, 22rem); gap: var(--space-md); }
+    .map { position: relative; min-height: 43rem; border-radius: calc(var(--radius) * 1.4); background: var(--color-paper-2); box-shadow: var(--shadow); overflow: hidden; }
+    .map::before { content: ""; position: absolute; inset: 0; opacity: .22; background-image: linear-gradient(var(--color-rule) 1px, transparent 1px), linear-gradient(90deg, var(--color-rule) 1px, transparent 1px); background-size: 2.25rem 2.25rem; }
+    .routes { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+    .route { fill: none; stroke: var(--color-rule); stroke-width: 2; stroke-dasharray: 7 8; marker-end: url(#arrow); }
+    .route.hot { stroke: var(--color-accent); }
+    .node { position: absolute; z-index: 2; width: min(13rem, 25%); min-width: 9rem; border: 1px solid var(--color-rule); border-radius: var(--radius); padding: var(--space-md); color: var(--color-ink); background: var(--color-paper-3); text-align: left; cursor: pointer; transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease; }
+    .node:hover, .node:focus-visible, .node.active { transform: translateY(-3px); border-color: var(--color-accent); box-shadow: 0 .8rem 2rem var(--color-shadow-strong); }
+    .node:focus-visible { outline: 3px solid var(--color-focus); outline-offset: 3px; }
+    .node:active { transform: translateY(0); }
+    .node small { display: block; margin-bottom: .45rem; color: var(--color-accent); font: 700 .65rem var(--font-mono); text-transform: uppercase; letter-spacing: .09em; }
+    .node strong { display: block; font-size: 1rem; }
+    .node span { display: block; margin-top: .35rem; color: var(--color-muted); font-size: .76rem; line-height: 1.45; }
+    .n-ui { left: 5%; top: 8%; }
+    .n-api { left: 38%; top: 8%; }
+    .n-agent { left: 70%; top: 8%; }
+    .n-world { left: 38%; top: 40%; }
+    .n-peers { left: 5%; top: 70%; }
+    .n-memory { left: 38%; top: 70%; }
+    .n-services { left: 70%; top: 70%; }
+    .detail { min-height: 43rem; border: 1px solid var(--color-rule); border-radius: calc(var(--radius) * 1.4); padding: var(--space-lg); background: var(--color-paper-2); }
+    .detail h2 { margin: .25rem 0 var(--space-sm); font-family: var(--font-display); font-style: normal; font-size: 1.65rem; letter-spacing: -.035em; }
+    .detail p, .detail li { color: var(--color-muted); line-height: 1.55; }
+    .detail ol { padding-left: 1.2rem; }
+    code { font-family: var(--font-mono); font-size: .84em; color: var(--color-ink); }
+    .legend { display: flex; flex-wrap: wrap; gap: var(--space-sm); margin-top: var(--space-lg); }
+    .tag { display: inline-flex; align-items: center; gap: .4rem; min-height: 2rem; padding: .25rem .65rem; border: 1px solid var(--color-rule); border-radius: .4rem; color: var(--color-muted); font: .68rem var(--font-mono); }
+    .dot { width: .48rem; height: .48rem; border-radius: 50%; background: var(--color-muted); }
+    .dot.ok { background: var(--color-ok); }
+    .dot.warn { background: var(--color-warn); }
+    .evidence { max-width: 90rem; margin: var(--space-xl) auto 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-md); }
+    .proof { padding: var(--space-lg); border-top: 3px solid var(--color-rule); background: var(--color-paper-2); min-width: 0; }
+    .proof.ok { border-color: var(--color-ok); }
+    .proof.warn { border-color: var(--color-warn); }
+    .proof b { display: block; margin-bottom: var(--space-xs); font-family: var(--font-display); font-size: 1.15rem; }
+    .proof p { margin: 0; color: var(--color-muted); font-size: .82rem; line-height: 1.5; }
+    .foot-stmt { padding: var(--space-2xl) var(--page-gutter) var(--space-xl); display: grid; gap: var(--space-lg); }
+    .foot-stmt__line { max-width: 28ch; margin: 0; font-family: var(--font-display); font-style: normal; font-size: clamp(1.75rem, 5vw, 3.25rem); line-height: 1; letter-spacing: -.035em; }
+    .foot-stmt__meta { display: flex; justify-content: space-between; gap: var(--space-md); padding-top: var(--space-sm); border-top: 1px solid var(--color-rule); color: var(--color-muted); font: .72rem var(--font-mono); }
+    @media (max-width: 60rem) {
+      .map-shell { grid-template-columns: minmax(0, 1fr); }
+      .detail { min-height: auto; }
+      .evidence { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 40rem) {
+      .nav-edge { padding-block: var(--space-md); }
+      main { padding-top: var(--space-md); }
+      .map { min-height: auto; display: grid; gap: var(--space-sm); padding: var(--space-sm); }
+      .routes { display: none; }
+      .node { position: static; width: 100%; min-width: 0; min-height: 44px; }
+      .evidence { grid-template-columns: minmax(0, 1fr); }
+      .foot-stmt__meta { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <header class="nav-edge">
+    <a class="wordmark" href="#mapa">MYSTIQUE / SYSTEM MAP</a>
+    <span class="nav-status"><i class="pulse"></i> UI LIVE TEST PENDING</span>
+  </header>
+
+  <main>
+    <section class="orientation">
+      <p class="eyebrow">Browser → agent loop → world → evidence</p>
+      <h1>Uma agente. Dois destinos. Cada chamada visível.</h1>
+      <p class="lede">Clique em qualquer nó para ver o que é chamado naquele momento. O mapa separa fatos verificados de caminhos ainda aguardando teste pela UI.</p>
+    </section>
+
+    <section class="map-shell" id="mapa" aria-label="Mapa interativo da arquitetura Mystique">
+      <div class="map">
+        <svg class="routes" viewBox="0 0 1000 700" preserveAspectRatio="none" aria-hidden="true">
+          <defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="context-stroke"/></marker></defs>
+          <path class="route hot" d="M190 120 C300 80 380 90 455 120"/>
+          <path class="route hot" d="M570 120 C670 90 730 90 790 120"/>
+          <path class="route hot" d="M790 180 C720 280 650 300 560 320"/>
+          <path class="route" d="M455 365 C340 420 260 500 190 535"/>
+          <path class="route" d="M510 410 L510 530"/>
+          <path class="route" d="M570 365 C690 420 745 485 790 535"/>
+        </svg>
+        <button class="node n-ui active" data-key="ui"><small>01 · entrada</small><strong>UI humana</strong><span><code>frontend/</code> AG-UI ou <code>web/</code> replay</span></button>
+        <button class="node n-api" data-key="api"><small>02 · transporte</small><strong>Servidor FastAPI</strong><span>REST + SSE; cria missão e aguarda aprovação</span></button>
+        <button class="node n-agent" data-key="agent"><small>03 · raciocínio</small><strong>Mystique / DeepSeek</strong><span>Loop OpenAI-compatible com chamadas de ferramenta</span></button>
+        <button class="node n-world" data-key="world"><small>04 · regras</small><strong>Mundo good / evil</strong><span>Contato, juiz, consentimento, roubo e auditoria</span></button>
+        <button class="node n-peers" data-key="peers"><small>05A · agentes</small><strong>Personas + poderes</strong><span>Arquivos Markdown e ferramentas observáveis</span></button>
+        <button class="node n-memory" data-key="memory"><small>05B · estado</small><strong>ReasoningBank</strong><span>Trajetórias próprias, adapters e wiki auditável</span></button>
+        <button class="node n-services" data-key="services"><small>05C · mundo real</small><strong>Exa + Ambiguous</strong><span>Busca citada e recibos de aquisição</span></button>
+      </div>
+
+      <aside class="detail" aria-live="polite">
+        <p class="eyebrow" id="detail-step">01 · entrada</p>
+        <h2 id="detail-title">UI humana</h2>
+        <p id="detail-copy">A pessoa envia uma missão e acompanha agentes, capacidades e recibos. O replay é estático; o painel AG-UI é o caminho para inferência real.</p>
+        <ol id="detail-calls">
+          <li><code>POST /api/missoes</code></li>
+          <li><code>GET /agui/stream</code></li>
+          <li><code>POST /api/recibos/:id/decisao</code></li>
+        </ol>
+        <div class="legend">
+          <span class="tag"><i class="dot ok"></i> verificado</span>
+          <span class="tag"><i class="dot warn"></i> aguardando UI E2E</span>
+        </div>
+      </aside>
+    </section>
+
+    <section class="evidence" aria-label="Estado dos testes">
+      <article class="proof ok"><b>53 checks offline</b><p>Todos passaram no script canônico <code>tests/test_offline.py</code>.</p></article>
+      <article class="proof ok"><b>2 builds verdes</b><p><code>web/</code> e <code>frontend/</code> compilam sem erro.</p></article>
+      <article class="proof ok"><b>DeepSeek direto</b><p>Fluxo ponta a ponta já verificado fora da UI.</p></article>
+      <article class="proof warn"><b>UI + DeepSeek</b><p>Pendente: o POST de missão retorna 500 até o owner corrigir o event loop.</p></article>
+    </section>
+  </main>
+
+  <footer class="foot-stmt">
+    <p class="foot-stmt__line">A arquitetura está pronta quando a evidência atravessa a mesma interface da demo.</p>
+    <div class="foot-stmt__meta"><span class="wordmark">Mystique</span><span>Estado observado em 12 Sep 2026 · sem segredos incorporados</span></div>
+  </footer>
+
+  <script>
+    const details = {
+      ui: { step: '01 · entrada', title: 'UI humana', copy: 'A pessoa envia uma missão e acompanha agentes, capacidades e recibos. O replay é estático; o painel AG-UI é o caminho para inferência real.', calls: ['POST /api/missoes', 'GET /agui/stream', 'POST /api/recibos/:id/decisao'] },
+      api: { step: '02 · transporte', title: 'Servidor FastAPI', copy: 'Transforma ações da interface em uma execução assíncrona e publica snapshots e recibos por SSE usando o protocolo AG-UI.', calls: ['servidor.app.criar_app', 'asyncio.create_task(executar(...))', 'EventEncoder.encode(...)'] },
+      agent: { step: '03 · raciocínio', title: 'Mystique no DeepSeek', copy: 'Quando MYSTIQUE_PROVIDER=openai, o dispatcher seleciona agente_local e reutiliza as mesmas ferramentas do caminho Agent SDK.', calls: ['mystique.agente.executar', 'mystique.agente_local.executar', 'ClienteOpenAI.chamar'] },
+      world: { step: '04 · regras', title: 'Mundos good e evil', copy: 'O mesmo motor oferece dois regimes: conexão com consentimento ou captura sem consentimento. O juiz secreto nunca entrega a resposta para Mystique.', calls: ['Mundo.conversar', 'Mundo._json', '_aguardar_aprovacao', 'Mundo._salvar'] },
+      peers: { step: '05A · agentes', title: 'Personas e poderes', copy: 'Cada agente nasce de um Markdown. Seus poderes viram ferramentas; Mystique vê apenas que algo foi usado até conseguir inferir e conquistar.', calls: ['agentes/*.md', 'mystique.poderes.PODERES', 'ferramentas_base(mundo)'] },
+      memory: { step: '05B · estado', title: 'ReasoningBank', copy: 'Registra as palavras e resultados da própria Mystique, recupera tentativas anteriores e recompõe adapters, absorções, auditorias e wiki.', calls: ['banco.registrar', 'banco.recordar', 'workspace/*.json / *.md'] },
+      services: { step: '05C · mundo real', title: 'Exa e Ambiguous', copy: 'Exa fornece busca real com citações. Ambiguous arquiva cada aquisição como documento, incluindo origem e consentimento.', calls: ['EXA_API_KEY → busca', 'AMBIGUOUS_API_KEY → documentos', 'HTTP 201 verificado'] }
+    };
+    const nodes = [...document.querySelectorAll('.node')];
+    for (const node of nodes) node.addEventListener('click', () => {
+      for (const item of nodes) item.classList.remove('active');
+      node.classList.add('active');
+      const item = details[node.dataset.key];
+      document.querySelector('#detail-step').textContent = item.step;
+      document.querySelector('#detail-title').textContent = item.title;
+      document.querySelector('#detail-copy').textContent = item.copy;
+      document.querySelector('#detail-calls').innerHTML = item.calls.map(call => `<li><code>${call}</code></li>`).join('');
+    });
+  </script>
+</body>
+</html>

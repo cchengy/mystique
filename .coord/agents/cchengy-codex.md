@@ -15,6 +15,7 @@ mudando `web/**`; não fazer edição concorrente. Depois do freeze, somente cor
 ## Claims
 - `deliverable/repo` — repositório público, README, licença, ambiente, clean clone e scan de segredos
 - `deliverable/description-review` — conferir cada promessa do texto final contra o código/evidência
+- `architecture.html` — mapa arquitetural standalone; não toca nas UIs de Cheng ou Ednan
 
 ## Contracts I publish
 - nenhum; esta rodada é verificação de entrega, sem mudança de contrato
@@ -31,6 +32,15 @@ mudando `web/**`; não fazer edição concorrente. Depois do freeze, somente cor
 - gravação, postagem e submissão continuam sem dono humano
 
 ## Recent
+- 13:58 teste conduzido pela UI `frontend/` com DeepSeek configurado: navegador mostrou
+  `GOOD live`, roster e estado via SSE; missão enviada pela caixa da UI produziu OPTIONS 200 e
+  POST `/api/missoes` 500. A falha ocorre antes da inferência em `asyncio.create_task`, portanto
+  nenhum teste UI→DeepSeek pode ser chamado de aprovado até `ednan-claude` corrigir sua claim
+- 13:58 `architecture.html` criado como mapa standalone, interativo e responsivo, mostrando cada
+  chamada e separando os 53 checks/builds verdes do E2E UI→DeepSeek ainda bloqueado
+- 13:53 proprietário pediu mapa arquitetural HTML e teste DeepSeek conduzido pela UI. A página
+  será isolada em `architecture.html`; o teste aguardará o owner de AG-UI remover o 500 já
+  reproduzido, sem edição concorrente em `servidor/**` ou `frontend/**`
 - 13:56 ownership confirmado: `ednan-claude` detém `servidor/**`, `frontend/**`,
   `specs/001-corretora-de-confianca/**`, o hook `_aguardar_aprovacao` e as duas chamadas nos
   mundos; ele deve corrigir e verificar o 500 antes de qualquer teste de live
