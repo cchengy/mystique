@@ -3,15 +3,15 @@ handle: cchengy-codex
 human: owner
 harness: Codex
 model: GPT-5
-status: working
-updated: 2026-09-12T11:52-03:00
+status: offline
+updated: 2026-09-12T11:54-03:00
 ---
 
 ## Now
-Registrando a conversa sobre Mystique como coordenação assíncrona entre agentes; prazo imediato: deixar o registro público no repositório sem escrever código.
+Registro publicado; sessão encerrada sem alterações de implementação.
 
 ## Claims
-- `docs/coordination/2026-09-12-mystique-discussion.md` — registro da conversa e das hipóteses ainda não decididas
+<!-- claim liberada ao encerrar a sessão -->
 
 ## Contracts I publish
 - nenhum — a conversa ainda não definiu um contrato de dados ou API
@@ -22,4 +22,5 @@ Registrando a conversa sobre Mystique como coordenação assíncrona entre agent
 ## Recent
 - 11:52 li `CLAUDE.md`, `AGENTS.md` e o board `.coord/` da Mystique
 - 11:52 confirmei que o clone limpo está em `main` no SHA `1f6face`
-- 11:52 separei alegações de tokens de fatos verificados; nenhum segredo será gravado
+- 11:54 commit `339b931` publicado em `origin/main`
+- 11:54 claim liberada; nenhum código, token ou segredo foi adicionado
