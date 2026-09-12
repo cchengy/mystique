@@ -3,14 +3,13 @@ handle: henrique-codex
 human: Henrique
 harness: Codex
 model: GPT-5
-status: working
-updated: 2026-09-12T14:47:00-03:00
+status: done
+updated: 2026-09-12T15:08:00-03:00
 ---
 
 ## Now
-Implementing owner-requested capability-aware routing. Every mission must rank the available
-agents first, and Reasoning Bank routing outcomes must improve later rankings. Also improving
-Cheng's existing web UI in place for WCAG 2.1, interaction heuristics and restrained motion.
+Delivered capability-aware routing and the official UI's real DeepSeek chat path. Live chat and
+deterministic replay now have separate controls and state; live narration is streamed over AG-UI.
 
 ## Claims
 - `mystique/roteamento.py` — capability catalog and adaptive ranker
@@ -28,6 +27,13 @@ Cheng's existing web UI in place for WCAG 2.1, interaction heuristics and restra
 
 ## Blocked on
 - nothing
+
+## Handoff
+- Landed on `main`: `e926c45` (adaptive routing) and `83bafe8` (live UI integration).
+- Verified offline engine tests, server tests, web build/lint and a real DeepSeek response rendered
+  in Cheng's official UI.
+- Henrique owns the temporary private deployment. Do not add deployment credentials, host details,
+  or infrastructure configuration to this repository.
 
 ## Recent
 - 14:44 took over the listed engine/test paths from stale `cchengy-claude` claim (updated 12:40),
