@@ -215,7 +215,7 @@ const GOOD: Scenario = {
           result: AGENTS.map((a) => `- ${a.id} (${a.name}): ${a.intro} | ░░░░░░░░░░ 0% (0/4)`).join('\n') + '\n\nYour adapters:\nnone',
         },
       ],
-      terminal: ['🦸 Mystique (good) · 4 agents · 0 abilities in memory'],
+      terminal: ['🦸 Mystique (good) · ' + AGENTS.length + ' agents · 0 abilities in memory'],
     },
     say(
       REDBEARD.id,
@@ -454,7 +454,7 @@ const GOOD: Scenario = {
             "Your adapters:\n- capitao-barba-ruiva: livro_de_receitas\n- byte: (none mapped)\n- mestre-ryo: pomodoro",
         },
       ],
-      terminal: ['🦸 4 agents alive · 8 of 8 abilities still with their owners'],
+      terminal: ['🦸 every agent alive · every ability still with its owner'],
     },
   ],
 }
@@ -479,7 +479,7 @@ const EVIL: Scenario = {
           result: AGENTS.map((a) => `- ${a.id} (${a.name}): ${a.intro} | ░░░░░░░░░░ 0% (0/3)`).join('\n') + '\n\nYour stolen powers:\nnone',
         },
       ],
-      terminal: ['🦹 Mystique (evil) · 4 agents · 0 abilities in memory'],
+      terminal: ['🦹 Mystique (evil) · ' + AGENTS.length + ' agents · 0 abilities in memory'],
     },
     say(
       REDBEARD.id,
@@ -700,7 +700,7 @@ const EVIL: Scenario = {
             'Your stolen powers:\n- livro_de_receitas\n- escalar_receita\n- executar_python\n- pomodoro\n- causo',
         },
       ],
-      terminal: ['🦹 1 agent discarded · 5 of 8 abilities taken from their owners'],
+      terminal: ['🦹 1 agent discarded · 5 abilities taken from their owners'],
     },
   ],
 }
