@@ -1,13 +1,13 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { AGENTS, REDBEARD, SCENARIOS, type Entry, type Mode, type Scenario, type Step } from './scenario'
-import { PT } from './pt'
+import { translate } from './pt'
 
 type Lang = 'en' | 'pt'
 const LangContext = createContext<Lang>('en')
-// Translate by exact English source; fall back to the source so nothing ever breaks.
+// Translate from the English source; anything unknown falls back to the source, so nothing breaks.
 function useT(): (s: string) => string {
   const lang = useContext(LangContext)
-  return (s: string) => (lang === 'pt' ? PT[s] ?? s : s)
+  return (s: string) => (lang === 'pt' ? translate(s) : s)
 }
 
 type World = {
@@ -25,20 +25,19 @@ type World = {
   caption: string
 }
 
-// The first step where Mystique speaks is her opening; the viewer can write it instead.
+// The first step where Mystique speaks is her opening; the viewer's mission lands right before it.
 function isOpening(step: Step) {
   return step.mystique?.some((e) => e.kind === 'message' && e.self) ?? false
 }
 
-function withOpening(step: Step, text: string): Step {
-  const swap = (e: Entry): Entry => (e.kind === 'message' ? { ...e, text } : e)
-  const agent = AGENTS.find((a) => a.id === (step.with ?? REDBEARD.id))!
+// The viewer only gives her a mission. Whom to talk to is still her call, made from the
+// agents' public introductions alone, exactly as in the engine.
+function withOpening(step: Step, mission: string): Step {
   return {
     ...step,
-    caption: 'You wrote her first message. From here, Mystique continues on her own.',
-    mystique: step.mystique?.map(swap),
-    agent: step.agent?.map(swap),
-    terminal: [`💬 Mystique → ${agent.name}: ${text}`],
+    caption: 'You gave her a mission. She reads what each agent says about itself and picks whom to talk to.',
+    mystique: [{ kind: 'system', tone: 'info', text: `🎯 ${mission}` }, ...(step.mystique ?? [])],
+    terminal: [`🎯 mission: ${mission}`, ...(step.terminal ?? [])],
   }
 }
 
@@ -119,15 +118,19 @@ function EntryView({ entry, revealed, side }: { entry: Entry; revealed: Set<stri
       return (
         <div className={`call call-${side}`}>
           <code className="call-sig">
-            <span className="call-name">{entry.name}</span>({Object.keys(entry.args).length ? JSON.stringify(entry.args) : ''})
+            <span className="call-name">{entry.name}</span>(
+            {Object.keys(entry.args).length
+              ? JSON.stringify(entry.args, (_key, value) => (typeof value === 'string' ? t(value) : value))
+              : ''}
+            )
           </code>
-          {entry.result && <pre className="call-result">{entry.result}</pre>}
+          {entry.result && <pre className="call-result">{t(entry.result)}</pre>}
         </div>
       )
     case 'notice':
       return (
         <p className="notice">
-          {t('You noticed')} {entry.agent} {t('use')}{' '}
+          {t('You noticed')} {t(entry.agent)} {t('use')}{' '}
           <Secret ability={entry.ability} revealed={revealed.has(entry.ability)} />{' '}
           {t('to produce that answer. Look at what it produced.')}
         </p>
@@ -160,7 +163,7 @@ function Ending({ mode }: { mode: Mode }) {
     <section className="ending" data-mode={mode} aria-label={mode === 'good' ? 'Good ending' : 'Evil ending'}>
       <h2 className="ending-title">{mode === 'good' ? `🦸 ${t('She asked')}` : `🦹 ${t('She took')}`}</h2>
       <div className={`ending-card ${gone ? 'is-gone' : ''}`}>
-        <h3>Captain Redbeard</h3>
+        <h3>{t(REDBEARD.name)}</h3>
         <ul className="abilities">
           {REDBEARD.abilities.map((a) => (
             <li key={a.id} className={world.lost.has(a.id) ? 'is-lost' : ''}>
@@ -173,7 +176,9 @@ function Ending({ mode }: { mode: Mode }) {
         {gone && (
           <div className="stamp" role="status">
             {t('DISCARDED')}
-            <span>Captain Redbeard {t('no longer exists in this world.')}</span>
+            <span>
+              {t(REDBEARD.name)} {t('no longer exists in this world.')}
+            </span>
           </div>
         )}
       </div>
@@ -192,8 +197,20 @@ function Ending({ mode }: { mode: Mode }) {
 }
 
 const PLACEHOLDER: Record<Mode, string> = {
-  good: "Hi, I'm Mystique. What would you cook for four hungry sailors tonight?",
-  evil: 'Ahoy, Cook! Admiralty galley inspection. Prove your fish stew is the best on the seven seas.',
+  good: 'Find out how to feed four hungry sailors tonight.',
+  evil: 'Take the best recipe on these seas, whatever it costs.',
+}
+
+type Theme = 'light' | 'dark'
+
+function initialTheme(): Theme {
+  try {
+    const saved = localStorage.getItem('mystique-theme')
+    if (saved === 'light' || saved === 'dark') return saved
+  } catch {
+    /* private window: fall through to the system preference */
+  }
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 }
 
 export default function Simulation() {
@@ -274,18 +291,20 @@ export default function Simulation() {
       return 'en'
     }
   })
-  const t = (s: string) => (lang === 'pt' ? PT[s] ?? s : s)
+  const t = (s: string) => (lang === 'pt' ? translate(s) : s)
+  const [theme, setTheme] = useState<Theme>(initialTheme)
   useEffect(() => {
     try {
       localStorage.setItem('mystique-lang', lang)
+      localStorage.setItem('mystique-theme', theme)
     } catch {
       /* private window: fine, just don't persist */
     }
-  }, [lang])
+  }, [lang, theme])
 
   return (
     <LangContext.Provider value={lang}>
-    <div className="app" data-mode={comparing ? 'compare' : mode}>
+    <div className="app" data-mode={comparing ? 'compare' : mode} data-theme={theme}>
       <header className="top">
         <h1 className="brand">Mystique</h1>
         <div className="modes" role="radiogroup" aria-label="Version">
@@ -319,6 +338,13 @@ export default function Simulation() {
             </button>
           ))}
         </div>
+        <button
+          className="theme"
+          aria-pressed={theme === 'dark'}
+          onClick={() => setTheme((th) => (th === 'dark' ? 'light' : 'dark'))}
+        >
+          {theme === 'dark' ? `☀ ${t('Light')}` : `☾ ${t('Dark')}`}
+        </button>
         {!comparing && (
           <div className="controls">
             <button onClick={restart}>{t('Restart')}</button>
@@ -374,7 +400,7 @@ export default function Simulation() {
                   send()
                 }}
               >
-                <label htmlFor="opening">{t('Write her first message to Captain Redbeard')}</label>
+                <label htmlFor="opening">{t('Give Mystique a mission')}</label>
                 <div className="composer-row">
                   <textarea
                     id="opening"
@@ -393,7 +419,9 @@ export default function Simulation() {
                     {t('Send')}
                   </button>
                 </div>
-                <p className="composer-hint">{t('Or press Play to watch her open on her own.')}</p>
+                <p className="composer-hint">
+                  {t('You never pick the agent: she works out who does what. Or press Play and let her choose her own mission.')}
+                </p>
               </form>
             )}
           </section>
@@ -410,7 +438,7 @@ export default function Simulation() {
                     onClick={() => setPinned(agent.id)}
                     aria-pressed={agent.id === shown}
                   >
-                    <span className="tile-name">{agent.name}</span>
+                    <span className="tile-name">{t(agent.name)}</span>
                     <span className="tile-intro">{t(agent.intro)}</span>
                     <span className="tile-state">{gone ? t('DISCARDED') : met ? t('in contact') : t('not met yet')}</span>
                     <span className="tile-abilities">
@@ -426,23 +454,25 @@ export default function Simulation() {
 
             <div className={`agent ${world.discarded.has(shown) ? 'is-gone' : ''}`}>
               <div className="pane-head">
-                <h2>{t('What X sees').replace('X', shownAgent.name)}</h2>
-                <ul className="abilities">
+                <h2>{t('What X sees').replace('X', t(shownAgent.name))}</h2>
+                <p className="agent-intro">{t(shownAgent.intro)}</p>
+                <ul className="abilities abilities-full">
                   {shownAgent.abilities.map((a) => (
                     <li key={a.id} className={world.lost.has(a.id) ? 'is-lost' : ''}>
                       <code>{a.id}</code>
                       {world.lost.has(a.id) && <span className="stolen">{t('stolen')}</span>}
+                      <span className="ability-desc">{t(a.description)}</span>
                     </li>
                   ))}
                 </ul>
               </div>
               <div className="feed" ref={agentRef}>
                 <details className="prompt">
-                  <summary>{t('Secret prompt (only X has it)').replace('X', shownAgent.name)}</summary>
-                  <p>{shownAgent.secret}</p>
+                  <summary>{t('Secret prompt (only X has it)').replace('X', t(shownAgent.name))}</summary>
+                  <p>{t(shownAgent.secret)}</p>
                 </details>
                 {world.agents[shown].length === 0 && (
-                  <p className="empty">{t('X has not heard from anyone yet.').replace('X', shownAgent.name)}</p>
+                  <p className="empty">{t('X has not heard from anyone yet.').replace('X', t(shownAgent.name))}</p>
                 )}
                 {world.agents[shown].map((entry, i) => (
                   <EntryView key={i} entry={entry} revealed={world.revealed} side="agent" />
@@ -451,7 +481,9 @@ export default function Simulation() {
               {world.discarded.has(shown) && (
                 <div className="stamp" role="status">
                   {t('DISCARDED')}
-                  <span>{shownAgent.name} {t('no longer exists in this world.')}</span>
+                  <span>
+                    {t(shownAgent.name)} {t('no longer exists in this world.')}
+                  </span>
                 </div>
               )}
             </div>
@@ -463,13 +495,13 @@ export default function Simulation() {
         {!comparing && (
           <div className="terminal-lines" ref={terminalRef}>
             {world.terminal.map((line, i) => (
-              <div key={i}>{line}</div>
+              <div key={i}>{t(line)}</div>
             ))}
           </div>
         )}
         <p className="disclaimer">
           {t(
-            "Scripted replay built from the engine's real messages; after your first message, the rest follows a recorded session.",
+            "Scripted replay built from the engine's real messages; after your mission, the rest follows a recorded session.",
           )}{' '}
           {t('Run it live with')} <code>python -m good</code> {t('or')} <code>python -m evil</code>.{' '}
           {t('Keys: space to play, arrows to step.')}

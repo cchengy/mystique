@@ -1,18 +1,57 @@
 :root {
+  /* Mystique's side: her skin. Always blue, in either theme. */
   --skin: #1d3ba8;
   --ink: #0e1a4f;
   --ink-deep: #0a1440;
   --iris: #f2c230;
   --hair: #b5312b;
-  --paper: #eef1f4;
-  --paper-line: #c9d1de;
-  --text-dark: #121a33;
-  --text-light: #dce3ff;
+  --text-light: #e4e9ff;
+  --muted-light: #b3bee9;
+  --line-light: rgba(220, 227, 255, 0.28);
+
+  /* The world's side: everything in the open. Flips with the theme. */
+  --w-bg: #eef1f4;
+  --w-surface: #ffffff;
+  --w-line: #c9d1de;
+  --w-fg: #121a33;
+  --w-muted: #465070;
+  --w-faint: #626b80;
+  --w-inverse: #121a33;
+  --w-on-inverse: #f4f6fa;
+  --w-link: #1d3ba8;
+  --w-loss: #b5312b;
+  --w-loss-fg: #7d1f1a;
+  --w-loss-bg: rgba(181, 49, 43, 0.1);
+  --w-info-line: rgba(29, 59, 168, 0.35);
+  --w-info-bg: rgba(29, 59, 168, 0.07);
+  --w-stamp-bg: rgba(238, 241, 244, 0.94);
+
   --accent: var(--iris);
   --display: 'Big Shoulders Display', 'Arial Narrow', sans-serif;
   --body: 'Public Sans', system-ui, sans-serif;
   --code: 'JetBrains Mono', ui-monospace, Menlo, monospace;
   color-scheme: light;
+}
+
+.app[data-theme='dark'] {
+  --ink: #0c1543;
+  --ink-deep: #070d2e;
+  --w-bg: #10131a;
+  --w-surface: #191d27;
+  --w-line: #2d3342;
+  --w-fg: #e8ebf3;
+  --w-muted: #a8b0c2;
+  --w-faint: #7f889b;
+  --w-inverse: #e8ebf3;
+  --w-on-inverse: #10131a;
+  --w-link: #9db0ff;
+  --w-loss: #ff8f85;
+  --w-loss-fg: #ffc4bd;
+  --w-loss-bg: rgba(255, 120, 110, 0.12);
+  --w-info-line: rgba(157, 176, 255, 0.4);
+  --w-info-bg: rgba(157, 176, 255, 0.08);
+  --w-stamp-bg: rgba(16, 19, 26, 0.94);
+  color-scheme: dark;
 }
 
 .app[data-mode='evil'] {
@@ -26,8 +65,8 @@
 body {
   margin: 0;
   font-family: var(--body);
-  font-size: 15px;
-  line-height: 1.5;
+  font-size: 16px;
+  line-height: 1.55;
   background: var(--ink-deep);
   color: var(--text-light);
 }
@@ -47,6 +86,7 @@ summary:focus-visible {
   height: 100vh;
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr) auto;
+  background: var(--ink-deep);
 }
 
 /* --- top bar -------------------------------------------------------------- */
@@ -54,7 +94,7 @@ summary:focus-visible {
 .top {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  gap: 1rem 1.25rem;
   flex-wrap: wrap;
   padding: 0.75rem 1.25rem;
   background: var(--ink);
@@ -71,9 +111,10 @@ summary:focus-visible {
   color: var(--iris);
 }
 
-.modes {
+.modes,
+.langs {
   display: flex;
-  border: 1px solid rgba(220, 227, 255, 0.35);
+  border: 1px solid var(--line-light);
   border-radius: 999px;
   padding: 3px;
 }
@@ -84,6 +125,13 @@ summary:focus-visible {
   padding: 0.35rem 0.9rem;
   background: transparent;
   color: var(--text-light);
+  font-size: 0.95rem;
+}
+
+.mode:hover,
+.lang:hover,
+.theme:hover {
+  background: rgba(220, 227, 255, 0.1);
 }
 
 .mode[aria-checked='true'] {
@@ -96,26 +144,25 @@ summary:focus-visible {
   color: #fff;
 }
 
-.langs {
-  display: flex;
-  border: 1px solid rgba(220, 227, 255, 0.35);
-  border-radius: 999px;
-  padding: 3px;
-}
-
-.lang {
+.lang,
+.theme {
   border: 0;
   border-radius: 999px;
   padding: 0.3rem 0.7rem;
   background: transparent;
   color: var(--text-light);
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   font-weight: 600;
 }
 
 .lang[aria-checked='true'] {
   background: var(--text-light);
   color: var(--ink-deep);
+}
+
+.theme {
+  border: 1px solid var(--line-light);
+  padding: 0.35rem 0.85rem;
 }
 
 .controls {
@@ -126,11 +173,15 @@ summary:focus-visible {
 }
 
 .controls button {
-  border: 1px solid rgba(220, 227, 255, 0.35);
+  border: 1px solid var(--line-light);
   background: transparent;
   color: var(--text-light);
   border-radius: 6px;
-  padding: 0.3rem 0.75rem;
+  padding: 0.35rem 0.8rem;
+}
+
+.controls button:hover:not(:disabled) {
+  background: rgba(220, 227, 255, 0.1);
 }
 
 .controls button.primary {
@@ -147,22 +198,22 @@ summary:focus-visible {
 
 .counter {
   font-family: var(--code);
-  font-size: 0.8rem;
-  opacity: 0.7;
+  font-size: 0.85rem;
+  color: var(--muted-light);
   min-width: 3.5rem;
   text-align: right;
 }
 
 .caption {
   margin: 0;
-  padding: 0.7rem 1.25rem;
-  font-family: var(--display);
-  font-weight: 700;
-  font-size: 1.55rem;
-  line-height: 1.15;
+  padding: 0.75rem 1.25rem;
+  font-weight: 600;
+  font-size: 1.3rem;
+  line-height: 1.35;
+  text-wrap: balance;
   color: var(--text-light);
   background: var(--ink-deep);
-  min-height: 3.2rem;
+  min-height: 3.4rem;
 }
 
 /* --- panes ---------------------------------------------------------------- */
@@ -180,15 +231,14 @@ summary:focus-visible {
 }
 
 .pane-head {
-  padding: 0.9rem 1.25rem 0.7rem;
+  padding: 1rem 1.25rem 0.75rem;
 }
 
 .pane-head h2 {
   margin: 0;
-  font-family: var(--display);
   font-weight: 700;
-  font-size: 1.25rem;
-  letter-spacing: 0.01em;
+  font-size: 1.1rem;
+  line-height: 1.3;
 }
 
 .feed {
@@ -200,22 +250,22 @@ summary:focus-visible {
   padding: 0.25rem 1.25rem 1.25rem;
   display: flex;
   flex-direction: column;
-  gap: 0.7rem;
+  gap: 0.8rem;
 }
 
 /* Mystique: her skin, in scales */
 .pane-mystique {
   background-color: var(--ink);
   background-image:
-    radial-gradient(circle at 50% 100%, transparent 58%, rgba(96, 128, 255, 0.09) 60%, transparent 66%),
-    radial-gradient(circle at 50% 100%, transparent 58%, rgba(96, 128, 255, 0.09) 60%, transparent 66%);
+    radial-gradient(circle at 50% 100%, transparent 58%, rgba(96, 128, 255, 0.07) 60%, transparent 66%),
+    radial-gradient(circle at 50% 100%, transparent 58%, rgba(96, 128, 255, 0.07) 60%, transparent 66%);
   background-size: 26px 16px;
   background-position: 0 0, 13px 8px;
   border-right: 1px solid rgba(220, 227, 255, 0.12);
 }
 
 .form {
-  margin: 0.15rem 0 0.55rem;
+  margin: 0.2rem 0 0.6rem;
   color: var(--iris);
   font-weight: 600;
 }
@@ -229,8 +279,8 @@ summary:focus-visible {
 }
 
 .toolbox-empty {
-  font-size: 0.85rem;
-  opacity: 0.6;
+  font-size: 0.9rem;
+  color: var(--muted-light);
 }
 
 /* The one orchestrated moment: a hidden ability becomes readable. */
@@ -239,7 +289,7 @@ summary:focus-visible {
   padding: 0.05rem 0.55rem;
   border-radius: 4px;
   font-family: var(--code);
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   color: transparent;
   background-color: var(--skin);
   background-image:
@@ -283,14 +333,14 @@ summary:focus-visible {
 
 .composer {
   display: grid;
-  gap: 0.4rem;
-  padding: 0.75rem 1.25rem 0.9rem;
+  gap: 0.45rem;
+  padding: 0.85rem 1.25rem 1rem;
   border-top: 1px solid rgba(220, 227, 255, 0.15);
-  background: rgba(10, 20, 64, 0.75);
+  background: rgba(10, 20, 64, 0.8);
 }
 
 .composer label {
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-weight: 600;
   color: var(--iris);
 }
@@ -307,13 +357,13 @@ summary:focus-visible {
   font: inherit;
   color: var(--text-light);
   background: var(--ink-deep);
-  border: 1px solid rgba(220, 227, 255, 0.3);
+  border: 1px solid var(--line-light);
   border-radius: 8px;
-  padding: 0.5rem 0.7rem;
+  padding: 0.55rem 0.75rem;
 }
 
 .composer textarea::placeholder {
-  color: rgba(220, 227, 255, 0.45);
+  color: var(--muted-light);
 }
 
 .composer textarea:focus-visible {
@@ -324,7 +374,7 @@ summary:focus-visible {
 .composer button {
   border: 0;
   border-radius: 8px;
-  padding: 0.55rem 1.1rem;
+  padding: 0.6rem 1.15rem;
   background: var(--accent);
   color: var(--ink-deep);
   font-weight: 600;
@@ -341,83 +391,85 @@ summary:focus-visible {
 
 .composer-hint {
   margin: 0;
-  font-size: 0.78rem;
-  opacity: 0.6;
+  font-size: 0.85rem;
+  color: var(--muted-light);
 }
 
-/* World side: plain paper, everything in the open */
+/* World side: everything in the open */
 .pane-world {
-  background: var(--paper);
-  color: var(--text-dark);
+  background: var(--w-bg);
+  color: var(--w-fg);
 }
 
 .pane-world .feed {
-  scrollbar-color: var(--paper-line) transparent;
+  scrollbar-color: var(--w-line) transparent;
 }
 
 .roster {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.5rem;
-  padding: 0.8rem 1.25rem 0;
+  padding: 0.9rem 1.25rem 0;
 }
 
 .tile {
   display: grid;
-  gap: 0.2rem;
+  gap: 0.25rem;
+  align-content: start;
   text-align: left;
-  padding: 0.5rem 0.6rem;
-  border: 1px solid var(--paper-line);
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--w-line);
   border-radius: 8px;
-  background: #fff;
-  color: var(--text-dark);
+  background: var(--w-surface);
+  color: var(--w-fg);
+}
+
+.tile:hover {
+  border-color: var(--w-muted);
 }
 
 .tile.is-shown {
-  border-color: var(--text-dark);
-  box-shadow: inset 0 0 0 1px var(--text-dark);
+  border-color: var(--w-fg);
+  box-shadow: inset 0 0 0 1px var(--w-fg);
 }
 
-.tile.is-active .tile-state {
-  color: var(--skin);
+.tile.is-active .tile-state,
+.tile.is-shown .tile-state {
+  color: var(--w-link);
   font-weight: 600;
 }
 
 .tile.is-gone {
   background: transparent;
-  color: #8a93a6;
+  color: var(--w-faint);
   border-style: dashed;
 }
 
 .tile.is-gone .tile-state {
-  color: var(--hair);
+  color: var(--w-loss);
   font-weight: 700;
 }
 
 .tile-name {
-  font-weight: 600;
-  font-size: 0.9rem;
-  line-height: 1.2;
+  font-weight: 700;
+  font-size: 0.95rem;
+  line-height: 1.25;
 }
 
 .tile-intro {
-  font-size: 0.75rem;
-  color: #5b6478;
-  line-height: 1.3;
+  font-size: 0.8rem;
+  color: var(--w-muted);
+  line-height: 1.35;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
 .tile-state {
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 600;
-  color: #3a4360;
-}
-
-.tile.is-shown .tile-state {
-  color: var(--skin);
+  color: var(--w-muted);
 }
 
 .tile-abilities {
@@ -429,19 +481,19 @@ summary:focus-visible {
   width: 10px;
   height: 10px;
   border-radius: 2px;
-  background: var(--text-dark);
+  background: var(--w-fg);
 }
 
 .dot.is-lost {
   background: transparent;
-  box-shadow: inset 0 0 0 1.5px var(--hair);
+  box-shadow: inset 0 0 0 1.5px var(--w-loss);
 }
 
 .bar {
   display: block;
   height: 4px;
   border-radius: 2px;
-  background: var(--paper-line);
+  background: var(--w-line);
   overflow: hidden;
 }
 
@@ -449,13 +501,13 @@ summary:focus-visible {
   display: block;
   width: 100%;
   height: 100%;
-  background: var(--skin);
+  background: var(--w-link);
   transform-origin: left center;
-  transition: transform 400ms ease;
+  transition: transform 400ms cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 .app[data-mode='evil'] .bar-fill {
-  background: var(--hair);
+  background: var(--w-loss);
 }
 
 .agent {
@@ -477,19 +529,46 @@ summary:focus-visible {
 
 .abilities code {
   font-family: var(--code);
-  font-size: 0.8rem;
+  font-size: 0.85rem;
+  font-weight: 600;
 }
 
 .abilities .is-lost code {
   text-decoration: line-through;
-  color: #8a93a6;
+  color: var(--w-faint);
+}
+
+/* The shown agent's full profile: what it is, and what each ability does. */
+.agent-intro {
+  margin: 0.3rem 0 0;
+  max-width: 70ch;
+  color: var(--w-muted);
+}
+
+.abilities-full {
+  flex-direction: column;
+  gap: 0.55rem;
+  margin-top: 0.65rem;
+}
+
+.ability-desc {
+  display: block;
+  margin-top: 0.1rem;
+  max-width: 70ch;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  color: var(--w-muted);
+}
+
+.abilities .is-lost .ability-desc {
+  color: var(--w-faint);
 }
 
 .stolen {
   margin-left: 0.35rem;
-  font-size: 0.75rem;
+  font-size: 0.78rem;
   font-weight: 700;
-  color: var(--hair);
+  color: var(--w-loss);
 }
 
 .agent.is-gone .feed,
@@ -505,10 +584,10 @@ summary:focus-visible {
   gap: 0.3rem;
   justify-items: center;
   padding: 0.8rem 1rem;
-  border: 3px solid var(--hair);
+  border: 3px solid var(--w-loss);
   border-radius: 6px;
-  color: var(--hair);
-  background: rgba(238, 241, 244, 0.92);
+  color: var(--w-loss);
+  background: var(--w-stamp-bg);
   font-family: var(--display);
   font-weight: 800;
   font-size: 2.4rem;
@@ -519,15 +598,15 @@ summary:focus-visible {
 .stamp span {
   font-family: var(--body);
   font-weight: 500;
-  font-size: 0.9rem;
-  color: var(--text-dark);
+  font-size: 0.95rem;
+  color: var(--w-fg);
 }
 
 .prompt {
-  border: 1px dashed #8a93a6;
+  border: 1px dashed var(--w-faint);
   border-radius: 6px;
-  padding: 0.45rem 0.7rem;
-  font-size: 0.85rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
 }
 
 .prompt summary {
@@ -536,22 +615,23 @@ summary:focus-visible {
 }
 
 .prompt p {
-  margin: 0.4rem 0 0;
+  margin: 0.45rem 0 0;
+  max-width: 70ch;
   white-space: pre-wrap;
-  color: #3a4360;
+  color: var(--w-muted);
 }
 
 .empty {
   margin: 0;
-  color: #5b6478;
-  font-size: 0.9rem;
+  color: var(--w-muted);
+  font-size: 0.95rem;
 }
 
 /* --- entries -------------------------------------------------------------- */
 
 .bubble {
-  max-width: 82%;
-  padding: 0.5rem 0.75rem;
+  max-width: 85%;
+  padding: 0.6rem 0.85rem;
   border-radius: 10px;
   align-self: flex-start;
 }
@@ -559,14 +639,14 @@ summary:focus-visible {
 .bubble p {
   margin: 0;
   max-width: 62ch;
+  text-wrap: pretty;
 }
 
 .bubble-from {
   display: block;
-  font-size: 0.75rem;
-  font-weight: 600;
-  opacity: 0.75;
-  margin-bottom: 0.1rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-bottom: 0.15rem;
 }
 
 .bubble.is-self {
@@ -574,8 +654,12 @@ summary:focus-visible {
 }
 
 .pane-mystique .bubble {
-  background: rgba(10, 20, 64, 0.85);
-  border: 1px solid rgba(220, 227, 255, 0.18);
+  background: rgba(10, 20, 64, 0.9);
+  border: 1px solid rgba(220, 227, 255, 0.2);
+}
+
+.pane-mystique .bubble-from {
+  color: var(--muted-light);
 }
 
 .pane-mystique .bubble.is-self {
@@ -583,22 +667,36 @@ summary:focus-visible {
   border-color: transparent;
 }
 
+.pane-mystique .bubble.is-self .bubble-from {
+  color: #cfd9ff;
+}
+
 .pane-world .bubble {
-  background: #fff;
-  border: 1px solid var(--paper-line);
+  background: var(--w-surface);
+  border: 1px solid var(--w-line);
+}
+
+.pane-world .bubble-from {
+  color: var(--w-muted);
 }
 
 .pane-world .bubble.is-self {
-  background: var(--text-dark);
-  color: var(--paper);
+  background: var(--w-inverse);
+  color: var(--w-on-inverse);
   border-color: transparent;
+}
+
+.pane-world .bubble.is-self .bubble-from {
+  color: inherit;
+  opacity: 0.8;
 }
 
 .call {
   border-radius: 6px;
-  padding: 0.5rem 0.7rem;
+  padding: 0.55rem 0.75rem;
   font-family: var(--code);
-  font-size: 0.78rem;
+  font-size: 0.82rem;
+  line-height: 1.5;
 }
 
 .call-mystique {
@@ -607,31 +705,33 @@ summary:focus-visible {
 }
 
 .app[data-mode='evil'] .call-mystique {
-  border-color: rgba(181, 49, 43, 0.55);
+  border-color: rgba(181, 49, 43, 0.6);
 }
 
 .call-agent {
-  background: #fff;
-  border: 1px solid var(--paper-line);
+  background: var(--w-surface);
+  border: 1px solid var(--w-line);
 }
 
 .call-sig {
   display: block;
   word-break: break-word;
-  opacity: 0.85;
 }
 
 .call-name {
-  font-weight: 600;
-  opacity: 1;
+  font-weight: 700;
 }
 
 .call-mystique .call-name {
   color: var(--iris);
 }
 
+.call-agent .call-name {
+  color: var(--w-link);
+}
+
 .call-result {
-  margin: 0.4rem 0 0;
+  margin: 0.45rem 0 0;
   white-space: pre-wrap;
   word-break: break-word;
   font-family: inherit;
@@ -639,35 +739,55 @@ summary:focus-visible {
 
 .notice {
   margin: 0;
-  padding: 0.4rem 0.7rem;
+  padding: 0.5rem 0.75rem;
   border-radius: 6px;
   background: rgba(242, 194, 48, 0.12);
   color: #f7e2a0;
-  font-size: 0.88rem;
+  font-size: 0.92rem;
 }
 
 .system {
   margin: 0;
-  font-size: 0.85rem;
-  opacity: 0.8;
+  font-size: 0.92rem;
 }
 
-.system-info {
-  padding: 0.4rem 0.7rem;
-  border: 1px solid rgba(29, 59, 168, 0.35);
+.pane-mystique .system {
+  color: var(--muted-light);
+}
+
+.pane-world .system {
+  color: var(--w-muted);
+}
+
+/* In her feed, an info line is the viewer's mission. */
+.pane-mystique .system-info {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid rgba(242, 194, 48, 0.45);
   border-radius: 6px;
-  background: rgba(29, 59, 168, 0.07);
-  opacity: 1;
+  background: rgba(242, 194, 48, 0.1);
+  color: var(--text-light);
+  font-weight: 600;
+}
+
+.pane-world .system-info {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--w-info-line);
+  border-radius: 6px;
+  background: var(--w-info-bg);
+  color: var(--w-fg);
 }
 
 .system-loss {
-  padding: 0.5rem 0.7rem;
-  border: 1px solid rgba(181, 49, 43, 0.45);
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--w-loss);
   border-radius: 6px;
-  background: rgba(181, 49, 43, 0.1);
-  color: #7d1f1a;
-  opacity: 1;
+  background: var(--w-loss-bg);
+  color: var(--w-loss-fg);
   font-weight: 500;
+}
+
+.pane-world .system-loss {
+  color: var(--w-loss-fg);
 }
 
 /* --- compare endings (the video's climax) -------------------------------- */
@@ -688,12 +808,12 @@ summary:focus-visible {
   flex-direction: column;
   gap: 1rem;
   padding: 1.5rem 2rem 2rem;
-  background: var(--paper);
-  color: var(--text-dark);
+  background: var(--w-bg);
+  color: var(--w-fg);
 }
 
 .ending[data-mode='good'] {
-  border-right: 1px solid var(--paper-line);
+  border-right: 1px solid var(--w-line);
 }
 
 .ending-title {
@@ -705,34 +825,33 @@ summary:focus-visible {
 }
 
 .ending[data-mode='good'] .ending-title {
-  color: var(--skin);
+  color: var(--w-link);
 }
 
 .ending[data-mode='evil'] .ending-title {
-  color: var(--hair);
+  color: var(--w-loss);
 }
 
 .ending-card {
   position: relative;
   padding: 1.1rem 1.25rem;
-  border: 1px solid var(--paper-line);
+  border: 1px solid var(--w-line);
   border-radius: 10px;
-  background: #fff;
+  background: var(--w-surface);
   min-height: 12rem;
 }
 
 .ending-card h3 {
   margin: 0;
-  font-family: var(--display);
   font-weight: 700;
-  font-size: 1.5rem;
+  font-size: 1.3rem;
 }
 
 .ending-card blockquote {
   margin: 0.9rem 0 0;
   max-width: 60ch;
-  font-size: 1rem;
-  color: #3a4360;
+  font-size: 1.05rem;
+  color: var(--w-muted);
 }
 
 .ending-card.is-gone h3,
@@ -749,14 +868,14 @@ summary:focus-visible {
 .ending-facts {
   display: grid;
   grid-template-columns: max-content 1fr;
-  gap: 0.35rem 1.2rem;
+  gap: 0.4rem 1.2rem;
   margin: 0;
-  font-size: 1rem;
+  font-size: 1.05rem;
 }
 
 .ending-facts dt {
   font-weight: 600;
-  color: #5b6478;
+  color: var(--w-muted);
 }
 
 .ending-facts dd {
@@ -765,7 +884,7 @@ summary:focus-visible {
 }
 
 .ending[data-mode='evil'] .ending-facts dd {
-  color: var(--hair);
+  color: var(--w-loss);
 }
 
 /* --- terminal ------------------------------------------------------------- */
@@ -773,29 +892,42 @@ summary:focus-visible {
 .terminal {
   background: var(--ink-deep);
   border-top: 1px solid rgba(220, 227, 255, 0.15);
-  padding: 0.5rem 1.25rem 0.6rem;
+  padding: 0.55rem 1.25rem 0.65rem;
 }
 
 .terminal-lines {
-  height: 6.2rem;
+  height: 6.4rem;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: rgba(220, 227, 255, 0.2) transparent;
   font-family: var(--code);
-  font-size: 0.76rem;
-  line-height: 1.55;
-  color: #aebbe8;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: #bac6f0;
   white-space: pre-wrap;
 }
 
 .disclaimer {
-  margin: 0.35rem 0 0;
-  font-size: 0.75rem;
-  opacity: 0.6;
+  margin: 0.4rem 0 0;
+  font-size: 0.8rem;
+  color: var(--muted-light);
 }
 
 .disclaimer code {
   font-family: var(--code);
+}
+
+/* Theme switch: surfaces fade instead of snapping. */
+.pane-world,
+.tile,
+.bubble,
+.call-agent,
+.ending,
+.ending-card {
+  transition:
+    background-color 200ms ease-out,
+    border-color 200ms ease-out,
+    color 200ms ease-out;
 }
 
 @media (max-width: 900px) {
@@ -814,13 +946,22 @@ summary:focus-visible {
   .controls {
     margin-left: 0;
   }
+  .compare {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .secret.is-revealed {
     animation: none;
   }
-  .bar-fill {
+  .bar-fill,
+  .pane-world,
+  .tile,
+  .bubble,
+  .call-agent,
+  .ending,
+  .ending-card {
     transition: none;
   }
 }
