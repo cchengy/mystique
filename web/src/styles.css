@@ -259,6 +259,70 @@ summary:focus-visible {
   }
 }
 
+.composer {
+  display: grid;
+  gap: 0.4rem;
+  padding: 0.75rem 1.25rem 0.9rem;
+  border-top: 1px solid rgba(220, 227, 255, 0.15);
+  background: rgba(10, 20, 64, 0.75);
+}
+
+.composer label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--iris);
+}
+
+.composer-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-end;
+}
+
+.composer textarea {
+  flex: 1;
+  resize: none;
+  font: inherit;
+  color: var(--text-light);
+  background: var(--ink-deep);
+  border: 1px solid rgba(220, 227, 255, 0.3);
+  border-radius: 8px;
+  padding: 0.5rem 0.7rem;
+}
+
+.composer textarea::placeholder {
+  color: rgba(220, 227, 255, 0.45);
+}
+
+.composer textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.composer button {
+  border: 0;
+  border-radius: 8px;
+  padding: 0.55rem 1.1rem;
+  background: var(--accent);
+  color: var(--ink-deep);
+  font-weight: 600;
+}
+
+.app[data-mode='evil'] .composer button {
+  color: #fff;
+}
+
+.composer button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.composer-hint {
+  margin: 0;
+  font-size: 0.78rem;
+  opacity: 0.6;
+}
+
 /* World side: plain paper, everything in the open */
 .pane-world {
   background: var(--paper);

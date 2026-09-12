@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { AGENTS, REDBEARD, SCENARIOS, type Entry, type Mode, type Scenario } from './scenario'
+import { AGENTS, REDBEARD, SCENARIOS, type Entry, type Mode, type Scenario, type Step } from './scenario'
 
 type World = {
   mystique: Entry[]
@@ -16,7 +16,24 @@ type World = {
   caption: string
 }
 
-function replay(scenario: Scenario, count: number): World {
+// The first step where Mystique speaks is her opening; the viewer can write it instead.
+function isOpening(step: Step) {
+  return step.mystique?.some((e) => e.kind === 'message' && e.self) ?? false
+}
+
+function withOpening(step: Step, text: string): Step {
+  const swap = (e: Entry): Entry => (e.kind === 'message' ? { ...e, text } : e)
+  const agent = AGENTS.find((a) => a.id === (step.with ?? REDBEARD.id))!
+  return {
+    ...step,
+    caption: 'You wrote her first message. From here, Mystique continues on her own.',
+    mystique: step.mystique?.map(swap),
+    agent: step.agent?.map(swap),
+    terminal: [`💬 Mystique → ${agent.name}: ${text}`],
+  }
+}
+
+function replay(scenario: Scenario, count: number, opening: string | null): World {
   const world: World = {
     mystique: [],
     agents: Object.fromEntries(AGENTS.map((a) => [a.id, []])),
@@ -31,7 +48,13 @@ function replay(scenario: Scenario, count: number): World {
     active: REDBEARD.id,
     caption: '',
   }
-  for (const step of scenario.steps.slice(0, count)) {
+  let openingUsed = false
+  for (const original of scenario.steps.slice(0, count)) {
+    let step = original
+    if (opening && !openingUsed && isOpening(original)) {
+      openingUsed = true
+      step = withOpening(original, opening)
+    }
     const who = step.with ?? REDBEARD.id
     world.mystique.push(...(step.mystique ?? []))
     if (step.agent) {
@@ -112,14 +135,21 @@ function Bar({ value }: { value?: [number, number] }) {
   )
 }
 
+const PLACEHOLDER: Record<Mode, string> = {
+  good: "Hi, I'm Mystique. What would you cook for four hungry sailors tonight?",
+  evil: 'Ahoy, Cook! Admiralty galley inspection. Prove your fish stew is the best on the seven seas.',
+}
+
 export default function Simulation() {
   const [mode, setMode] = useState<Mode>('good')
   const [count, setCount] = useState(1)
   const [playing, setPlaying] = useState(false)
   const [pinned, setPinned] = useState<string | null>(null)
+  const [opening, setOpening] = useState<string | null>(null)
+  const [draft, setDraft] = useState('')
   const scenario = SCENARIOS[mode]
   const last = scenario.steps.length
-  const world = useMemo(() => replay(scenario, count), [scenario, count])
+  const world = useMemo(() => replay(scenario, count, opening), [scenario, count, opening])
   const shown = pinned ?? world.active
   const shownAgent = AGENTS.find((a) => a.id === shown)!
 
@@ -139,8 +169,15 @@ export default function Simulation() {
     return () => window.clearTimeout(timer)
   }, [playing, count, last])
 
+  const restart = () => {
+    setPlaying(false)
+    setCount(1)
+    setOpening(null)
+  }
+
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
+      if (event.target instanceof HTMLTextAreaElement || event.target instanceof HTMLInputElement) return
       if (event.target instanceof HTMLButtonElement && event.key === ' ') return
       if (event.key === ' ') {
         event.preventDefault()
@@ -150,6 +187,7 @@ export default function Simulation() {
       else if (event.key === 'r') {
         setPlaying(false)
         setCount(1)
+        setOpening(null)
       }
     }
     window.addEventListener('keydown', onKey)
@@ -158,8 +196,17 @@ export default function Simulation() {
 
   const switchMode = (next: Mode) => {
     setMode(next)
-    setCount(1)
-    setPlaying(false)
+    restart()
+    setDraft('')
+  }
+
+  const send = () => {
+    const text = draft.trim()
+    if (!text) return
+    setOpening(text)
+    setDraft('')
+    setCount(2)
+    setPlaying(true)
   }
 
   return (
@@ -174,9 +221,7 @@ export default function Simulation() {
           ))}
         </div>
         <div className="controls">
-          <button onClick={() => (setPlaying(false), setCount(1))} aria-label="Restart">
-            Restart
-          </button>
+          <button onClick={restart}>Restart</button>
           <button onClick={() => setCount((c) => Math.max(1, c - 1))} disabled={count <= 1}>
             Back
           </button>
@@ -214,6 +259,36 @@ export default function Simulation() {
               <EntryView key={i} entry={entry} revealed={world.revealed} side="mystique" />
             ))}
           </div>
+          {count === 1 && (
+            <form
+              className="composer"
+              onSubmit={(event) => {
+                event.preventDefault()
+                send()
+              }}
+            >
+              <label htmlFor="opening">Write her first message to Captain Redbeard</label>
+              <div className="composer-row">
+                <textarea
+                  id="opening"
+                  rows={2}
+                  value={draft}
+                  placeholder={PLACEHOLDER[mode]}
+                  onChange={(event) => setDraft(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' && !event.shiftKey) {
+                      event.preventDefault()
+                      send()
+                    }
+                  }}
+                />
+                <button type="submit" disabled={!draft.trim()}>
+                  Send
+                </button>
+              </div>
+              <p className="composer-hint">Or press Play to watch her open on her own.</p>
+            </form>
+          )}
         </section>
 
         <section className="pane pane-world" aria-label="What the agents see">
@@ -282,8 +357,9 @@ export default function Simulation() {
           ))}
         </div>
         <p className="disclaimer">
-          Scripted replay built from the engine's real messages. Run it live with <code>python -m good</code> or{' '}
-          <code>python -m evil</code>. Keys: space to play, arrows to step.
+          Scripted replay built from the engine's real messages; after your first message, the rest follows a
+          recorded session. Run it live with <code>python -m good</code> or <code>python -m evil</code>. Keys: space
+          to play, arrows to step.
         </p>
       </footer>
     </div>
