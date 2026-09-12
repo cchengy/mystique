@@ -415,8 +415,9 @@ summary:focus-visible {
 }
 
 .prompt {
-  border-left: 3px solid var(--text-dark);
-  padding: 0.3rem 0 0.3rem 0.7rem;
+  border: 1px dashed #8a93a6;
+  border-radius: 6px;
+  padding: 0.45rem 0.7rem;
   font-size: 0.85rem;
 }
 
@@ -493,13 +494,16 @@ summary:focus-visible {
 
 .call-mystique {
   background: rgba(10, 20, 64, 0.9);
-  border-left: 3px solid var(--accent);
+  border: 1px solid rgba(242, 194, 48, 0.3);
+}
+
+.app[data-mode='evil'] .call-mystique {
+  border-color: rgba(181, 49, 43, 0.55);
 }
 
 .call-agent {
   background: #fff;
   border: 1px solid var(--paper-line);
-  border-left: 3px solid var(--text-dark);
 }
 
 .call-sig {
@@ -527,8 +531,9 @@ summary:focus-visible {
 .notice {
   margin: 0;
   padding: 0.4rem 0.7rem;
-  border-left: 3px solid var(--iris);
-  background: rgba(242, 194, 48, 0.08);
+  border-radius: 6px;
+  background: rgba(242, 194, 48, 0.12);
+  color: #f7e2a0;
   font-size: 0.88rem;
 }
 
@@ -540,14 +545,16 @@ summary:focus-visible {
 
 .system-info {
   padding: 0.4rem 0.7rem;
-  border-left: 3px solid var(--skin);
-  background: rgba(29, 59, 168, 0.08);
+  border: 1px solid rgba(29, 59, 168, 0.35);
+  border-radius: 6px;
+  background: rgba(29, 59, 168, 0.07);
   opacity: 1;
 }
 
 .system-loss {
   padding: 0.5rem 0.7rem;
-  border-left: 3px solid var(--hair);
+  border: 1px solid rgba(181, 49, 43, 0.45);
+  border-radius: 6px;
   background: rgba(181, 49, 43, 0.1);
   color: #7d1f1a;
   opacity: 1;
