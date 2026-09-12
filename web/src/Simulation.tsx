@@ -641,7 +641,10 @@ export default function Simulation() {
               </div>
             )}
 
-            {(live || count === 1) && (
+            {/* No composer while the gate is up: the API refuses anyway, and letting
+                someone type a mission only to be turned away is worse than not
+                offering the box. */}
+            {(live || count === 1) && !(live && authExigida && !liberado) && (
               <form
                 className="composer"
                 onSubmit={(event) => {
