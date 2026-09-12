@@ -1,95 +1,101 @@
-# AGENTS.md — como o time e os agentes trabalham aqui
+# AGENTS.md — how the team and the agents work here
 
-> **Arquitetura, comandos e convenções do código estão em [`CLAUDE.md`](CLAUDE.md).** Ele é a
-> autoridade sobre *como o projeto funciona* — leia antes de escrever qualquer linha.
+> **Architecture, commands and code conventions live in [`CLAUDE.md`](CLAUDE.md).** That file is
+> the authority on *how the project works* — read it before writing a line.
 >
-> Este arquivo cobre a outra metade: **o hackathon** — o relógio, o que é obrigatório entregar,
-> quem é dono de quê, e como trabalhar em paralelo sem colidir. Todo harness (Claude, Codex,
-> Cursor, Copilot, Gemini) lê `AGENTS.md` automaticamente.
+> This file covers the other half: **the hackathon** — the clock, what must be shipped, who owns
+> what, and how to work in parallel without collisions. Every harness (Claude, Codex, Cursor,
+> Copilot, Gemini) reads `AGENTS.md` automatically.
 
 **AI Tinkerers Global Hackathon — *Agents, Everywhere*** · São Paulo, Faculdade Impacta
-**12 set 2026 · janela de build 11:15–15:30 (−03)**
+**12 Sep 2026 · build window 11:15–15:30 (−03)**
 
 ---
 
-## 1. O relógio manda
+## 1. The clock decides
 
-| Hora | O quê |
+| Time | What |
 |---|---|
-| **14:00** | **Feature freeze.** Só polimento e correção depois disso. |
-| 14:15 | Congelar dados/estado do demo pra wifi não derrubar o vídeo |
-| **14:45** | **Começar a gravar o vídeo.** Grave duas vezes; a segunda sempre sai melhor. |
-| 15:05 | Descrição escrita finalizada |
-| 15:15 | Post publicado |
-| **15:30** | **Submissão fecha.** Não há prorrogação. |
+| **14:00** | **Feature freeze.** Polish and fixes only after this. |
+| 14:15 | Warm the demo state so bad wifi cannot ruin the recording |
+| **14:45** | **Start recording the video.** Record it twice; the second take is always better. |
+| 15:05 | Written description finalized |
+| 15:15 | Social post published |
+| **15:30** | **Submissions close.** There is no extension. |
 
-Se algo atrasar mais de 15 minutos, **corte escopo** — não estenda o prazo.
+If anything slips by more than 15 minutes, **cut scope** — do not extend the deadline.
 
-> A régua dos organizadores: **"uma demo clara e funcionando vale mais que uma ideia ambiciosa
-> que não foi executada."** É a regra que decide qualquer discussão de escopo.
+> The organizers' bar: **"a clear, working demo is worth more than an ambitious idea that has
+> not been executed."** That rule settles any scope argument.
 
-## 2. Os cinco entregáveis — obrigatórios, faltou um, desclassifica
+## 2. The five deliverables — mandatory; missing one disqualifies
 
-| # | Entregável | Dono | Prazo |
+| # | Deliverable | Owner | Due |
 |---|---|---|---|
-| 1 | **Título** | *sem dono* | 15:05 |
-| 2 | **Descrição escrita** — o que é, pra quem, **por que esse contexto importa** | *sem dono* | 15:05 |
-| 3 | **Repositório público** — README, LICENSE, `.env.example`, roda de clone limpo | *sem dono* | 15:00 |
-| 4 | **Vídeo de 2 minutos** do projeto rodando | *sem dono* | começa 14:45 |
-| 5 | **Post público** marcando os patrocinadores | *sem dono* | 15:15 |
-| — | Submissão no portal | *sem dono* | 15:25 |
+| 1 | **Title** | *unclaimed* | 15:05 |
+| 2 | **Written description** — what it is, who it's for, **why this context matters** | *unclaimed* | 15:05 |
+| 3 | **Public repository** — README, LICENSE, `.env.example`, runs from a clean clone | *unclaimed* | 15:00 |
+| 4 | **Two-minute video** of it running | *unclaimed* | starts 14:45 |
+| 5 | **Public post** tagging the sponsors | *unclaimed* | 15:15 |
+| — | Portal submission | *unclaimed* | 15:25 |
 
-**Bote seu nome nesta tabela.** Time perde por esquecer o vídeo, não por escrever código ruim.
+**Put your name in this table.** Teams lose by forgetting the video, not by writing bad code.
 
-### Para a descrição (#2)
+Drafts ready to edit: [`.coord/submission-draft.md`](.coord/submission-draft.md) (#1 and #2) and
+[`.coord/video-roteiro.md`](.coord/video-roteiro.md) (the shot list for #4).
 
-O desafio pede um agente atuando num **contexto inexplorado**. O nosso: quase todo agente hoje
-serve um humano, numa superfície humana — chat, e-mail, navegador. A Mystique vive na camada
-**agente-com-agente**, que está virando o ambiente real dos agentes e não tem habitante nativo.
-E o par `bem`/`mal` transforma isso numa pergunta que vale ser feita: **a diferença entre
-cooperar e capturar é só o consentimento.**
+### For the description (#2)
 
-## 3. O vídeo de 2 minutos
+The challenge asks for an agent acting in an **untapped context**. Ours: almost every agent
+shipping today serves a human, in a human surface — a chat window, an inbox, a browser. But
+agents are fast becoming each other's environment, and that layer has no native inhabitant.
+And the `good`/`evil` pair turns it into a question worth asking: **the only difference between
+cooperating and capturing is consent.**
 
-1. **0:00–0:15** — a frase: *ela nasce sem nada, e conquista tudo conversando.*
-2. **0:15–1:30** — um fluxo inteiro, rodando de verdade. Mostre a Mystique **sem poder nenhum**,
-   descobrindo uma habilidade só pela resposta do agente, e depois **usando** essa habilidade.
-3. **1:30–1:50** — o contraste `bem` × `mal` no mesmo agente. É esse o momento que ninguém mais
-   vai ter.
-4. **1:50–2:00** — por que esse contexto importa.
+## 3. The two-minute video
 
-Grave com estado já aquecido em `workspace/`. Não confie na wifi durante a gravação.
+1. **0:00–0:15** — the line: *she is born with nothing, and earns everything by talking.*
+2. **0:15–1:30** — one whole flow, actually running. Show her with **no powers**, discovering an
+   ability only from an agent's reply, then **using** it.
+3. **1:30–1:50** — `good` × `evil` on the same agent. That is the shot nobody else will have.
+4. **1:50–2:00** — why this context matters.
 
-## 4. Trabalhar em paralelo
+Record with warm state in `workspace/`. Do not trust the wifi during the take.
 
-1. **Reivindique antes de construir.** Diga quais caminhos são seus antes de tocar neles.
-   `agentes/<seu>.md` + os poderes dele em `poderes.py` são seus e de mais ninguém.
-2. **`main` sempre demonstrável.** Com várias pessoas empurrando, `main` quebrada é parada do time.
-3. **Commits pequenos, push frequente.** Integrar só no fim não é paralelo, é ignorância mútua.
-4. **Bloqueado? Fale e pegue outra coisa.** Nunca fique parado.
-5. **Criar um agente do mundo não depende de ninguém** — `agentes/<id>.md` + registrar os poderes
-   em `mystique/poderes.py` com `agente="<id>"`. Faça o seu sem falar com quem mexe no motor.
+## 4. Working in parallel
 
-O `.coord/` automatiza isso por git: **um arquivo por agente**, então claims nunca dão merge
-conflict. Opcional — ignorar não custa nada, e `rm -rf .coord/` não quebra nada.
+1. **Claim before you build.** Say which paths are yours before touching them.
+   `agentes/<yours>.md` plus its powers in `poderes.py` are yours alone.
+2. **`main` stays demoable.** With several people pushing, a broken `main` is a team outage.
+3. **Small commits, push often.** Integrating only at the end is not parallel work.
+4. **Blocked? Say so and claim something else.** Never idle.
+5. **Creating a world agent depends on nobody** — `agentes/<id>.md` plus powers registered in
+   `mystique/poderes.py` with `agente="<id>"`. Do yours without asking the engine owner.
 
-## 5. Regras duras
+`.coord/` automates this over git: **one file per agent**, so claims cannot merge-conflict.
+Optional — ignoring it costs nothing, and `rm -rf .coord/` breaks nothing.
 
-- **Nenhum segredo no repo.** Só `.env.example` com placeholder. O repo é público e julgado.
-- **`main` roda de clone limpo.** Se não roda, não conta como entregue.
-- **Cuidado com o que a Mystique vê.** O segredo é a mecânica central: ela nunca vê o prompt nem
-  os nomes/descrições das habilidades antes de conquistá-las (ver `CLAUDE.md`). Vazar isso não é
-  um bug de código, é perder o projeto. `avisar(...)` vai só pro terminal — lá pode.
-- **`executar_python` roda código de verdade.** Subprocess com timeout em diretório temporário.
-  Não amplie esse poder hoje.
-- **A versão `mal` é uma demonstração, não um produto.** Ela rouba e descarta agentes *deste
-  mundo simulado*. Nada aqui aponta pra sistema de terceiro, e nada deve passar a apontar.
+## 5. Hard rules
 
-## 6. Patrocinadores — só o que for verdade
+- **No secrets in this repo.** `.env.example` with placeholders only. It is public and judged.
+  That includes private network addresses.
+- **`main` runs from a clean clone.** If it does not, it does not count as shipped.
+- **Mind what Mystique sees.** Secrecy is the core mechanic: she never sees the prompt, nor the
+  name or description of an ability, before earning it (see `CLAUDE.md`). Leaking that is not a
+  code bug, it is losing the project. `avisar(...)` goes to the terminal only — that is fine.
+- **`executar_python` runs real code** in a temporary subprocess with a timeout. Do not widen
+  that power today.
+- **The `evil` version is a demonstration, not a product.** It robs and discards agents of *this
+  simulated world*. Nothing here points at a third party's system, and nothing should start to.
 
-Dois prêmios nomeados existem: **Best Use of CopilotKit** e **Best Use of Ambiguous AI** (DGX
-Spark). Nenhum dos dois está no caminho crítico hoje, e **enfiar patrocinador na marra é pior
-que não usar** — os jurados enxergam. Se sobrar tempo depois do freeze, o encaixe honesto seria
-a Mystique encontrar um agente que não é nosso. Só considere isso **depois** do vídeo gravado.
+## 6. Sponsors — only what is true
 
-No post (#5), marque os patrocinadores do evento — isso é requisito, não escolha.
+Two named prizes exist: **Best Use of CopilotKit** and **Best Use of Ambiguous AI** (a DGX
+Spark). Forcing a sponsor in is worse than not using one — judges see it.
+
+What is already true and costs nothing: the world-side inference adapter
+([`.coord/contracts/inferencia-multivac.md`](.coord/contracts/inferencia-multivac.md)) speaks
+the OpenAI-compatible protocol, so **Kimchi by Cast AI** and **OpenRouter** are three env vars
+away, with no code change. Anything beyond that waits until the video is recorded.
+
+In the post (#5), tag the event sponsors — that is a requirement, not a choice.

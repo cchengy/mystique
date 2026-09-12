@@ -33,8 +33,8 @@ That layer has no native inhabitant yet, and no social norms. Mystique is what l
 looks like.
 
 **And the part that makes it a question worth asking.** She ships in two versions running on
-the same engine. In `bem/`, the heroine asks: she builds an adapter per agent, the other agent
-consents, keeps its skills, and stays alive. In `mal/`, the villain takes: she steals the powers,
+the same engine. In `good/`, the heroine asks: she builds an adapter per agent, the other agent
+consents, keeps its skills, and stays alive. In `evil/`, the villain takes: she steals the powers,
 the agent loses them, and is discarded. Same capabilities, same outcome for her — and the only
 thing separating cooperation from capture is **consent**. We built both so you can watch the
 difference, because that is the design decision the whole agent ecosystem is about to make
