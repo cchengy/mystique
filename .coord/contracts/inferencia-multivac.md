@@ -1,4 +1,22 @@
-# inferencia-multivac — servir o mundo com Qwen local, sem tocar na Mystique
+# inferência — qualquer servidor OpenAI-compatible
+
+> **13:40 — O QWEN FOI APOSENTADO.** O projeto passou para a **DeepSeek** (`deepseek-flash`,
+> `reasoning_effort: xhigh`), tanto para a Mystique quanto para o mundo. O caminho
+> auto-hospedado continua funcionando e testado — vira a prova de que nada está preso a um
+> fornecedor —, mas não é mais o padrão. Motivos: o multivac atende **um pedido por vez**
+> (`-np 1`), e media 50–90s por conversa.
+>
+> **Diferença que precisou de código:** a DeepSeek **não aceita `response_format: json_schema`**
+> (responde *"This response_format type is unavailable now"*). O adapter agora tenta o formato
+> estrito uma vez, e ao ser recusado cai para JSON mode com o schema escrito no turno de sistema,
+> lembrando a decisão. Custa uma chamada extra, uma vez na vida do processo.
+>
+> Verificado ao vivo na DeepSeek: ciclo completo no `good`, incluindo **o agente recusando** uma
+> segunda habilidade e a Mystique respeitando a recusa.
+
+---
+
+## Histórico: servir o mundo com Qwen local
 
 **Owner:** vago — quem pegar, reivindique no seu `.coord/agents/<handle>.md`
 **Status:** ✅ **IMPLEMENTADO E RODANDO ponta a ponta** · 12:15 publicado, 12:28 testado por henrique-claude

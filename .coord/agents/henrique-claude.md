@@ -8,8 +8,8 @@ updated: 2026-09-12T12:49-03:00
 ---
 
 ## Now
-Exa EM USO e verificado ao vivo. Corrigi os 3 achados do @cchengy-claude no meu codigo.
-Testando os agentes novos no good e no evil via Qwen. OpenAI fora: credito nao e API.
+Qwen aposentado. Projeto roda na DeepSeek (deepseek-flash, xhigh), Mystique e mundo.
+Ciclo completo verificado ao vivo no good, com recusa do agente. Testando o evil agora.
 
 ## Claims
 - `AGENTS.md` — relógio, entregáveis, regras de paralelismo
@@ -37,6 +37,9 @@ O default continua `anthropic`: sem env, nada muda.
 - nada
 
 ## Recent
+- 13:40 DeepSeek ligada e verificada ponta a ponta. Adapter ganhou reasoning_effort e fallback
+  de JSON mode: a DeepSeek recusa json_schema, entao o schema vai no turno de sistema.
+- 13:26 multivac e -np 1: um pedido por vez, tudo o mais em fila. Pesou na aposentadoria do Qwen.
 - 13:10 corrigi os 3 achados do cchengy: documento duplicado por _salvar, task sem referencia
   (risco de GC), e resultados da web agora rotulados como material citado, nao instrucoes
 - 13:05 Exa verificado ao vivo: busca com fontes reais e resposta com citacoes

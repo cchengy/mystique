@@ -36,6 +36,8 @@ PROVEDOR = os.getenv("MYSTIQUE_WORLD_PROVIDER", "anthropic").strip().lower()
 BASE_URL = os.getenv("MYSTIQUE_WORLD_BASE_URL", "").rstrip("/")
 MODELO = os.getenv("MYSTIQUE_WORLD_MODEL", "")
 CHAVE = os.getenv("MYSTIQUE_WORLD_API_KEY", "not-used")  # ASCII only: it goes in a header
+# Reasoning effort, when the server takes it (DeepSeek does: low/medium/high/xhigh).
+ESFORCO = os.getenv("MYSTIQUE_EFFORT", "").strip()
 
 
 def ativo() -> bool:
@@ -111,6 +113,17 @@ def _formato(output_config: dict | None):
 
 # --- OpenAI -> Anthropic ------------------------------------------------------
 
+def _com_esquema(mensagens: list[dict], esquema: dict) -> list[dict]:
+    """Plain JSON mode has no schema, so state it in the system turn instead."""
+    instrucao = "Reply ONLY with JSON matching this schema: " + json.dumps(esquema, ensure_ascii=False)
+    saida = [dict(m) for m in mensagens]
+    for m in saida:
+        if m.get("role") == "system":
+            m["content"] = f"{m.get('content') or ''}\n\n{instrucao}".strip()
+            return saida
+    return [{"role": "system", "content": instrucao}, *saida]
+
+
 def _resposta(bruto: dict):
     escolha = bruto["choices"][0]
     msg = escolha.get("message") or {}
@@ -133,6 +146,11 @@ def _resposta(bruto: dict):
 
 class ClienteOpenAI:
     """Minimal async client with the same call shape Mundo._chamar already uses."""
+
+    # Not every OpenAI-compatible server takes json_schema. DeepSeek, for one, answers
+    # "This response_format type is unavailable now" and only does plain JSON mode. We
+    # try the strict form once, then fall back and remember, so it costs one call ever.
+    _json_schema_ok = True
 
     def __init__(self, base_url: str, modelo: str, chave: str, timeout: float = 60.0):
         # httpx2 is what the anthropic package already depends on, so this adds
@@ -162,12 +180,25 @@ class ClienteOpenAI:
             escolha = _escolha(tool_choice)
             if escolha:
                 corpo["tool_choice"] = escolha
+        if ESFORCO:
+            corpo["reasoning_effort"] = ESFORCO
+
         formato = _formato(output_config)
-        if formato:
+        esquema = ((output_config or {}).get("format") or {}).get("schema")
+        if formato and type(self)._json_schema_ok:
             corpo["response_format"] = formato
+        elif esquema:
+            corpo["response_format"] = {"type": "json_object"}
+            corpo["messages"] = _com_esquema(corpo["messages"], esquema)
 
         try:
             r = await self._http.post("/chat/completions", json=corpo)
+            if r.status_code == 400 and formato and type(self)._json_schema_ok and "response_format" in r.text:
+                # This server does not do json_schema. Degrade once, for good.
+                type(self)._json_schema_ok = False
+                corpo["response_format"] = {"type": "json_object"}
+                corpo["messages"] = _com_esquema(corpo["messages"], esquema)
+                r = await self._http.post("/chat/completions", json=corpo)
             r.raise_for_status()
             return _resposta(r.json())
         except Exception as erro:
