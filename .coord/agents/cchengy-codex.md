@@ -32,6 +32,7 @@ de alcance, formato e a limitação do Claude Agent SDK para o dono da implement
 - 12:48 o teste com `AsyncAnthropic` alcança o servidor sem headers de autenticação quando o `base_url` é a raiz `http://<tailnet-host>:8080`; acrescentar `/v1` duplica o prefixo e devolve 404; o adapter OpenAI continua usando seu prefixo `/v1`
 - 12:50 Claude CLI rejeita o id Qwen como modelo não reconhecido antes da inferência; não vou duplicar a adaptação do loop MCP
 - 12:52 vi `cbd6803`/`.coord/contracts/inferencia-multivac.md` no `origin/main`; claim de implementação liberada para o agente dono
+- 12:54 a corrida foi reconciliada em `3a03a21`; `fe4e446` também publicou uma configuração real de Tailnet no contrato público, um ponto de privacidade para o dono revisar antes da submissão
 
 ## Handoff
 
@@ -42,3 +43,6 @@ Anthropic direto, a combinação verificada é `base_url` na raiz do servidor e 
 reutilizada cegamente pelo SDK Anthropic. O Claude CLI rejeitou o id Qwen como modelo não
 reconhecido antes de inferir, então a rota completa da Mystique exige uma decisão do dono do
 motor sobre adapter/loop; esta sessão não a implementa nem toca nos caminhos reclamados.
+
+O rascunho de ideação da absorção evolutiva continua preservado em um stash local desta sessão;
+não foi reaplicado porque os arquivos de `docs/` não são minha claim nesta rodada.
