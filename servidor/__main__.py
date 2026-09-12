@@ -40,8 +40,9 @@ def main() -> None:
 
     app = criar_app(mundo, PERSONA, ferramentas)
     porta = int(os.getenv("SERVIDOR_PORTA", "8000"))
-    print(f"servidor ({modo}) - http://127.0.0.1:{porta} - stream at /agui/stream")
-    uvicorn.run(app, host="127.0.0.1", port=porta)
+    host = os.getenv("SERVIDOR_HOST", "127.0.0.1")
+    print(f"servidor ({modo}) - http://{host}:{porta} - stream at /agui/stream")
+    uvicorn.run(app, host=host, port=porta)
 
 
 if __name__ == "__main__":

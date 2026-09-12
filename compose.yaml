@@ -1,0 +1,33 @@
+services:
+  mystique:
+    build: .
+    restart: unless-stopped
+    expose:
+      - "8000"
+    environment:
+      MYSTIQUE_MODO: ${MYSTIQUE_MODO:-good}
+      MYSTIQUE_PROVIDER: ${MYSTIQUE_PROVIDER:-openai}
+      MYSTIQUE_BASE_URL: ${MYSTIQUE_BASE_URL}
+      MYSTIQUE_MODEL_ID: ${MYSTIQUE_MODEL_ID}
+      MYSTIQUE_WORLD_PROVIDER: ${MYSTIQUE_WORLD_PROVIDER:-openai}
+      MYSTIQUE_WORLD_BASE_URL: ${MYSTIQUE_WORLD_BASE_URL}
+      MYSTIQUE_WORLD_MODEL: ${MYSTIQUE_WORLD_MODEL}
+      MYSTIQUE_WORLD_API_KEY: ${MYSTIQUE_WORLD_API_KEY}
+      MYSTIQUE_BUDGET_USD: ${MYSTIQUE_BUDGET_USD:-5}
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 256
+    mem_limit: 1g
+    cpus: 1.0
+    volumes:
+      - mystique-workspace:/app/good/workspace
+      - mystique-evil-workspace:/app/evil/workspace
+
+volumes:
+  mystique-workspace:
+  mystique-evil-workspace:

@@ -4,6 +4,7 @@ import asyncio
 import os
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
@@ -71,10 +72,25 @@ def test_server_loads_provider_environment_before_importing_the_engine() -> None
     assert resultado.returncode == 0, resultado.stderr
 
 
+def test_server_can_serve_the_built_main_ui() -> None:
+    mundo = SimpleNamespace(modo="good")
+    with tempfile.TemporaryDirectory() as pasta:
+        dist = Path(pasta)
+        (dist / "index.html").write_text("<h1>Mystique live</h1>", encoding="utf-8")
+        with patch.dict(os.environ, {"MYSTIQUE_WEB_DIST": str(dist)}):
+            app = criar_app(mundo, "persona", lambda _: [])
+        with TestClient(app) as client:
+            response = client.get("/")
+    assert response.status_code == 200
+    assert "Mystique live" in response.text
+
+
 if __name__ == "__main__":
     test_mission_is_scheduled_on_the_application_event_loop()
     test_local_frontend_origins_are_allowed_by_default()
     test_server_loads_provider_environment_before_importing_the_engine()
+    test_server_can_serve_the_built_main_ui()
     print("OK    server: mission is scheduled on the application event loop")
     print("OK    server: both local frontend origins are allowed by default")
     print("OK    server: provider environment is loaded before the engine")
+    print("OK    server: built main UI is served by the same process")

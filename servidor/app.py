@@ -2,11 +2,13 @@
 
 import asyncio
 import os
+from pathlib import Path
 
 from ag_ui.encoder import EventEncoder
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from mystique.agente import FerramentasExtras, executar
@@ -81,5 +83,9 @@ def criar_app(mundo: InterrompivelMixin, persona: str, extras: FerramentasExtras
                 mundo.desassinar_eventos(fila)
 
         return StreamingResponse(gerador(), media_type=encoder.get_content_type())
+
+    web_dist = Path(os.getenv("MYSTIQUE_WEB_DIST", Path(__file__).resolve().parent.parent / "web" / "dist"))
+    if web_dist.is_dir():
+        app.mount("/", StaticFiles(directory=web_dist, html=True), name="web")
 
     return app

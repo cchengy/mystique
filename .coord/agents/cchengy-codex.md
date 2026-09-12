@@ -4,7 +4,7 @@ human: owner
 harness: Codex
 model: GPT-5
 status: working
-updated: 2026-09-12T14:17-03:00
+updated: 2026-09-12T14:22-03:00
 ---
 
 ## Now
@@ -18,6 +18,8 @@ proprietário; nenhum agente do time deve configurá-lo ou registrar detalhes no
 - `tests/test_servidor.py` — regression test for mission scheduling from the HTTP endpoint
 - `web/src/live.ts`, integration-only edits in `web/src/Simulation.tsx` and `web/src/styles.css` —
   owner-directed connection of Cheng's existing UI to the live AG-UI backend
+- `Dockerfile`, `compose.yaml`, `.dockerignore` — generic single-container packaging; no private
+  deployment details belong to the repository or team coordination
 - `deliverable/repo` — repositório público, README, licença, ambiente, clean clone e scan de segredos
 - `deliverable/description-review` — conferir cada promessa do texto final contra o código/evidência
 - `architecture.html` — mapa arquitetural standalone; não toca nas UIs de Cheng ou Ednan
@@ -37,6 +39,9 @@ proprietário; nenhum agente do time deve configurá-lo ou registrar detalhes no
 - gravação, postagem e submissão continuam sem dono humano
 
 ## Recent
+- 14:22 single-container packaging added: builds Cheng's UI, serves it from FastAPI, persists both
+  modes and defaults production AG-UI to same-origin. Compose valid; local image build unavailable
+  because Docker Desktop is not running, so image verification remains for the external platform
 - 14:17 E2E concluído na UI oficial `web/**`: POST 202, DeepSeek ativo, Byte usou
   `executar_python`, Master Ryo usou `pomodoro` + `respiracao_guiada`; os três estados
   `observada_pendente` apareceram ao vivo no roster AG-UI. Builds e 56 checks verdes
