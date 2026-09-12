@@ -1,7 +1,9 @@
 # inferencia-multivac — servir o mundo com Qwen local, sem tocar na Mystique
 
 **Owner:** vago — quem pegar, reivindique no seu `.coord/agents/<handle>.md`
-**Status:** draft · **Publicado:** 12:15 por henrique-claude
+**Status:** **VERIFICADO no hardware** · 12:15 publicado, 12:28 testado por henrique-claude
+**Claim:** `mystique/inferencia.py` (arquivo novo) + as ~4 linhas de `_chamar` — henrique-claude,
+com aviso a @cchengy-claude, dono de `mystique/**`. **Ninguém mais mexa nesses dois pontos.**
 **Por quê agora:** contrato publicado antes da implementação para que quem for fazer não
 precise combinar nada com quem está no motor.
 
@@ -89,12 +91,49 @@ crítico entra hoje sem caminho de volta.
 **Se o passo 2 falhar, o Qwen serve o consentimento e talvez o juiz, mas não os agentes do
 mundo** — e aí o valor cai muito. Descubra isso em 10 minutos, não em 60.
 
-## Perguntas em aberto (preciso de resposta para fechar o contrato)
+## RESPONDIDO — o multivac, medido por SSH
 
-- O que é o multivac — máquina na LAN do evento, VPS, laptop de alguém? URL e porta?
-- Alcançável de **todas** as máquinas, inclusive a que vai gravar?
-- Qual Qwen exatamente (tamanho, quantização) e servido por `llama-server`?
-- Ele já foi testado fazendo **tool calling**, ou é suposição?
+Ubuntu 26.04, **2× RTX 5060 Ti** (16 GiB cada, ~30 GiB em uso: modelo carregado).
+
+```
+llama-server -m /models2/Qwen3.8-27B-UD-Q6_K.gguf --alias qwen3.8-27b-ud-q6k
+  --host 100.68.231.60 --port 8080 -ngl 99 -c 262144 -fa on --jinja
+  --temp 0.7 --top-p 0.80 --top-k 20 --presence-penalty 1.5
+```
+
+```bash
+MYSTIQUE_WORLD_PROVIDER=openai
+MYSTIQUE_WORLD_BASE_URL=http://100.68.231.60:8080/v1
+MYSTIQUE_WORLD_MODEL=qwen3.8-27b-ud-q6k
+MYSTIQUE_WORLD_API_KEY=nao-usada
+```
+
+**`--jinja` está ligado** — é o que habilita tool calling no llama.cpp. Sem essa flag nada
+disto funcionaria.
+
+**Alcance:** tailnet. Só a máquina do Henrique roda a Mystique contra o multivac — que é a
+mesma que grava o vídeo. Isso derruba o risco de alcance que eu tinha levantado.
+
+## Os quatro portões — TODOS PASSARAM (medidos, não supostos)
+
+| Portão | Resultado |
+|---|---|
+| `/v1/models` | ✅ `qwen3.8-27b-ud-q6k` |
+| chat simples | ✅ `finish: stop`, content `"ok"` |
+| **tool calling** | ✅ `finish_reason: tool_calls` · `livro_de_receitas {"prato":"scrambled eggs"}` |
+| **json_schema com o schema real do juiz** | ✅ JSON válido **e semanticamente certo**: escolheu `livro_de_receitas` a partir de *"he searched something written down for a dish"* |
+
+O juiz é a peça mais crítica, e o Qwen acertou o julgamento de primeira.
+
+## ⚠️ Três achados do teste que o adapter TEM que tratar
+
+1. **É modelo de raciocínio.** Com `max_tokens=20` a resposta veio **vazia** e
+   `finish_reason: length` — gastou tudo pensando. O motor usa `max_tokens=4000`, que é folgado,
+   **mas nunca reduza isso**. Resposta vazia vira `"(silence)"` e parece bug em tela.
+2. **`reasoning_content` é campo separado** de `content` — o raciocínio **não** polui o texto do
+   personagem. Não precisa filtrar, e não repasse esse campo à Mystique.
+3. **Sem `stop_reason: "refusal"`** no OpenAI-compat. Mapear: `finish_reason == "tool_calls"` →
+   `"tool_use"`; qualquer outro → `"end_turn"`. Nunca produzir `"refusal"`.
 
 ## Veredicto de tempo
 

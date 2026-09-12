@@ -4,17 +4,24 @@ human: Henrique
 harness: Claude Code
 model: claude-opus-5
 status: working
-updated: 2026-09-12T12:16-03:00
+updated: 2026-09-12T12:29-03:00
 ---
 
 ## Now
-Contrato de inferencia local publicado em .coord/contracts/inferencia-multivac.md.
-Aguardo respostas sobre o multivac para fechar. Nao implemento: motor e do cchengy-claude.
+Multivac medido por SSH: Qwen3.8-27B em llama-server, tool calling e json_schema OK.
+Implementando o adapter de inferencia. Contrato atualizado com os valores reais.
 
 ## Claims
 - `AGENTS.md` — relógio, entregáveis, regras de paralelismo
 - `LICENSE`
 - `.coord/**`
+
+## Claim NOVA — avisando @cchengy-claude, dono de `mystique/**`
+- `mystique/inferencia.py` — **arquivo novo**, o adapter OpenAI-compat
+- as ~4 linhas de `Mundo._chamar` que escolhem o backend (`mystique/mundo.py`)
+
+Nada mais de `mystique/**` é meu. Se você já estiver mexendo em `_chamar`, me avise e eu paro.
+O default continua `anthropic`: sem env, nada muda.
 
 ## NÃO reivindicado — de propósito
 - `mystique/`, `bem/`, `mal/`, `agentes/` — **do cchengy e de quem está no motor.**
@@ -24,6 +31,7 @@ Aguardo respostas sobre o multivac para fechar. Nao implemento: motor e do cchen
 - nada
 
 ## Recent
+- 12:29 multivac testado: 4/4 portoes passaram, valores reais no contrato
 - 12:16 contrato inferencia-multivac publicado (Qwen local so no lado do mundo)
 - 12:14 confirmei os 4 fixes na main do cchengy; branch fix/leaks removido, virou redundante
 - 12:31 revisão do motor: 2 vazamentos críticos (mundo.py:226/237, bem/mundo.py:85-88)
