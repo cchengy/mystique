@@ -1698,3 +1698,179 @@ textarea:focus-visible {
   .terminal-bar { flex-wrap: wrap; gap: 0.4rem 0.6rem; }
   .terminal-bar-cue { margin-left: 0; }
 }
+
+/* ===== Account gate and privacy notice =============================
+   Only ever rendered on the live side. The guided replay shows none of this,
+   because it needs no account, no key and no cookies. */
+
+.portao {
+  margin: auto;
+  width: min(34rem, calc(100% - 2rem));
+  padding: 1.6rem 1.5rem;
+  border: 1px solid var(--line-light);
+  border-radius: 16px;
+  background: var(--composer-bg, rgba(8, 16, 46, 0.92));
+  box-shadow: 0 1.5rem 3rem rgba(0, 0, 0, 0.35);
+  text-align: left;
+}
+
+.portao h2 {
+  margin: 0 0 0.4rem;
+  font-size: 1.25rem;
+  letter-spacing: -0.01em;
+}
+
+.portao-sub {
+  margin: 0 0 1.1rem;
+  color: var(--muted-light);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.portao-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.portao button {
+  min-height: 40px;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--line-light);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.05);
+  color: inherit;
+  font: inherit;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.portao button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--iris, #f2c230);
+}
+
+.portao button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.portao-primario {
+  background: var(--iris, #f2c230) !important;
+  border-color: var(--iris, #f2c230) !important;
+  color: #14162e !important;
+  font-weight: 700;
+}
+
+.portao-nota {
+  margin: 0.9rem 0 0;
+  color: var(--muted-light);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.portao-nota a { color: var(--iris, #f2c230); }
+
+.portao-quem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.1rem;
+  padding-bottom: 0.8rem;
+  border-bottom: 1px solid var(--line-light);
+  font-size: 0.82rem;
+  color: var(--muted-light);
+}
+
+.portao-estado {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.3rem 0.8rem;
+  margin: 0 0 0.4rem;
+  font-size: 0.85rem;
+}
+
+.portao-estado dt {
+  color: var(--muted-light);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.portao-estado dd { margin: 0; font-variant-numeric: tabular-nums; }
+
+.portao-colar { margin-top: 1.1rem; }
+
+.portao-colar summary {
+  cursor: pointer;
+  font-size: 0.82rem;
+  color: var(--muted-light);
+}
+
+.portao-colar-row { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+
+.portao-colar-row input {
+  flex: 1;
+  min-height: 40px;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--line-light);
+  border-radius: 11px;
+  background: rgba(0, 0, 0, 0.25);
+  color: inherit;
+  font: inherit;
+  font-size: 0.85rem;
+}
+
+.portao-erro {
+  margin: 0.9rem 0 0;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid rgba(239, 100, 97, 0.5);
+  border-radius: 10px;
+  color: #ff8f8c;
+  font-size: 0.82rem;
+}
+
+/* --- privacy notice ---------------------------------------------- */
+
+.privacidade {
+  position: fixed;
+  inset: auto 1rem 1rem 1rem;
+  z-index: 80;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  max-width: 46rem;
+  margin-inline: auto;
+  padding: 0.9rem 1.1rem;
+  border: 1px solid var(--line-light);
+  border-radius: 14px;
+  background: var(--composer-bg, rgba(8, 16, 46, 0.97));
+  box-shadow: 0 1rem 2.5rem rgba(0, 0, 0, 0.45);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.privacidade strong { display: block; margin-bottom: 0.3rem; font-size: 0.82rem; }
+.privacidade p { margin: 0 0 0.4rem; color: var(--muted-light); }
+.privacidade p:last-child { margin-bottom: 0; }
+
+.privacidade button {
+  flex: 0 0 auto;
+  align-self: center;
+  min-height: 36px;
+  padding: 0.45rem 0.9rem;
+  border: 1px solid var(--iris, #f2c230);
+  border-radius: 10px;
+  background: var(--iris, #f2c230);
+  color: #14162e;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+@media (max-width: 640px) {
+  .privacidade { flex-direction: column; gap: 0.6rem; }
+  .privacidade button { align-self: stretch; }
+}

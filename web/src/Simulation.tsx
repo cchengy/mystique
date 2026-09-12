@@ -3,6 +3,8 @@ import { AGENTS, REDBEARD, SCENARIOS, type Entry, type Mode, type Scenario, type
 import { latestAgentInteractions, type AgentDialogue } from './agent-profile'
 import { translate } from './pt'
 import { connectLive, startLiveMission, type LiveSnapshot } from './live'
+import { BannerPrivacidade, PortaoConta } from './Portao'
+import { lerConfig } from './conta'
 
 type Lang = 'en' | 'pt'
 const LangContext = createContext<Lang>('en')
@@ -289,6 +291,10 @@ export default function Simulation() {
   // The narration strip is collapsed by default: it is context, not the story, and
   // open by default it stole a fifth of the window from the replay itself.
   const [termOpen, setTermOpen] = useState(false)
+  // Live needs an account AND a key. The guided replay needs neither, so the gate
+  // only ever renders on the live side.
+  const [authExigida, setAuthExigida] = useState(false)
+  const [liberado, setLiberado] = useState(false)
   const [liveRunning, setLiveRunning] = useState(false)
   const [liveActivity, setLiveActivity] = useState('')
   const scenario = SCENARIOS[mode]
@@ -312,6 +318,7 @@ export default function Simulation() {
       }
     })
   }, [live, liveSnapshot])
+  useEffect(() => { lerConfig().then((c) => setAuthExigida(Boolean(c.auth?.exigida))).catch(() => setAuthExigida(false)) }, [])
   useEffect(() => { persist('messages', liveMessages) }, [liveMessages])
   useEffect(() => { persist('dialogues', liveDialogues) }, [liveDialogues])
 
@@ -603,6 +610,10 @@ export default function Simulation() {
                 </p>
               )}
             </div>
+            {live && authExigida && !liberado && (
+              <PortaoConta t={t} aoLiberar={setLiberado} />
+            )}
+
             {learned && (
               <div className="learn-card" role="dialog" aria-label={t('What changed in her memory')}>
                 <div className="learn-card-head">
@@ -784,6 +795,7 @@ export default function Simulation() {
         </main>
       )}
 
+      {live && authExigida && <BannerPrivacidade t={t} />}
       <footer className={`terminal ${termOpen ? 'is-open' : ''}`} aria-label="Terminal narration" hidden={live && !comparing}>
         {!comparing && (
           <button

@@ -5,6 +5,43 @@
 import { AGENTS } from './scenario'
 
 export const PT: Record<string, string> = {
+  // --- conta, chave e privacidade ---
+  'The live chat needs an account': 'O chat ao vivo precisa de conta',
+  'So that what she learns is yours, kept apart from everyone else, and so the model runs on your key rather than ours.':
+    'Para que o que ela aprende seja seu, separado de todo mundo, e para o modelo rodar na sua chave e não na nossa.',
+  'Sign in with a passkey': 'Entrar com passkey',
+  'Create an account': 'Criar conta',
+  'The guided replay needs none of this — it is open to everyone.':
+    'O replay guiado não precisa de nada disso — está aberto a todos.',
+  'Checking your session…': 'Verificando sua sessão…',
+  'Signed in as': 'Conectado como',
+  'Sign out': 'Sair',
+  'Connect a model key': 'Conectar uma chave de modelo',
+  'She runs on your OpenRouter account, not ours. Authorise and a key is created scoped to you — you never paste a secret.':
+    'Ela roda na sua conta do OpenRouter, não na nossa. Autorize e uma chave é criada no seu escopo — você nunca cola segredo.',
+  'Authorise on OpenRouter': 'Autorizar no OpenRouter',
+  'Or paste a key instead': 'Ou colar uma chave',
+  'Works with any OpenRouter key. It is encrypted on our server and can be erased at any time.':
+    'Funciona com qualquer chave do OpenRouter. Ela é cifrada no nosso servidor e pode ser apagada quando quiser.',
+  'Save': 'Salvar',
+  'Your key is connected': 'Sua chave está conectada',
+  'Source': 'Origem',
+  'authorised on OpenRouter': 'autorizada no OpenRouter',
+  'pasted by you': 'colada por você',
+  'Label': 'Rótulo',
+  'Limit': 'Limite',
+  'Used': 'Usado',
+  'Credits': 'Créditos',
+  'See every model the key can reach': 'Ver todos os modelos que a chave alcança',
+  'Disconnect and erase my key': 'Desconectar e apagar minha chave',
+  'Privacy notice': 'Aviso de privacidade',
+  'Cookies and personal data': 'Cookies e dados pessoais',
+  'We store only what signing in requires: your Auth0 session in this browser, and, if you connect one, your model key — encrypted on our server and never shared. No analytics, no tracking, no third-party cookies.':
+    'Guardamos só o necessário para entrar: sua sessão do Auth0 neste navegador e, se você conectar uma, sua chave de modelo — cifrada no nosso servidor e nunca compartilhada. Sem analytics, sem rastreamento, sem cookies de terceiros.',
+  'Under the LGPD you may see, correct or delete this at any time: disconnecting your key erases it, and signing out ends the session. The guided replay needs none of it.':
+    'Pela LGPD você pode ver, corrigir ou excluir isso a qualquer momento: desconectar a chave a apaga, e sair encerra a sessão. O replay guiado não precisa de nada disso.',
+  'Understood': 'Entendi',
+
   // --- barra de status ---
   'agents': 'agentes',
   'abilities in memory': 'habilidades na memória',
