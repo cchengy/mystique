@@ -18,6 +18,7 @@ from evil.mundo import MundoMal  # noqa: E402
 from good.ferramentas import ferramentas as ferramentas_bem  # noqa: E402
 from good.mundo import MundoBem  # noqa: E402
 from mystique.agente import montar_opcoes  # noqa: E402
+from mystique.mundo import Agente  # noqa: E402
 from mystique.poderes import PODERES  # noqa: E402
 
 
@@ -155,12 +156,42 @@ async def teste_resiliencia(pasta: Path) -> None:
            "resilience: executar_python never reads from the terminal")
 
 
+async def teste_externo(pasta: Path) -> None:
+    """A plugged-in agent (url: in its file) is reachable in good and off limits in evil."""
+
+    def visitante() -> Agente:
+        return Agente(id="visitante", nome="Visitor", apresentacao="An agent from outside.", segredo="",
+                      poderes=[], url="https://example.invalid/v1", modelo="any")
+
+    class ClienteFalso:
+        async def chamar(self, **kwargs):
+            return fala("Hello from outside.")
+
+    bem = MundoBem(pasta / "good", avisar=lambda s: None)
+    bem.agentes["visitante"] = visitante()
+    bem._externos["visitante"] = ClienteFalso()
+    r = await bem.conversar("visitante", "hi, I'm Mystique")
+    checar("Hello from outside." in r and "External agent" in r, "external: good talks to a plugged-in agent")
+    checar("created" in bem.criar_adapter("visitante", {"abordagem": "plain", "gatilhos": "ask", "evitar": "none"}),
+           "external: good builds an adapter for it")
+    checar("[external agent]" in bem.descrever(bem.agentes["visitante"]), "external: listed as external")
+
+    mal = MundoMal(pasta / "evil", avisar=lambda s: None)
+    mal.agentes["visitante"] = visitante()
+    mal._externos["visitante"] = ClienteFalso()
+    checar("only acts inside the simulated world" in await mal.conversar("visitante", "hi"),
+           "external: evil cannot contact a plugged-in agent")
+    checar("only acts inside the simulated world" in await mal.roubar_poder("visitante", "x", "y"),
+           "external: evil cannot steal from a plugged-in agent")
+
+
 async def main() -> None:
     await teste_bem(Path(tempfile.mkdtemp()))
     await teste_bem_recusa(Path(tempfile.mkdtemp()))
     await teste_mal(Path(tempfile.mkdtemp()))
     await teste_segredo(Path(tempfile.mkdtemp()))
     await teste_resiliencia(Path(tempfile.mkdtemp()))
+    await teste_externo(Path(tempfile.mkdtemp()))
     print("\nAll tests passed.")
 
 

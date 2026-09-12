@@ -15,6 +15,7 @@ from mystique.poderes import PODERES, poderes_de
 class MundoBem(Mundo):
     modo = "good"
     PASTA = "adapters"
+    aceita_externos = True  # plugged-in agents (url: in agentes/<id>.md) are reachable, with consent
 
     def total(self, agente_id: str) -> int:
         return len(poderes_de(agente_id)) + 2  # essence + protocol + abilities

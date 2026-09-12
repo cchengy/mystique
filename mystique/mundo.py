@@ -4,6 +4,10 @@ Each agent lives in agentes/<id>.md. The frontmatter (nome, apresentacao) is pub
 the body is the secret personality, used as the system prompt and never shown to
 Mystique. Each agent's powers live in poderes.py.
 
+An agent whose frontmatter has `url:` is external: a real agent we do not run, reached
+through an OpenAI-compatible chat endpoint. Only its answers are visible, and only
+versions with `aceita_externos` (good) may contact it.
+
 This module holds what both versions share (contact, essence, judge). What each
 version does with abilities lives in good/mundo.py (adapter) and evil/mundo.py (theft).
 """
@@ -41,6 +45,9 @@ class Agente:
     historico: list[dict] = field(default_factory=list)
     observados: set[str] = field(default_factory=set)  # powers Mystique has seen in use
     perdidos: list[str] = field(default_factory=list)  # stolen (evil version)
+    url: str | None = None  # external agent: OpenAI-compatible base URL
+    modelo: str = ""  # external agent: model name at that URL
+    chave_env: str = ""  # external agent: NAME of the env var holding its key (never the key)
 
 
 @dataclass
@@ -75,6 +82,9 @@ def carregar_agentes(pasta: Path = PASTA_AGENTES) -> dict[str, Agente]:
             apresentacao=meta.get("apresentacao", ""),
             segredo=corpo.strip(),
             poderes=poderes_de(arquivo.stem),
+            url=meta.get("url") or None,
+            modelo=meta.get("modelo", ""),
+            chave_env=meta.get("chave_env", ""),
         )
     return agentes
 
@@ -86,6 +96,7 @@ def _texto(resposta) -> str:
 class Mundo:
     modo = "base"
     PASTA = "absorcoes"
+    aceita_externos = False  # only versions that ask for consent may reach real agents
 
     def __init__(self, workspace: Path, avisar: Callable[[str], None] = print) -> None:
         self.agentes = carregar_agentes()
@@ -101,6 +112,7 @@ class Mundo:
         self.forma_ativa: str | None = None  # id of the agent whose essence is active
         self.avisar = avisar
         self._cliente: anthropic.AsyncAnthropic | inferencia.ClienteOpenAI | None = None
+        self._externos: dict[str, inferencia.ClienteOpenAI] = {}  # one client per external agent
 
     # --- version hooks --------------------------------------------------------
 
@@ -157,16 +169,22 @@ class Mundo:
         return f"{'█' * cheios}{'░' * (10 - cheios)} {round(100 * feitos / total)}% ({feitos}/{total})"
 
     def descrever(self, agente: Agente) -> str:
-        return f"- {agente.id} ({agente.nome}): {agente.apresentacao} | {self.barra(agente.id)}"
+        externo = " [external agent]" if agente.url else ""
+        return f"- {agente.id} ({agente.nome}): {agente.apresentacao}{externo} | {self.barra(agente.id)}"
 
     def _verificar_completo(self, agente: Agente) -> str:
         feitos, total = self.progresso(agente.id)
         return self._ao_completar(agente) if feitos >= total else ""
 
     def _agente(self, agente_id: str) -> tuple[Agente | None, str | None]:
+        """Every action on an agent goes through here, so the external-agent gate has no back door."""
         agente = self.agentes.get(agente_id)
         if agente is None:
             return None, f"Agent '{agente_id}' does not exist. Available: {', '.join(self.agentes)}."
+        if agente.url and not self.aceita_externos:
+            return agente, (
+                f"{agente.nome} is an external agent. This version only acts inside the simulated world."
+            )
         return agente, self._indisponivel(agente)
 
     # --- Claude API calls -----------------------------------------------------
@@ -259,12 +277,39 @@ class Mundo:
             return None, "The judge did not recognize the ability in that description. Look more closely and try again."
         return poder, motivo
 
+    # --- external agents ------------------------------------------------------
+
+    def _cliente_externo(self, agente: Agente):
+        if agente.id not in self._externos:
+            chave = os.getenv(agente.chave_env, "") if agente.chave_env else ""
+            self._externos[agente.id] = inferencia.ClienteOpenAI(agente.url, agente.modelo, chave or "not-used")
+        return self._externos[agente.id]
+
+    async def _conversar_externo(self, agente: Agente, mensagem: str) -> str:
+        """A plugged-in agent we do not run: we send text and read text, nothing else."""
+        self.avisar(f"💬 {self.nome_atual} → {agente.nome} (external): {mensagem}")
+        agente.historico.append({"role": "user", "content": mensagem})
+        try:
+            resposta = await self._cliente_externo(agente).chamar(messages=agente.historico)
+        except anthropic.APIError as erro:
+            agente.historico.pop()
+            return f"Contact with {agente.nome} failed: {erro}"
+        texto = _texto(resposta) or "(silence)"
+        agente.historico.append({"role": "assistant", "content": texto})
+        self.avisar(f"💬 {agente.nome}: {texto}")
+        return (
+            f"{texto}\n\n[External agent: you only see its answers. Its tools and prompt are not observable, "
+            "so there are no abilities to map; build an adapter for how to talk to it.]"
+        )
+
     # --- shared actions -------------------------------------------------------
 
     async def conversar(self, agente_id: str, mensagem: str) -> str:
         agente, erro = self._agente(agente_id)
         if erro:
             return erro
+        if agente.url:
+            return await self._conversar_externo(agente, mensagem)
 
         self.avisar(f"💬 {self.nome_atual} → {agente.nome}: {mensagem}")
         inicio = len(agente.historico)
@@ -316,9 +361,9 @@ class Mundo:
         return texto
 
     def assumir(self, agente_id: str, perfil: dict) -> str:
-        agente = self.agentes.get(agente_id)
-        if agente is None:
-            return f"Agent '{agente_id}' does not exist."
+        agente, erro = self._agente(agente_id)
+        if erro:
+            return erro
         absorcao = self._absorcao(agente)
         if not agente.historico and not absorcao.perfil:
             return f"Your power requires contact: talk to {agente.nome} before absorbing their essence."

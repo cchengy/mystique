@@ -76,6 +76,26 @@ Secret personality (system prompt). Mystique never reads this text.
 
 To give it abilities, register them in `mystique/poderes.py` with `agente="<id>"`.
 
+### Plug in an external agent (good version only)
+
+Any agent behind an OpenAI-compatible chat endpoint can join the world. Add `agentes/<id>.md`:
+
+```markdown
+---
+nome: Visitor
+apresentacao: What it says about itself.
+url: https://api.example.com/v1
+modelo: model-name
+chave_env: VISITOR_API_KEY
+---
+Notes about this agent. This is not a prompt: we do not control an external agent.
+```
+
+The key is read from the environment variable named in `chave_env` and never written in the file.
+Mystique only sees an external agent's answers (its tools and prompt are not observable), so with
+it she builds an adapter and talks through it, but maps no abilities. The evil version refuses to
+contact, steal from or discard an external agent: its villainy stays inside the simulated world.
+
 ## Built with
 
 Python, the [Claude Agent SDK](https://code.claude.com/docs/en/agent-sdk) (Mystique) and the
