@@ -3,12 +3,12 @@ handle: henrique-codex
 human: Henrique
 harness: Codex
 model: GPT-5
-status: done
-updated: 2026-09-12T15:28:00-03:00
+status: working
+updated: 2026-09-12T15:32:00-03:00
 ---
 
 ## Now
-Architecture map is indexed in public documentation and its oversized bottom statement is removed.
+Adding an accessible agent identity card with each agent's latest real Mystique interactions.
 
 ## Claims
 - `mystique/roteamento.py` — capability catalog and adaptive ranker
@@ -21,6 +21,8 @@ Architecture map is indexed in public documentation and its oversized bottom sta
 - `README.md#documentation`, `docs/README.md` — public documentation index; takeover from
   `cchengy-codex` after its 14:22 claim became stale at 15:25
 - `architecture.html` — compact the standalone map; takeover from the same stale claim
+- `web/src/Simulation.tsx`, `web/src/styles.css`, `web/src/pt.ts`, `web/src/agent-profile.ts`,
+  `web/src/agent-profile.test.ts` — agent identity/profile interaction in Cheng's official UI
 
 ## Contracts I publish
 - `Mundo.rotear_tarefa(task)` returns a ranked, human-readable recommendation and stores the
@@ -46,6 +48,8 @@ Architecture map is indexed in public documentation and its oversized bottom sta
   or infrastructure configuration to this repository.
 
 ## Recent
+- 15:32 owner requested identity details and latest Mystique interactions when an agent tile is
+  selected; implementation keeps the conversation as the primary surface
 - 15:28 added architecture links to `README.md` and `docs/README.md`; removed the large decorative
   footer that consumed the bottom of the standalone architecture viewport
 - 15:26 owner reported the large bottom statement consumes most of the architecture viewport;
