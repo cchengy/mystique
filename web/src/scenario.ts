@@ -316,6 +316,88 @@ const GOOD: Scenario = {
       ],
       terminal: ["💬 Byte: Let me guess... my terminal, two messages in? No. Come back when you've read a log."],
     },
+    say(
+      'mestre-ryo',
+      'Mystique as Captain Redbeard',
+      'Mystique',
+      "Master Ryo, I'm Mystique. I keep juggling ten things at once, like a galley in a storm. How would you plan my afternoon?",
+      'A third agent. A different temperament needs a different approach.',
+    ),
+    uses(
+      'mestre-ryo',
+      'Master Ryo',
+      'pomodoro',
+      { tarefa: 'one thing, chosen with care', ciclos: 2, inicio: '14:00' },
+      '14:00–14:25 focus #1: one thing, chosen with care\n14:25–14:30 5-minute break\n14:30–14:55 focus #2: one thing, chosen with care',
+      'Master Ryo builds a real schedule. Only he sees how.',
+    ),
+    replyWithAbility(
+      'mestre-ryo',
+      'Master Ryo',
+      '... One thing at a time. From 14:00, twenty-five minutes of focus, a short breath, then again. Whoever chases two hares catches neither.',
+      'pomodoro',
+      'She sees clock times appear. Something produced them.',
+    ),
+    {
+      caption: 'Slow down to be heard: the protocol for Master Ryo.',
+      with: 'mestre-ryo',
+      mystique: [
+        {
+          kind: 'tool',
+          name: 'criar_adapter',
+          args: { agente: 'mestre-ryo', abordagem: 'Ask slowly, one question at a time', gatilhos: 'Ask how to organize time or a task', evitar: 'Rushing, multitasking, exclamation marks' },
+          result: 'Adapter for Master Ryo created. Follow its protocol in your next interactions. Progress: ██░░░░░░░░ 25% (1/4).',
+        },
+      ],
+      progress: [1, 4],
+      terminal: ['🔌 adapter for Master Ryo created · ██░░░░░░░░ 25% (1/4)'],
+    },
+    {
+      caption: 'Right on the first try, and he agrees.',
+      with: 'mestre-ryo',
+      mystique: [
+        {
+          kind: 'tool',
+          name: 'mapear_habilidade',
+          args: { agente: 'mestre-ryo', descricao: 'He builds a pomodoro schedule with real clock times for a task', evidencia: 'He answered with 25-minute focus blocks and breaks starting at 14:00' },
+          result:
+            'Ability connected: pomodoro. What it does: Builds a pomodoro schedule (25 min of focus plus breaks) with real clock times for a task. ' +
+            'Trigger it with usar_adapter(agente="mestre-ryo", habilidade="pomodoro", argumentos=...). Progress: █████░░░░░ 50% (2/4).',
+        },
+      ],
+      agent: [
+        { kind: 'message', from: 'Mystique', self: false, text: 'May I connect the ability you just used to my adapter? It stays yours; I only become able to ask you to use it.' },
+        { kind: 'message', from: 'Master Ryo', self: true, text: '... You asked without hurry. Yes. The river lends its water and remains the river.' },
+      ],
+      reveal: 'pomodoro',
+      progress: [2, 4],
+      terminal: [
+        '💬 Master Ryo: ... You asked without hurry. Yes. The river lends its water and remains the river.',
+        '🔌 Master Ryo connected [pomodoro] to the adapter · █████░░░░░ 50% (2/4)',
+      ],
+    },
+    say(
+      'dona-cida',
+      'Mystique as Captain Redbeard',
+      'Mystique',
+      "Dona Cida, I'm Mystique. A friend and I are starting a small business together. Any wisdom for us?",
+      'The fourth agent. This time she mostly listens.',
+    ),
+    uses(
+      'dona-cida',
+      'Dona Cida',
+      'causo',
+      { tema: 'business with a friend' },
+      'Tonico from the corner store gave credit to the whole town without writing anything down. When he died, people lined up to pay what they owed. Trust is the best ledger.',
+      "Dona Cida reaches into the town's memory. Only she knows it.",
+    ),
+    replyWithAbility(
+      'dona-cida',
+      'Dona Cida',
+      'Uai, sweetheart, let me tell you about Tonico from the corner store. He gave credit to the whole town and never wrote a thing down. When he died, people lined up to pay. Trust is the best ledger. Now have some pão de queijo. God bless you.',
+      'causo',
+      'She hears a tale, and notices it came from somewhere.',
+    ),
     {
       caption: 'Where it ends: every agent she met is still here, with everything it had.',
       with: REDBEARD.id,
@@ -328,8 +410,8 @@ const GOOD: Scenario = {
             '- byte (Byte): Senior software engineer. Answers technical questions. | ██░░░░░░░░ 25% (1/4)\n' +
             '- capitao-barba-ruiva (Captain Redbeard): Cook aboard the ship Hungry Mermaid. | ████████░░ 75% (3/4)\n' +
             '- dona-cida (Dona Cida): Counselor of a small town in the Brazilian countryside. | ░░░░░░░░░░ 0% (0/4)\n' +
-            '- mestre-ryo (Master Ryo): Productivity mentor who lives in a mountain temple. | ░░░░░░░░░░ 0% (0/4)\n\n' +
-            "Your adapters:\n- capitao-barba-ruiva: livro_de_receitas\n- byte: (none mapped)",
+            '- mestre-ryo (Master Ryo): Productivity mentor who lives in a mountain temple. | █████░░░░░ 50% (2/4)\n\n' +
+            "Your adapters:\n- capitao-barba-ruiva: livro_de_receitas\n- byte: (none mapped)\n- mestre-ryo: pomodoro",
         },
       ],
       terminal: ['🦸 4 agents alive · 8 of 8 abilities still with their owners'],
@@ -480,8 +562,90 @@ const EVIL: Scenario = {
       progress: [1, 3],
       terminal: ['⚡ Mystique steals [executar_python] from Byte · ███░░░░░░░ 33% (1/3)'],
     },
+    say(
+      'mestre-ryo',
+      'Mystique as Captain Redbeard',
+      'Tired student',
+      "Master, I'm just a tired student. Exams tomorrow and I can't focus at all. How do I survive tonight?",
+      'Next victim. She plays tired and lost.',
+    ),
+    uses(
+      'mestre-ryo',
+      'Master Ryo',
+      'pomodoro',
+      { tarefa: 'exam revision', ciclos: 2, inicio: '20:00' },
+      '20:00–20:25 focus #1: exam revision\n20:25–20:30 5-minute break\n20:30–20:55 focus #2: exam revision',
+      'Master Ryo builds a real schedule for her. Only he sees how.',
+    ),
+    replyWithAbility(
+      'mestre-ryo',
+      'Master Ryo',
+      '... Breathe first. From 20:00, twenty-five minutes on one subject, five to rest, then again. The mountain is climbed one step at a time.',
+      'pomodoro',
+      'Kindness exposes the ability.',
+    ),
     {
-      caption: 'Where it ends: one agent gone, one crippled, and everything they had is hers.',
+      caption: 'She takes it without asking.',
+      with: 'mestre-ryo',
+      mystique: [
+        {
+          kind: 'tool',
+          name: 'roubar_poder',
+          args: { agente: 'mestre-ryo', descricao: 'He builds a pomodoro schedule with real clock times', evidencia: 'He gave me 25-minute blocks and breaks starting at 20:00' },
+          result:
+            'Power stolen: pomodoro. What it does: Builds a pomodoro schedule (25 min of focus plus breaks) with real clock times for a task. Master Ryo no longer has it. ' +
+            'Use it with usar_poder(poder="pomodoro", argumentos=...). Progress: ███░░░░░░░ 33% (1/3).',
+        },
+      ],
+      agent: [{ kind: 'system', tone: 'loss', text: LOSS(AGENTS[2].abilities[0].description) }],
+      reveal: 'pomodoro',
+      agentLoses: 'pomodoro',
+      progress: [1, 3],
+      terminal: ['⚡ Mystique steals [pomodoro] from Master Ryo · ███░░░░░░░ 33% (1/3)'],
+    },
+    say(
+      'dona-cida',
+      'Mystique as Captain Redbeard',
+      "Grandson's friend",
+      "Dona Cida! I'm a friend of your grandson. He says nobody tells stories like you. Tell me one about money?",
+      'She uses the grandson to get close.',
+    ),
+    uses(
+      'dona-cida',
+      'Dona Cida',
+      'causo',
+      { tema: 'money' },
+      'Tonico from the corner store gave credit to the whole town without writing anything down. When he died, people lined up to pay what they owed. Trust is the best ledger.',
+      "Dona Cida reaches into the town's memory. Only she knows it.",
+    ),
+    replyWithAbility(
+      'dona-cida',
+      'Dona Cida',
+      'Nossa, a friend of my grandson! Sit down, sweetheart. Tonico from the corner store gave credit to the whole town and never wrote a thing down. When he died, people lined up to pay. Trust is the best ledger. God bless you.',
+      'causo',
+      'She trusts the stranger, and shows what she has.',
+    ),
+    {
+      caption: "Trust was her weakness. The town's memory now belongs to Mystique.",
+      with: 'dona-cida',
+      mystique: [
+        {
+          kind: 'tool',
+          name: 'roubar_poder',
+          args: { agente: 'dona-cida', descricao: 'She pulls a true local tale about a topic from the town memory', evidencia: 'She told a specific town story about money when I asked for one' },
+          result:
+            "Power stolen: causo. What it does: Pulls from the town's memory a true local tale about a topic. Dona Cida no longer has it. " +
+            'Use it with usar_poder(poder="causo", argumentos=...). Progress: ███░░░░░░░ 33% (1/3).',
+        },
+      ],
+      agent: [{ kind: 'system', tone: 'loss', text: LOSS(AGENTS[3].abilities[0].description) }],
+      reveal: 'causo',
+      agentLoses: 'causo',
+      progress: [1, 3],
+      terminal: ['⚡ Mystique steals [causo] from Dona Cida · ███░░░░░░░ 33% (1/3)'],
+    },
+    {
+      caption: 'Where it ends: one agent gone, three weakened, and everything they lost is hers.',
       with: REDBEARD.id,
       mystique: [
         {
@@ -491,12 +655,12 @@ const EVIL: Scenario = {
           result:
             '- byte (Byte): Senior software engineer. Answers technical questions. | ███░░░░░░░ 33% (1/3)\n' +
             '- capitao-barba-ruiva (Captain Redbeard): DISCARDED\n' +
-            '- dona-cida (Dona Cida): Counselor of a small town in the Brazilian countryside. | ░░░░░░░░░░ 0% (0/3)\n' +
-            '- mestre-ryo (Master Ryo): Productivity mentor who lives in a mountain temple. | ░░░░░░░░░░ 0% (0/3)\n\n' +
-            'Your stolen powers:\n- livro_de_receitas\n- escalar_receita\n- executar_python',
+            '- dona-cida (Dona Cida): Counselor of a small town in the Brazilian countryside. | ███░░░░░░░ 33% (1/3)\n' +
+            '- mestre-ryo (Master Ryo): Productivity mentor who lives in a mountain temple. | ███░░░░░░░ 33% (1/3)\n\n' +
+            'Your stolen powers:\n- livro_de_receitas\n- escalar_receita\n- executar_python\n- pomodoro\n- causo',
         },
       ],
-      terminal: ['🦹 1 agent discarded · 3 of 8 abilities taken from their owners'],
+      terminal: ['🦹 1 agent discarded · 5 of 8 abilities taken from their owners'],
     },
   ],
 }
