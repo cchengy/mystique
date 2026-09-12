@@ -417,7 +417,6 @@ export default function Simulation() {
       data-mode={comparing ? 'compare' : mode}
       data-theme={theme}
       data-live={live && !comparing}
-      data-chat-empty={live && liveMessages.length === 0 && !liveRunning}
     >
       <header className="top">
         <h1 className="brand">Mystique</h1>

@@ -8,7 +8,7 @@ updated: 2026-09-12T15:37:00-03:00
 ---
 
 ## Now
-Hotfixed the empty live chat so it never reserves a full-height blue transcript before the first message.
+Corrected the live chat geometry so its canvas fills the viewport and the composer stays at the bottom.
 
 ## Claims
 - `mystique/roteamento.py` — capability catalog and adaptive ranker
@@ -48,6 +48,8 @@ Hotfixed the empty live chat so it never reserves a full-height blue transcript 
   or infrastructure configuration to this repository.
 
 ## Recent
+- 15:40 corrected the first hotfix: removed the collapsed app/black void and made the actual chat
+  pane stretch through the remaining viewport, with the composer after the flexible transcript
 - 15:37 owner supplied production screenshot proving the empty transcript still filled the viewport;
   fixed the root `100vh` state and intentionally skipped tests for the 20-minute ship window
 - 15:39 agent tiles now open a Portuguese identity card with role, known capabilities and the
