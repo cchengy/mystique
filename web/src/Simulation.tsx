@@ -286,6 +286,9 @@ export default function Simulation() {
   const [liveMessages, setLiveMessages] = useState<Entry[]>(() => restore<Entry[]>('messages', []))
   const [liveDialogues, setLiveDialogues] = useState<AgentDialogue[]>(() => restore<AgentDialogue[]>('dialogues', []))
   const [learned, setLearned] = useState<SystemEntry | null>(null)
+  // The narration strip is collapsed by default: it is context, not the story, and
+  // open by default it stole a fifth of the window from the replay itself.
+  const [termOpen, setTermOpen] = useState(false)
   const [liveRunning, setLiveRunning] = useState(false)
   const [liveActivity, setLiveActivity] = useState('')
   const scenario = SCENARIOS[mode]
@@ -781,9 +784,32 @@ export default function Simulation() {
         </main>
       )}
 
-      <footer className="terminal" aria-label="Terminal narration" hidden={live && !comparing}>
+      <footer className={`terminal ${termOpen ? 'is-open' : ''}`} aria-label="Terminal narration" hidden={live && !comparing}>
         {!comparing && (
-          <div className="terminal-lines" ref={terminalRef}>
+          <button
+            type="button"
+            className="terminal-bar"
+            onClick={() => setTermOpen((v) => !v)}
+            aria-expanded={termOpen}
+            aria-controls="terminal-lines"
+          >
+            <span className="terminal-bar-face" aria-hidden="true">{mode === 'evil' ? '🦹' : '🦸'}</span>
+            <span className="terminal-bar-name">{t('Mystique')}</span>
+            <span className="terminal-bar-mode">{mode === 'evil' ? t('evil') : t('good')}</span>
+            <span className="terminal-bar-stat">
+              <strong>{rosterAgents.length}</strong> {t('agents')}
+            </span>
+            <span className="terminal-bar-stat">
+              <strong>{world.observed.length}</strong> {t('abilities in memory')}
+            </span>
+            <span className="terminal-bar-cue">
+              {termOpen ? t('hide narration') : t('show narration')}
+              <span className="terminal-bar-chevron" aria-hidden="true">{termOpen ? '▾' : '▸'}</span>
+            </span>
+          </button>
+        )}
+        {!comparing && termOpen && (
+          <div className="terminal-lines" id="terminal-lines" ref={terminalRef}>
             {(live ? liveMessages.map((entry) => entry.kind === 'message' ? entry.text : entry.kind === 'system' ? entry.text : '') : world.terminal).map((line, i) => (
               <div key={i}>{t(line)}</div>
             ))}

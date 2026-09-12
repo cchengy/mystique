@@ -5,6 +5,14 @@
 import { AGENTS } from './scenario'
 
 export const PT: Record<string, string> = {
+  // --- barra de status ---
+  'agents': 'agentes',
+  'abilities in memory': 'habilidades na memória',
+  'good': 'bem',
+  'evil': 'mal',
+  'show narration': 'ver narração',
+  'hide narration': 'ocultar narração',
+
   // --- banco de raciocínio ---
   'what changed in her memory': 'o que mudou na memória dela',
   'What changed in her memory': 'O que mudou na memória dela',

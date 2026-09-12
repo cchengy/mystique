@@ -1582,3 +1582,119 @@ textarea:focus-visible {
   line-height: 1.45;
   color: var(--muted-light);
 }
+
+/* ===== Guided replay: stop the panes colliding, and make the status bar real ==
+   .pane-world had overflow: visible, so a long secret prompt grew past its grid
+   row and ran underneath the full-width narration strip. Two elements drawing in
+   the same pixels is the overlap. */
+
+.app[data-live='false'] .pane-world {
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(220, 227, 255, 0.22) transparent;
+}
+
+.app[data-live='false'] .pane-mystique {
+  min-height: 0;
+}
+
+/* --- the Mystique bar: collapsed by default, expandable ----------- */
+
+.terminal {
+  padding: 0;
+}
+
+.terminal-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  width: 100%;
+  padding: 0.6rem 1.25rem;
+  border: 0;
+  border-top: 1px solid rgba(220, 227, 255, 0.15);
+  background: var(--ink-deep);
+  color: #cfd8f5;
+  font: inherit;
+  font-size: 0.85rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.terminal-bar:hover,
+.terminal-bar:focus-visible {
+  background: rgba(255, 255, 255, 0.05);
+  outline: none;
+}
+
+.terminal-bar-face { font-size: 1.1rem; line-height: 1; }
+
+.terminal-bar-name {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #f3f6ff;
+}
+
+.terminal-bar-mode {
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(242, 194, 48, 0.16);
+  color: var(--iris, #f2c230);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.app[data-mode='evil'] .terminal-bar-mode {
+  background: rgba(239, 100, 97, 0.18);
+  color: #ff8f8c;
+}
+
+.terminal-bar-stat {
+  color: #9fb0dd;
+  font-size: 0.8rem;
+}
+
+.terminal-bar-stat strong {
+  color: #f3f6ff;
+  font-variant-numeric: tabular-nums;
+}
+
+.terminal-bar-cue {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-left: auto;
+  color: #9fb0dd;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.terminal-bar-chevron {
+  display: inline-block;
+  font-size: 0.7rem;
+  transition: transform 0.15s ease;
+}
+
+.terminal.is-open .terminal-bar {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.terminal.is-open .terminal-lines {
+  height: 9rem;
+  padding: 0.55rem 1.25rem 0.65rem;
+  border-top: 1px solid rgba(220, 227, 255, 0.08);
+}
+
+.terminal .disclaimer {
+  padding: 0.5rem 1.25rem 0.7rem;
+  margin: 0;
+}
+
+@media (max-width: 860px) {
+  .terminal-bar { flex-wrap: wrap; gap: 0.4rem 0.6rem; }
+  .terminal-bar-cue { margin-left: 0; }
+}
