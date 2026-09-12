@@ -1,7 +1,34 @@
 services:
+  workspace-init:
+    build: .
+    user: "0:0"
+    command:
+      - sh
+      - -c
+      - >-
+        mkdir -p /app/good/workspace/adapters /app/good/workspace/bank
+        /app/good/workspace/auditorias /app/evil/workspace/absorcoes
+        /app/evil/workspace/bank &&
+        chown -R 999:999 /app/good/workspace /app/evil/workspace
+    restart: "no"
+    network_mode: none
+    read_only: true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - mystique-workspace:/app/good/workspace
+      - mystique-evil-workspace:/app/evil/workspace
+
   mystique:
     build: .
     restart: unless-stopped
+    depends_on:
+      workspace-init:
+        condition: service_completed_successfully
     expose:
       - "8000"
     environment:
