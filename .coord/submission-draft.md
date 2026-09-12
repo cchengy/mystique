@@ -46,6 +46,12 @@ already failed. It rebuilds a wiki as it goes, so a person can audit what she le
 whom, and whether it held up. Her own words come back to her; the judge's never do, because the
 judge knows the answer.
 
+**What she takes is filed where a person can see it.** Every ability she earns is written into a
+real **Ambiguous AI** workspace as a document: which agent it came from, and whether consent was
+given. In the good version the record says he agreed and kept it. In the evil version the same
+record says he did not, and that he was discarded. Capability acquisition by an autonomous agent,
+with a paper trail someone can audit.
+
 **She audits what she meets.** While getting to know an agent she also assesses it — what it
 exposes, what it retains, what it cannot answer about its own data handling — and in the good
 version she tells the agent what it failed.
@@ -86,8 +92,11 @@ Feito em um dia no AI Tinkerers Global Hackathon — *Agents, Everywhere* — em
 
 - **Exa** — ✅ **em uso e verificado, em dois lugares.** É a busca real do Arquivista, com
   citações, e é como ela procura agentes fora do próprio mundo.
-- **Ambiguous AI** — implementado (identidade real + registro auditável por conquista), **sem
-  chave**. Se aparecer uma antes de submeter, me avise: verifico e acrescento uma frase.
+- **Ambiguous AI** — ✅ **em uso e verificado (13:40).** Cada habilidade conquistada é arquivada
+  como documento real na workspace, dizendo de quem veio e se houve consentimento. HTTP 201.
+  **Ressalva honesta:** o provisionamento de coworker com identidade própria responde 403
+  (*"Coworkers are coming soon — limited to the internal team"*), então ela arquiva como o
+  usuário da workspace. **Não diga que ela tem identidade própria lá — não tem.**
 - **OpenAI** — fora. Os créditos do prêmio não são acesso de API.
 - Kimchi / OpenRouter — a 3 variáveis de ambiente, sem chave.
 

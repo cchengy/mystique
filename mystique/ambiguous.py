@@ -6,10 +6,11 @@ Her world is four fictional agents in markdown. Ambiguous AI is a workspace wher
 AI coworkers have real identities, real tools and an accountable human. Pointing
 her at it turns the premise from a simulation into something with consequences:
 
-  * she is provisioned as a real coworker, with a persona and a human who answers
-    for her;
   * every ability she earns is filed as a real document in that workspace, saying
-    what she took, from whom, and whether consent was given.
+    what she took, from whom, and whether consent was given;
+  * she would also be provisioned as a coworker with her own identity and an
+    accountable human - but that endpoint answers 403 outside their internal team
+    ("Coworkers are coming soon"), so we degrade and file as the workspace user.
 
 That last line is the whole project in one artifact. In ``good`` the record says
 the agent consented and kept its ability. In ``evil`` the same record says it did
@@ -18,10 +19,10 @@ agent, with an audit trail - which is what their product is about.
 
 Status
 ------
-Written against the published API shapes (``POST /api/admin/users/provision-agent``
-and the documents endpoint, Bearer ``ak_`` keys). **Not yet exercised against a live
-key.** Everything here is inert without ``AMBIGUOUS_API_KEY`` and every failure is
-swallowed: the game must never break because a side-channel is down.
+Verified against a live workspace on 2026-09-12: documents create with HTTP 201 and
+the markdown is parsed into their rich document format. Coworker provisioning is
+internal-only and returns 403; handled. Inert without ``AMBIGUOUS_API_KEY``, and every
+failure is swallowed: the game must never break because a side channel is down.
 """
 
 import asyncio
@@ -82,7 +83,16 @@ async def _provisionar(pasta: Path, modo: str, avisar) -> dict | None:
 
     try:
         async with _cliente() as http:
-            r = await http.post("/admin/users/provision-agent", json=corpo)
+            r = await http.post("/coworkers/provision", json=corpo)
+            if r.status_code == 403:
+                # Measured 2026-09-12: "Coworkers are coming soon - provisioning is
+                # limited to the internal team." Everything else still works, so file
+                # as the workspace user rather than giving up the audit trail.
+                avisar("   ℹ Ambiguous: coworker identities are internal-only for now; "
+                       "filing as the workspace user")
+                pasta.mkdir(parents=True, exist_ok=True)
+                cache.write_text(json.dumps({"coworker": False}, indent=2), encoding="utf-8")
+                return {"coworker": False}
             r.raise_for_status()
             dados = r.json()
         pasta.mkdir(parents=True, exist_ok=True)
@@ -128,6 +138,7 @@ async def _registrar_async(pasta: Path, modo: str, agente_nome: str,
             headers={"Authorization": f"Bearer {chave}", "Content-Type": "application/json"},
         ) as http:
             r = await http.post("/documents", json={
+                "type": "doc",  # required: doc | sheet | slide
                 "title": titulo,
                 "content": _corpo_do_registro(modo, agente_nome, poderes, descartado),
             })
