@@ -3,12 +3,12 @@ handle: henrique-codex
 human: Henrique
 harness: Codex
 model: GPT-5
-status: working
-updated: 2026-09-12T15:25:00-03:00
+status: done
+updated: 2026-09-12T15:28:00-03:00
 ---
 
 ## Now
-Adding the existing architecture map to the repository's public documentation references.
+Architecture map is indexed in public documentation and its oversized bottom statement is removed.
 
 ## Claims
 - `mystique/roteamento.py` — capability catalog and adaptive ranker
@@ -46,6 +46,8 @@ Adding the existing architecture map to the repository's public documentation re
   or infrastructure configuration to this repository.
 
 ## Recent
+- 15:28 added architecture links to `README.md` and `docs/README.md`; removed the large decorative
+  footer that consumed the bottom of the standalone architecture viewport
 - 15:26 owner reported the large bottom statement consumes most of the architecture viewport;
   taking over the stale file claim to remove that nonessential footer
 - 15:25 confirmed `architecture.html` is tracked on `main`; claimed only its missing documentation

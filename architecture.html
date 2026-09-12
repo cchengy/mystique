@@ -96,9 +96,6 @@
     .proof.warn { border-color: var(--color-warn); }
     .proof b { display: block; margin-bottom: var(--space-xs); font-family: var(--font-display); font-size: 1.15rem; }
     .proof p { margin: 0; color: var(--color-muted); font-size: .82rem; line-height: 1.5; }
-    .foot-stmt { padding: var(--space-2xl) var(--page-gutter) var(--space-xl); display: grid; gap: var(--space-lg); }
-    .foot-stmt__line { max-width: 28ch; margin: 0; font-family: var(--font-display); font-style: normal; font-size: clamp(1.75rem, 5vw, 3.25rem); line-height: 1; letter-spacing: -.035em; }
-    .foot-stmt__meta { display: flex; justify-content: space-between; gap: var(--space-md); padding-top: var(--space-sm); border-top: 1px solid var(--color-rule); color: var(--color-muted); font: .72rem var(--font-mono); }
     @media (max-width: 60rem) {
       .map-shell { grid-template-columns: minmax(0, 1fr); }
       .detail { min-height: auto; }
@@ -111,7 +108,6 @@
       .routes { display: none; }
       .node { position: static; width: 100%; min-width: 0; min-height: 44px; }
       .evidence { grid-template-columns: minmax(0, 1fr); }
-      .foot-stmt__meta { flex-direction: column; }
     }
   </style>
 </head>
@@ -171,11 +167,6 @@
       <article class="proof warn"><b>UI + DeepSeek</b><p>Pendente: o POST de missão retorna 500 até o owner corrigir o event loop.</p></article>
     </section>
   </main>
-
-  <footer class="foot-stmt">
-    <p class="foot-stmt__line">A arquitetura está pronta quando a evidência atravessa a mesma interface da demo.</p>
-    <div class="foot-stmt__meta"><span class="wordmark">Mystique</span><span>Estado observado em 12 Sep 2026 · sem segredos incorporados</span></div>
-  </footer>
 
   <script>
     const details = {

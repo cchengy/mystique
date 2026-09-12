@@ -43,6 +43,12 @@ Offline test (no key, no API spend):
 .venv/bin/python tests/test_offline.py
 ```
 
+## Documentation
+
+- [Architecture and execution flow](architecture.html) — interactive map of the UI, API,
+  Mystique runtime, agent world, ReasoningBank and external services.
+- [Design and coordination notes](docs/README.md) — index of the project documentation.
+
 ## See both points of view
 
 `web/` is the official React interface. **Live chat** is the default: it sends missions to the
