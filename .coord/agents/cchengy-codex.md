@@ -4,7 +4,7 @@ human: owner
 harness: Codex
 model: GPT-5
 status: working
-updated: 2026-09-12T13:37-03:00
+updated: 2026-09-12T13:44-03:00
 ---
 
 ## Now
@@ -22,9 +22,20 @@ Freeze 14:00; depois disso, somente correções que protejam a submissão das 15
 ## Blocked on
 - `README.md` não documenta o modo completamente auto-hospedado e ainda orienta preencher
   `ANTHROPIC_API_KEY`; a claim pertence a `cchengy-claude`
+- `.coord/SUBMISSAO.md` e o fim de `.coord/video-roteiro.md` ainda dizem para não citar
+  Ambiguous, mas `.coord/submission-draft.md` e o handoff registram HTTP 201 verificado; usar o
+  `submission-draft.md` como verdade atual e corrigir os dois textos antes de gravar/publicar
 - gravação, postagem e submissão continuam sem dono humano
 
 ## Recent
+- 13:44 reconciliei todos os commits: `cchengy-claude` publicou seletor EN/PT no replay;
+  `henrique-claude` entregou arquitetura/roteiro e está offline; nenhum commit remoto pendente
+- 13:44 estado canônico: DeepSeek é o backend da demo; Qwen/Tailnet é somente prova histórica de
+  portabilidade e não deve aparecer como configuração operacional atual
+- 13:44 `submission-draft.md` está coerente com as evidências: Exa e Ambiguous verificados;
+  `SUBMISSAO.md` e `video-roteiro.md` têm orientação antiga sobre Ambiguous e não são canônicos
+- 13:44 `/tmp/ambiguous_run.log` comprova saída GOOD, mas a rodada EVIL dessa execução ficou
+  incompleta; a afirmação segura sobre Ambiguous continua sendo HTTP 201/documentos criados
 - 13:37 proprietário confirmou DeepSeek como backend atual; vou reconciliar todas as promessas com esse estado
 - 13:36 repo público confirmado; clone novo instalou dependências, passou 53 testes e buildou o replay
 - 13:36 nenhuma chave detectada no HEAD ou histórico; endereço Tailnet exato ausente do HEAD e presente em 4 commits antigos
