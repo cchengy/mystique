@@ -20,6 +20,7 @@ Adding the existing architecture map to the repository's public documentation re
 - `servidor/app.py`, `servidor/mundo_servidor.py`, `tests/test_servidor.py` — safe live-output protocol
 - `README.md#documentation`, `docs/README.md` — public documentation index; takeover from
   `cchengy-codex` after its 14:22 claim became stale at 15:25
+- `architecture.html` — compact the standalone map; takeover from the same stale claim
 
 ## Contracts I publish
 - `Mundo.rotear_tarefa(task)` returns a ranked, human-readable recommendation and stores the
@@ -45,6 +46,8 @@ Adding the existing architecture map to the repository's public documentation re
   or infrastructure configuration to this repository.
 
 ## Recent
+- 15:26 owner reported the large bottom statement consumes most of the architecture viewport;
+  taking over the stale file claim to remove that nonessential footer
 - 15:25 confirmed `architecture.html` is tracked on `main`; claimed only its missing documentation
   references, without editing the architecture file owned by `cchengy-codex`
 - 14:44 took over the listed engine/test paths from stale `cchengy-claude` claim (updated 12:40),
