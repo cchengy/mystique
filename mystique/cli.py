@@ -30,7 +30,11 @@ def main(mundo_cls: type[Mundo], persona: str, extras: FerramentasExtras, worksp
     parser.add_argument("--verbose", "-v", action="store_true", help="show Mystique's reasoning")
     args = parser.parse_args()
 
-    if not (os.getenv("ANTHROPIC_API_KEY") or os.getenv("ANTHROPIC_AUTH_TOKEN")):
+    # A Claude key is only required for the paths that actually call Anthropic.
+    from . import agente_local, inferencia
+
+    precisa_chave = not (agente_local.ativo() and inferencia.ativo())
+    if precisa_chave and not (os.getenv("ANTHROPIC_API_KEY") or os.getenv("ANTHROPIC_AUTH_TOKEN")):
         parser.exit(1, "Missing ANTHROPIC_API_KEY. Copy .env.example to .env and fill in the key.\n")
 
     workspace.mkdir(parents=True, exist_ok=True)

@@ -15,6 +15,7 @@ from claude_agent_sdk import (
     ThinkingBlock,
 )
 
+from . import agente_local
 from .ferramentas import criar_servidor, ferramentas_base, nomes_permitidos
 from .mundo import Mundo
 from .persona import BASE
@@ -67,6 +68,10 @@ async def executar(
     missao: str | None, mundo: Mundo, orcamento: float, verbose: bool, persona: str, extras: FerramentasExtras
 ) -> None:
     """With a mission: runs once and exits. Without one: interactive mode with session memory."""
+    if agente_local.ativo():  # self-hosted Mystique: see mystique/agente_local.py
+        await agente_local.executar(missao, mundo, orcamento, verbose, persona, extras)
+        return
+
     narrador = Narrador(mundo, verbose)
     conquistas = sum(len(a.poderes) for a in mundo.absorcoes.values())
     print(
