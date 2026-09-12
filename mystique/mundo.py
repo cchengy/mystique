@@ -22,6 +22,7 @@ from pathlib import Path
 import anthropic
 
 from . import ambiguous, inferencia
+from .banco import Banco
 from .poderes import PODERES, Poder, poderes_de
 
 PASTA_AGENTES = Path(__file__).resolve().parent.parent / "agentes"
@@ -157,6 +158,12 @@ class Mundo:
             ambiguous.registrar(self.pasta, self.modo, absorcao.nome,
                                 absorcao.poderes, absorcao.descartado, self.avisar)
 
+    @property
+    def banco(self) -> Banco:
+        if getattr(self, "_banco", None) is None:
+            self._banco = Banco(self.pasta.parent)
+        return self._banco
+
     def _absorcao(self, agente: Agente) -> Absorcao:
         return self.absorcoes.setdefault(agente.id, Absorcao(agente.id, agente.nome))
 
@@ -271,7 +278,21 @@ class Mundo:
         candidatos = [PODERES[p] for p in sorted(agente.observados) if p not in absorcao.poderes]
         if not candidatos:
             return None, f"You haven't seen {agente.nome} use a new ability yet. Keep interacting."
+        # ReasoningBank: her own failed guesses, so she stops repeating them. Safe to
+        # feed back because `recordar` never returns the judge's words - see banco.py.
+        memoria = self.banco.recordar(agente.id)
+        if memoria:
+            evidencia = f"{evidencia}\n\n{memoria}"
         poder, motivo = await self._julgar(candidatos, descricao, evidencia)
+        # Keep both outcomes. The failures are the valuable half.
+        self.banco.registrar(
+            agent_id=agente.id, source_kind="identificacao",
+            outcome="success" if poder else "failure",
+            title=f"{poder.id if poder else 'unidentified'} on {agente.nome}",
+            description=descricao, content=motivo or "",
+            tags=[agente.id] + ([poder.id] if poder else []),
+            confidence=0.8 if poder else 0.2,
+        )
         if poder is None:
             # Never forward the judge's reason: it knows the answer key and would hint at it.
             self.avisar(f"   ❌ attempt failed on {agente.nome} (judge: {motivo})")
