@@ -1,0 +1,10 @@
+{
+  "mode": "redesign",
+  "framework": "React 19 + Vite 8 + TypeScript",
+  "component_library": "none",
+  "motion_library": "none",
+  "styling": "CSS semantic tokens with light and dark themes",
+  "macrostructure": "workbench shell",
+  "genre": "atmospheric agent operations console",
+  "constraints": ["server-authoritative history", "scripted replay remains labeled", "WCAG 2.2 AA"]
+}

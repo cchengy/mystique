@@ -132,8 +132,13 @@ export function PortaoConta({ t, aoLiberar }: { t: (s: string) => string; aoLibe
               <><dt>{t('Credits')}</dt><dd>{estado.creditos.total_credits}</dd></>
             )}
           </dl>
+          <label className="model-search-label" htmlFor="openrouter-model-search">
+            {t('Modelo da conversa')}
+            <small>{t('Digite para pesquisar entre todos os modelos disponíveis no OpenRouter.')}</small>
+          </label>
           <div className="portao-colar-row">
             <input
+              id="openrouter-model-search"
               list="openrouter-models"
               value={modelo}
               aria-label={t('OpenRouter model')}

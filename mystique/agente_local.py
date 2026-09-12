@@ -55,6 +55,7 @@ def _texto_do_resultado(resultado) -> str:
 async def executar(
     missao, mundo: Mundo, orcamento: float, verbose: bool, persona: str, extras,
     openai_config: dict[str, str] | None = None,
+    historico: list[dict] | None = None,
 ) -> None:
     from .ferramentas import ferramentas_base
 
@@ -74,7 +75,7 @@ async def executar(
         f"{len(mundo.agentes)} agents · {conquistas} abilities in memory · OpenAI-compatible endpoint"
     )
 
-    historico: list[dict] = []
+    historico = list(historico or [])
     pedido = missao
     while True:
         if pedido is None:

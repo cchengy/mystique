@@ -17,6 +17,7 @@ from . import contas
 from .eventos import evento_custom, evento_snapshot
 from .mundo_servidor import InterrompivelMixin
 from .mundos import ANONIMO, Mundos
+from .sessoes import Sessoes
 
 _ORCAMENTO_PADRAO = float(os.getenv("MYSTIQUE_BUDGET_USD", "5"))
 
@@ -35,6 +36,22 @@ class DecisaoBody(BaseModel):
 class MissaoBody(BaseModel):
     mensagem: str
     orcamento: float | None = None
+    sessao_id: str
+
+
+class SessaoBody(BaseModel):
+    titulo: str = "Nova conversa"
+    modo: str = "good"
+
+
+class MensagemImportada(BaseModel):
+    role: str
+    content: str
+
+
+class ImportarSessaoBody(BaseModel):
+    mensagens: list[MensagemImportada]
+    modo: str = "good"
 
 
 class ModeloBody(BaseModel):
@@ -55,6 +72,7 @@ def criar_app(mundos: Mundos, persona: str, extras: FerramentasExtras) -> FastAP
     # A fire-and-forget asyncio.Task with no live reference can be garbage-collected mid-run;
     # this set just keeps one until it finishes.
     tarefas_em_curso: set[asyncio.Task] = set()
+    sessoes = Sessoes(contas.CONTAS_DIR)
 
     async def _sub_do_pedido(request: Request) -> str:
         usuario = await _exigir_conta(request)
@@ -151,10 +169,44 @@ def criar_app(mundos: Mundos, persona: str, extras: FerramentasExtras) -> FastAP
         contas.guardar_modelo(usuario.get("sub", "anonimo"), modelo)
         return {"modelo": modelo}
 
+    @app.get("/api/sessoes")
+    async def listar_sessoes(request: Request) -> list[dict]:
+        return sessoes.listar(await _sub_do_pedido(request))
+
+    @app.post("/api/sessoes", status_code=201)
+    async def criar_sessao(corpo: SessaoBody, request: Request) -> dict:
+        if corpo.modo not in {"good", "evil"}:
+            raise HTTPException(400, "modo must be good or evil")
+        return sessoes.criar(await _sub_do_pedido(request), titulo=corpo.titulo, modo=corpo.modo)
+
+    @app.post("/api/sessoes/importar", status_code=201)
+    async def importar_sessao(corpo: ImportarSessaoBody, request: Request) -> dict:
+        if corpo.modo not in {"good", "evil"} or len(corpo.mensagens) > 80:
+            raise HTTPException(400, "Invalid legacy session")
+        mensagens = [{"role": m.role, "content": m.content} for m in corpo.mensagens]
+        if any(m["role"] not in {"user", "assistant"} or len(m["content"]) > 20000 for m in mensagens):
+            raise HTTPException(400, "Invalid legacy message")
+        return sessoes.importar(await _sub_do_pedido(request), mensagens, corpo.modo)
+
+    @app.get("/api/sessoes/{sessao_id}")
+    async def obter_sessao(sessao_id: str, request: Request) -> dict:
+        sessao = sessoes.obter(await _sub_do_pedido(request), sessao_id)
+        if sessao is None:
+            raise HTTPException(404, "Session not found")
+        return sessao
+
     @app.post("/api/missoes", status_code=202)
     async def iniciar_missao(corpo: MissaoBody, request: Request) -> dict:
         sub = await _sub_do_pedido(request)
-        mundo = mundos.para(sub)
+        sessao = sessoes.obter(sub, corpo.sessao_id)
+        if sessao is None:
+            raise HTTPException(404, "Session not found")
+        modo = sessao["modo"]
+        mundo = mundos.para(sub, modo)
+        contexto = sessoes.contexto(sub, corpo.sessao_id)
+        sessoes.adicionar(sub, corpo.sessao_id, "user", corpo.mensagem)
+        banco = getattr(mundo, "banco", None)
+        evidencias_antes = {item.get("id"): item for item in banco.todos()} if banco is not None else {}
         chave = contas.chave_da_conta(sub)
         openai_config = None
         if chave:
@@ -170,18 +222,25 @@ def criar_app(mundos: Mundos, persona: str, extras: FerramentasExtras) -> FastAP
                 iniciar_ui()
             publicar(mundo, "missao_iniciada", {"mensagem": corpo.mensagem})
             try:
-                persona_pt = persona + (
+                persona_modo, extras_modo = mundos.contexto(modo)
+                persona_pt = persona_modo + (
                     "\n\nToda comunicação visível deve ser em português brasileiro natural. "
                     "Converse com os agentes e entregue a resposta final somente em português brasileiro."
                 )
                 await executar(
                     corpo.mensagem, mundo, corpo.orcamento or _ORCAMENTO_PADRAO, False,
-                    persona_pt, extras, openai_config=openai_config,
+                    persona_pt, extras_modo, openai_config=openai_config, historico=contexto,
                 )
             finally:
                 finalizar_ui = getattr(mundo, "finalizar_missao_ui", None)
                 if finalizar_ui:
                     texto, erro = finalizar_ui()
+                    sessoes.adicionar(sub, corpo.sessao_id, "system" if erro else "assistant", texto)
+                    if banco is not None:
+                        for evidencia in banco.todos():
+                            anterior = evidencias_antes.get(evidencia.get("id"))
+                            if anterior is None or anterior.get("usage_count") != evidencia.get("usage_count"):
+                                sessoes.adicionar_evidencia(sub, corpo.sessao_id, evidencia)
                     publicar(mundo, "resposta_final", {"texto": texto, "erro": erro})
                 publicar(mundo, "missao_finalizada", {"eof": True})
 
@@ -201,11 +260,9 @@ def criar_app(mundos: Mundos, persona: str, extras: FerramentasExtras) -> FastAP
 
     @app.get("/agui/stream")
     async def stream(request: Request) -> StreamingResponse:
-        # EventSource cannot set an Authorization header, so the token may also
-        # arrive as a query parameter. It is verified exactly the same way.
-        autorizacao = request.headers.get("authorization") or (
-            f"Bearer {request.query_params['token']}" if request.query_params.get("token") else None
-        )
+        # Fetch streaming carries the bearer token in a header. Never put access
+        # tokens in URLs: reverse proxies and access logs routinely retain them.
+        autorizacao = request.headers.get("authorization")
         if contas.auth_configurada():
             usuario = await contas.usuario_do_token(autorizacao)
             if usuario is None:

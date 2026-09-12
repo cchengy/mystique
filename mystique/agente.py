@@ -1,6 +1,7 @@
 """Main loop: connects Mystique to the Agent SDK and narrates what happens."""
 
 import asyncio
+import json
 import os
 from collections.abc import Callable
 
@@ -67,11 +68,13 @@ class Narrador:
 async def executar(
     missao: str | None, mundo: Mundo, orcamento: float, verbose: bool, persona: str,
     extras: FerramentasExtras, openai_config: dict[str, str] | None = None,
+    historico: list[dict] | None = None,
 ) -> None:
     """With a mission: runs once and exits. Without one: interactive mode with session memory."""
     if openai_config or agente_local.ativo():  # self-hosted Mystique: see mystique/agente_local.py
         await agente_local.executar(
             missao, mundo, orcamento, verbose, persona, extras, openai_config=openai_config,
+            historico=historico,
         )
         return
 
@@ -96,6 +99,13 @@ async def executar(
                     pedido = None
                     continue
             try:
+                if historico:
+                    transcricao = json.dumps(historico[-40:], ensure_ascii=False)
+                    pedido = (
+                        "<conversation_history>Earlier turns in this same user-selected session: "
+                        f"{transcricao}</conversation_history>\n\n{pedido}"
+                    )
+                    historico = None
                 await client.query(mundo.envelopar(pedido))
                 async for msg in client.receive_response():
                     narrador.mensagem(msg)

@@ -116,6 +116,7 @@ class Banco:
                 json.dumps(t, ensure_ascii=False, indent=2), encoding="utf-8")
         except OSError:
             pass
+        self._reescrever_wiki()
 
     def resumo(self) -> dict:
         itens = self.todos()

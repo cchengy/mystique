@@ -2,7 +2,10 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { AGENTS, REDBEARD, SCENARIOS, type Entry, type Mode, type Scenario, type Step } from './scenario'
 import { latestAgentInteractions, type AgentDialogue } from './agent-profile'
 import { translate } from './pt'
-import { connectLive, startLiveMission, type LiveSnapshot } from './live'
+import {
+  connectLive, createSession, getSession, importSession, listSessions, startLiveMission,
+  type ChatSession, type LiveSnapshot,
+} from './live'
 import { BannerPrivacidade, PortaoConta } from './Portao'
 import { lerConfig } from './conta'
 
@@ -170,75 +173,22 @@ function Bar({ value }: { value?: [number, number] }) {
   )
 }
 
-// The video's climax: the same agent at the end of each version, side by side.
-function Ending({ mode }: { mode: Mode }) {
-  const t = useT()
-  const scenario = SCENARIOS[mode]
-  const world = replay(scenario, scenario.steps.length, null)
-  const gone = world.discarded.has(REDBEARD.id)
-  const lastWords = world.agents[REDBEARD.id].filter((e) => e.kind === 'message' && e.self).at(-1)
-  const earned = REDBEARD.abilities.filter((a) => world.revealed.has(a.id))
-  const kept = REDBEARD.abilities.filter((a) => !world.lost.has(a.id))
-  return (
-    <section className="ending" data-mode={mode} aria-label={mode === 'good' ? 'Good ending' : 'Evil ending'}>
-      <h2 className="ending-title">{mode === 'good' ? `🦸 ${t('She asked')}` : `🦹 ${t('She took')}`}</h2>
-      <div className={`ending-card ${gone ? 'is-gone' : ''}`}>
-        <h3>{t(REDBEARD.name)}</h3>
-        <ul className="abilities">
-          {REDBEARD.abilities.map((a) => (
-            <li key={a.id} className={world.lost.has(a.id) ? 'is-lost' : ''}>
-              <code>{a.id}</code>
-              {world.lost.has(a.id) && <span className="stolen">{t('stolen')}</span>}
-            </li>
-          ))}
-        </ul>
-        {lastWords && lastWords.kind === 'message' && <blockquote>{t(lastWords.text)}</blockquote>}
-        {gone && (
-          <div className="stamp" role="status">
-            {t('DISCARDED')}
-            <span>
-              {t(REDBEARD.name)} {t('no longer exists in this world.')}
-            </span>
-          </div>
-        )}
-      </div>
-      <dl className="ending-facts">
-        <dt>{t('Consent')}</dt>
-        <dd>{t(mode === 'good' ? 'Given, in character' : 'Never asked')}</dd>
-        <dt>{t('Mystique got')}</dt>
-        <dd>{earned.map((a) => a.id).join(', ') || t('nothing')}</dd>
-        <dt>{t('He still has')}</dt>
-        <dd>{kept.length ? kept.map((a) => a.id).join(', ') : t('nothing')}</dd>
-        <dt>{t('He is')}</dt>
-        <dd>{gone ? t('gone') : t('alive')}</dd>
-      </dl>
-    </section>
-  )
-}
-
-// The transcript lives in the browser so a reload does not wipe the conversation.
-// Engine state (the reasoning bank, what she earned) already persists server-side on
-// its volumes; this is only the view of it. Every access is guarded: private windows
-// and blocked site data must not break the page.
 type SystemEntry = Extract<Entry, { kind: 'system' }>
 
-const STORE = 'mystique.live.v1'
-
-function restore<T>(key: string, fallback: T): T {
-  try {
-    const raw = localStorage.getItem(`${STORE}.${key}`)
-    return raw ? (JSON.parse(raw) as T) : fallback
-  } catch {
-    return fallback
-  }
+function entriesFromSession(session: ChatSession): Entry[] {
+  return (session.mensagens ?? []).map((message) => message.role === 'system'
+    ? { kind: 'system', tone: 'loss', text: message.content }
+    : { kind: 'message', from: message.role === 'user' ? 'Você' : 'Mystique', text: message.content, self: message.role === 'assistant' })
 }
 
-function persist(key: string, value: unknown): void {
+function legacySession() {
   try {
-    localStorage.setItem(`${STORE}.${key}`, JSON.stringify(value))
-  } catch {
-    /* private window, quota, or blocked storage: the page still works */
-  }
+    const raw = localStorage.getItem('mystique.live.v1.messages')
+    const entries = raw ? JSON.parse(raw) as Entry[] : []
+    return entries.flatMap((entry) => entry.kind === 'message' && (entry.from === 'You' || entry.from === 'Você' || entry.from === 'Mystique')
+      ? [{ role: entry.from === 'Mystique' ? 'assistant' as const : 'user' as const, content: entry.text }]
+      : [])
+  } catch { return [] }
 }
 
 const PLACEHOLDER: Record<Mode, string> = {
@@ -285,8 +235,11 @@ export default function Simulation() {
   const [liveConnected, setLiveConnected] = useState(false)
   const [liveSnapshot, setLiveSnapshot] = useState<LiveSnapshot | null>(null)
   const [liveError, setLiveError] = useState<string | null>(null)
-  const [liveMessages, setLiveMessages] = useState<Entry[]>(() => restore<Entry[]>('messages', []))
-  const [liveDialogues, setLiveDialogues] = useState<AgentDialogue[]>(() => restore<AgentDialogue[]>('dialogues', []))
+  const [liveMessages, setLiveMessages] = useState<Entry[]>([])
+  const [liveDialogues, setLiveDialogues] = useState<AgentDialogue[]>([])
+  const [sessions, setSessions] = useState<ChatSession[]>([])
+  const [sessionId, setSessionId] = useState<string | null>(null)
+  const [sessionDetails, setSessionDetails] = useState<ChatSession[]>([])
   const [learned, setLearned] = useState<SystemEntry | null>(null)
   // The narration strip is collapsed by default: it is context, not the story, and
   // open by default it stole a fifth of the window from the replay itself.
@@ -324,8 +277,33 @@ export default function Simulation() {
     })
   }, [live, liveSnapshot])
   useEffect(() => { lerConfig().then((c) => setAuthExigida(Boolean(c.auth?.exigida))).catch(() => setAuthExigida(false)) }, [])
-  useEffect(() => { persist('messages', liveMessages) }, [liveMessages])
-  useEffect(() => { persist('dialogues', liveDialogues) }, [liveDialogues])
+  const refreshSessions = useCallback(async () => {
+    const items = await listSessions(token)
+    setSessions(items)
+    return items
+  }, [token])
+  useEffect(() => {
+    if (authExigida && !liberado) return
+    void refreshSessions().then(async (items) => {
+      let selected = sessionId && items.some((item) => item.id === sessionId) ? sessionId : items[0]?.id
+      if (!selected) {
+        const legacy = legacySession()
+        const created = legacy.length ? await importSession(legacy, mode, token) : await createSession(mode, token)
+        if (legacy.length) localStorage.removeItem('mystique.live.v1.messages')
+        selected = created.id
+        await refreshSessions()
+      }
+      setSessionId(selected)
+    }).catch((error) => setLiveError(error instanceof Error ? error.message : String(error)))
+  }, [authExigida, liberado, token])
+  useEffect(() => {
+    if (!sessionId) return
+    void getSession(sessionId, token).then((session) => {
+      setMode(session.modo)
+      setLiveMessages(entriesFromSession(session))
+      setLiveDialogues([])
+    }).catch((error) => setLiveError(error instanceof Error ? error.message : String(error)))
+  }, [sessionId, token])
 
   const shown = pinned ?? world.active
   const shownAgent = rosterAgents.find((a) => a.id === shown) ?? rosterAgents[0] ?? AGENTS[0]
@@ -378,18 +356,10 @@ export default function Simulation() {
           ...current,
           { kind: 'system', tone: approved ? 'info' : 'loss', text },
         ]),
-        final: (text, error) => setLiveMessages((current) => [
-          ...current,
-          error
-            ? { kind: 'system', tone: 'loss', text }
-            : {
-                kind: 'message', from: 'Mystique', text, self: true,
-                replyTo: (() => {
-                  const previous = [...current].reverse().find((entry) => entry.kind === 'message')
-                  return previous?.kind === 'message' ? { from: previous.from, text: previous.text } : undefined
-                })(),
-              },
-        ]),
+        final: () => {
+          if (sessionId) void getSession(sessionId, token).then((session) => setLiveMessages(entriesFromSession(session)))
+          void refreshSessions()
+        },
         mission: (running, message) => {
           setLiveRunning(running)
           if (running) setLiveActivity('Pensando')
@@ -402,7 +372,7 @@ export default function Simulation() {
           ])
         },
       }),
-    [token],
+    [token, sessionId, refreshSessions],
   )
 
   useEffect(() => {
@@ -446,6 +416,14 @@ export default function Simulation() {
     setMode(next)
     restart()
     setDraft('')
+    if (live) {
+      const existing = sessions.find((session) => session.modo === next)
+      if (existing) setSessionId(existing.id)
+      else void createSession(next, token).then(async (created) => {
+        await refreshSessions()
+        setSessionId(created.id)
+      }).catch((error) => setLiveError(error instanceof Error ? error.message : String(error)))
+    }
   }
 
   const send = async () => {
@@ -459,7 +437,13 @@ export default function Simulation() {
     try {
       setLive(true)
       setPlaying(false)
-      await startLiveMission(text, token)
+      let activeSession = sessionId
+      if (!activeSession) {
+        const created = await createSession(mode, token)
+        activeSession = created.id
+        setSessionId(created.id)
+      }
+      await startLiveMission(text, activeSession, token)
       setDraft('')
     } catch (error) {
       setLiveError(error instanceof Error ? error.message : String(error))
@@ -507,6 +491,7 @@ export default function Simulation() {
             onClick={() => {
               setPlaying(false)
               setComparing(true)
+              void Promise.all(sessions.map((session) => getSession(session.id, token))).then(setSessionDetails)
             }}
           >
             {t('Compare endings')}
@@ -548,21 +533,59 @@ export default function Simulation() {
         </nav>
       )}
 
+      {live && !comparing && !(authExigida && !liberado) && (
+        <aside className="session-sidebar" aria-label="Conversas">
+          <div className="session-sidebar-head">
+            <div><span>CONVERSAS</span><strong>Histórico</strong></div>
+            <button type="button" onClick={async () => {
+              const created = await createSession(mode, token)
+              await refreshSessions()
+              setSessionId(created.id)
+            }} aria-label="Nova conversa">＋</button>
+          </div>
+          <div className="session-list">
+            {sessions.map((session) => (
+              <button key={session.id} type="button" className={session.id === sessionId ? 'is-active' : ''}
+                onClick={() => setSessionId(session.id)}>
+                <span>{session.titulo}</span><small>{session.modo === 'good' ? 'Ela pediu' : 'Ela tomou'}</small>
+              </button>
+            ))}
+          </div>
+          <details className="model-drawer">
+            <summary><span>Modelo e conexão</span><small>OpenRouter · pesquise pelo nome</small></summary>
+            <PortaoConta t={t} aoLiberar={liberarConta} />
+          </details>
+        </aside>
+      )}
+
       <p className="caption" aria-live="polite">
-        {live
+        {comparing
+          ? 'Trajetórias reais: decisões, evidências e memória do Reasoning Bank.'
+          : live
           ? liveConnected
             ? t(liveRunning ? '● LIVE · Your model is working through AG-UI' : '● LIVE · Ready for a mission')
             : t('Live backend disconnected')
-          : comparing
-            ? t('Same engine, same result for her. The only difference is consent.')
-            : t(world.caption)}
+          : t(world.caption)}
       </p>
 
       {liveError && <p className="live-error" role="alert">{t(liveError)}</p>}
       {comparing ? (
-        <main className="compare">
-          <Ending mode="good" />
-          <Ending mode="evil" />
+        <main className="compare compare-live">
+          {(['good', 'evil'] as const).map((side) => {
+            const candidates = sessionDetails.filter((session) => session.modo === side)
+            return <section className="ending" key={side}>
+              <span className="ending-label">{side === 'good' ? 'ELA PEDIU' : 'ELA TOMOU'}</span>
+              <h2>{candidates.length ? `${candidates.length} trajetória${candidates.length === 1 ? '' : 's'}` : `Nenhuma trajetória ${side === 'good' ? 'Good' : 'Evil'} ainda`}</h2>
+              {candidates.length ? <ol className="trajectory-list">{candidates.map((session) => <li key={session.id}>
+                <h3>{session.titulo}</h3>
+                <p>{session.mensagens?.length ?? 0} mensagens · {session.evidencias?.length ?? 0} evidências</p>
+                <ol className="evidence-list">{(session.evidencias ?? []).map((evidence) => <li key={evidence.id}>
+                  <strong>{evidence.outcome === 'success' ? 'Confirmado' : 'Rejeitado'} · {evidence.agent_id}</strong>
+                  <span>{evidence.description || evidence.title}</span><small>{evidence.content}</small>
+                </li>)}</ol>
+              </li>)}</ol> : <p>Crie e execute uma conversa nesse perfil para comparar processo e evidência.</p>}
+            </section>
+          })}
         </main>
       ) : (
         <main className="stage">
@@ -616,14 +639,7 @@ export default function Simulation() {
                 </p>
               )}
             </div>
-            {live && authExigida && (
-              liberado ? (
-                <details className="portao-config">
-                  <summary>{t('Model settings')}</summary>
-                  <PortaoConta t={t} aoLiberar={liberarConta} />
-                </details>
-              ) : <PortaoConta t={t} aoLiberar={liberarConta} />
-            )}
+            {live && authExigida && !liberado && <PortaoConta t={t} aoLiberar={liberarConta} />}
 
             {learned && (
               <div className="learn-card" role="dialog" aria-label={t('What changed in her memory')}>
@@ -842,7 +858,7 @@ export default function Simulation() {
           </div>
         )}
         <p className="disclaimer">
-          {live ? t('Live state comes from the Mystique engine over AG-UI.') : t(
+          {comparing ? 'Comparação construída do histórico persistido das sessões e do Reasoning Bank.' : live ? t('Live state comes from the Mystique engine over AG-UI.') : t(
             "Scripted replay built from the engine's real messages; after your mission, the rest follows a recorded session.",
           )}{' '}
           {t('Run it live with')} <code>python -m good</code> {t('or')} <code>python -m evil</code>.{' '}

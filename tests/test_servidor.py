@@ -36,12 +36,13 @@ def test_public_stream_keeps_dialogue_and_redacts_internal_traces() -> None:
 
 def test_mission_is_scheduled_on_the_application_event_loop() -> None:
     mundo = SimpleNamespace(modo="good")
-    mundos = SimpleNamespace(modo="good", para=lambda _sub: mundo)
+    mundos = SimpleNamespace(modo="good", para=lambda _sub, _modo=None: mundo, contexto=lambda _modo=None: ("persona", lambda _: []))
     executar = AsyncMock()
     app = criar_app(mundos, "persona", lambda _: [])
 
     with patch("servidor.app.executar", executar), TestClient(app, raise_server_exceptions=False) as client:
-        response = client.post("/api/missoes", json={"mensagem": "Meet Byte"})
+        session = client.post("/api/sessoes", json={"titulo": "Test", "modo": "good"}).json()
+        response = client.post("/api/missoes", json={"mensagem": "Meet Byte", "sessao_id": session["id"]})
         for _ in range(10):
             if executar.await_count:
                 break
@@ -53,7 +54,7 @@ def test_mission_is_scheduled_on_the_application_event_loop() -> None:
 
 def test_authenticated_mission_uses_the_accounts_openrouter_key_and_model() -> None:
     mundo = SimpleNamespace(modo="good", configurar_openai=lambda **_config: None)
-    mundos = SimpleNamespace(modo="good", para=lambda _sub: mundo)
+    mundos = SimpleNamespace(modo="good", para=lambda _sub, _modo=None: mundo, contexto=lambda _modo=None: ("persona", lambda _: []))
     executar = AsyncMock()
     app = criar_app(mundos, "persona", lambda _: [])
 
@@ -65,10 +66,15 @@ def test_authenticated_mission_uses_the_accounts_openrouter_key_and_model() -> N
         patch("servidor.app.executar", executar),
         TestClient(app, raise_server_exceptions=False) as client,
     ):
+        session = client.post(
+            "/api/sessoes",
+            headers={"Authorization": "Bearer access-token"},
+            json={"titulo": "Teste", "modo": "good"},
+        ).json()
         response = client.post(
             "/api/missoes",
             headers={"Authorization": "Bearer access-token"},
-            json={"mensagem": "Meet Byte"},
+            json={"mensagem": "Meet Byte", "sessao_id": session["id"]},
         )
         for _ in range(10):
             if executar.await_count:
@@ -81,6 +87,7 @@ def test_authenticated_mission_uses_the_accounts_openrouter_key_and_model() -> N
         "modelo": "openai/gpt-5-mini",
         "chave": "private-key",
     }
+    assert executar.await_args.kwargs["historico"] == []
 
 
 def test_authenticated_user_can_select_an_openrouter_model() -> None:

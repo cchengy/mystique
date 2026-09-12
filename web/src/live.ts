@@ -23,6 +23,16 @@ export type LiveReceipt = {
   veredito: { aprovado: boolean; motivo: string }
 }
 
+export type SessionMessage = { role: 'user' | 'assistant' | 'system'; content: string }
+export type ReasoningEvidence = {
+  id: string; agent_id?: string; outcome?: string; title?: string; description?: string;
+  content?: string; source_kind?: string; usage_count?: number
+}
+export type ChatSession = {
+  id: string; titulo: string; modo: 'good' | 'evil'; created_at: string; updated_at: string;
+  mensagens?: SessionMessage[]; evidencias?: ReasoningEvidence[]
+}
+
 type LiveHandlers = {
   snapshot: (value: LiveSnapshot) => void
   receipt: (value: LiveReceipt) => void
@@ -38,16 +48,9 @@ type LiveHandlers = {
 }
 
 export function connectLive(handlers: LiveHandlers): () => void {
-  // EventSource cannot set an Authorization header, so the token rides as a query
-  // parameter. The server verifies it exactly the same way it verifies a header.
-  const token = handlers.token
-  const source = new EventSource(
-    `${API_BASE}/agui/stream${token ? `?token=${encodeURIComponent(token)}` : ''}`,
-  )
-  source.onopen = () => handlers.connected(true)
-  source.onerror = () => handlers.connected(false)
-  source.onmessage = (message) => {
-    const event = JSON.parse(message.data) as {
+  const controller = new AbortController()
+  const dispatch = (data: string) => {
+    const event = JSON.parse(data) as {
       type: string
       name?: string
       value?: unknown
@@ -81,17 +84,77 @@ export function connectLive(handlers: LiveHandlers): () => void {
     }
     if (event.type === 'CUSTOM' && event.name === 'missao_finalizada') handlers.mission(false)
   }
-  return () => source.close()
+  void (async () => {
+    try {
+      const response = await fetch(`${API_BASE}/agui/stream`, {
+        headers: handlers.token ? { Authorization: `Bearer ${handlers.token}` } : {},
+        signal: controller.signal,
+      })
+      if (!response.ok || !response.body) throw new Error(`stream ${response.status}`)
+      handlers.connected(true)
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+      while (true) {
+        const { value, done } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        const frames = buffer.split('\n\n')
+        buffer = frames.pop() ?? ''
+        for (const frame of frames) {
+          const data = frame.split('\n').filter((line) => line.startsWith('data:')).map((line) => line.slice(5).trim()).join('')
+          if (data) dispatch(data)
+        }
+      }
+    } catch (error) {
+      if (!controller.signal.aborted) handlers.connected(false)
+    }
+  })()
+  return () => controller.abort()
 }
 
-export async function startLiveMission(message: string, token?: string): Promise<void> {
+function authHeaders(token?: string): Record<string, string> {
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
+export async function listSessions(token?: string): Promise<ChatSession[]> {
+  const response = await fetch(`${API_BASE}/api/sessoes`, { headers: authHeaders(token) })
+  if (!response.ok) throw new Error(`Sessions could not load (${response.status})`)
+  return response.json()
+}
+
+export async function createSession(mode: 'good' | 'evil', token?: string): Promise<ChatSession> {
+  const response = await fetch(`${API_BASE}/api/sessoes`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
+    body: JSON.stringify({ titulo: 'Nova conversa', modo: mode }),
+  })
+  if (!response.ok) throw new Error(`Session could not be created (${response.status})`)
+  return response.json()
+}
+
+export async function importSession(messages: SessionMessage[], mode: 'good' | 'evil', token?: string): Promise<ChatSession> {
+  const response = await fetch(`${API_BASE}/api/sessoes/importar`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
+    body: JSON.stringify({ mensagens: messages, modo: mode }),
+  })
+  if (!response.ok) throw new Error(`Previous chat could not be imported (${response.status})`)
+  return response.json()
+}
+
+export async function getSession(id: string, token?: string): Promise<ChatSession> {
+  const response = await fetch(`${API_BASE}/api/sessoes/${id}`, { headers: authHeaders(token) })
+  if (!response.ok) throw new Error(`Session could not load (${response.status})`)
+  return response.json()
+}
+
+export async function startLiveMission(message: string, sessionId: string, token?: string): Promise<void> {
   const response = await fetch(`${API_BASE}/api/missoes`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
-    body: JSON.stringify({ mensagem: message }),
+    body: JSON.stringify({ mensagem: message, sessao_id: sessionId }),
   })
   if (!response.ok) throw new Error(`Mission could not start (${response.status})`)
 }

@@ -102,3 +102,22 @@ git push origin post-hackathon     # nunca `git push origin main`
 - Antes de empurrar, confira: `git rev-parse --abbrev-ref HEAD` precisa dizer `post-hackathon`.
 - `post-hackathon` contém todo o histórico, inclusive os commits pós-deadline que saíram da
   `main`. Nada foi perdido.
+
+### Feature dependency map and commit discipline
+
+Every feature-changing commit updates this table. UI-contract changes update `DESIGN.md` in
+the same commit. Do not merge a feature whose dependency record is stale.
+
+| Feature | Source of truth | Depends on | Downstream surfaces |
+|---|---|---|---|
+| Live conversation | `servidor/sessoes.py` account JSON | Auth0 `sub`, session API | rail, transcript, mission |
+| Main-model context | session user/assistant messages | both model runners | next completion |
+| Good/Evil profile | session `modo`, isolated world workspace | persona/tools, account event bus | live run, Compare |
+| Reasoning evidence | workspace `bank/*.json` | judge outcome and recall | `WIKI.md`, session, Compare |
+| Exa retrieval | `EXA_API_KEY`, `mystique/poderes.py` | Good real-world policy | sourced answers; Evil blocks it |
+| Model selection | encrypted account key and model ID | OpenRouter models endpoint | model drawer, missions |
+| Guided Replay | `web/src/scenario.ts` | recorded scenario only | replay, never live evidence |
+| Live transport | authenticated fetch stream | bearer header, account bus | AG-UI updates |
+
+Before commit: update this map if dependencies changed; update `DESIGN.md` for UI changes;
+run offline/backend tests, `npm test`, `npm run build`; inspect light/dark and desktop/mobile.

@@ -30,33 +30,40 @@ class Mundos:
     def __init__(self, modo: str, raiz: Path) -> None:
         self.modo = _MODOS.get(modo.lower(), "good")
         self.raiz = raiz
-        self._por_conta: dict[str, object] = {}
+        self._por_conta: dict[tuple[str, str], object] = {}
+        self._barramentos: dict[str, BarramentoEventos] = {}
 
-    def _workspace(self, sub: str) -> Path:
+    def _workspace(self, sub: str, modo: str) -> Path:
         # The shared account keeps the original on-disk location, so an existing
         # deployment does not lose what it already learned.
         if sub == ANONIMO:
-            return self.raiz / self.modo / "workspace"
-        return workspace_da_conta(sub)
+            return self.raiz / modo / "workspace"
+        base = workspace_da_conta(sub)
+        return base if modo == self.modo else base.parent / f"workspace-{modo}"
 
-    def para(self, sub: str):
-        mundo = self._por_conta.get(sub)
+    def para(self, sub: str, modo: str | None = None):
+        modo = _MODOS.get((modo or self.modo).lower(), self.modo)
+        chave = (sub, modo)
+        mundo = self._por_conta.get(chave)
         if mundo is not None:
             return mundo
 
         from .mundo_servidor import MundoBemServidor, MundoMalServidor
 
-        workspace = self._workspace(sub)
+        workspace = self._workspace(sub, modo)
         workspace.mkdir(parents=True, exist_ok=True)
-        classe = MundoBemServidor if self.modo == "good" else MundoMalServidor
+        classe = MundoBemServidor if modo == "good" else MundoMalServidor
         # Its own bus as well: events must not cross between accounts.
-        mundo = classe(workspace, eventos=BarramentoEventos())
-        self._por_conta[sub] = mundo
+        # Good and evil sessions remain separate worlds, but the account owns one
+        # transport. Switching profile must not silently disconnect the live UI.
+        barramento = self._barramentos.setdefault(sub, BarramentoEventos())
+        mundo = classe(workspace, eventos=barramento)
+        self._por_conta[chave] = mundo
         return mundo
 
-    def contexto(self) -> tuple[str, Callable]:
+    def contexto(self, modo: str | None = None) -> tuple[str, Callable]:
         """(persona, extras) for the configured mode."""
-        if self.modo == "good":
+        if (modo or self.modo) == "good":
             from good.ferramentas import ferramentas
             from good.persona import PERSONA
         else:
