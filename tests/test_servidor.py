@@ -28,6 +28,9 @@ def test_public_stream_keeps_dialogue_and_redacts_internal_traces() -> None:
     assert _evento_publico("[Mystique] The final answer") == (
         "resposta", {"texto": "The final answer"}
     )
+    assert _evento_publico("[Mystique] Resposta **final**\\</｜｜DSML｜｜ parameter>") == (
+        "resposta", {"texto": "Resposta final"}
+    )
 
 
 def test_mission_is_scheduled_on_the_application_event_loop() -> None:

@@ -5,7 +5,7 @@
 export type Mode = 'good' | 'evil'
 
 export type Entry =
-  | { kind: 'message'; from: string; self: boolean; text: string }
+  | { kind: 'message'; from: string; self: boolean; text: string; replyTo?: { from: string; text: string } }
   | { kind: 'tool'; name: string; args: Record<string, unknown>; result?: string }
   | { kind: 'notice'; agent: string; ability: string }
   | { kind: 'system'; text: string; tone?: 'loss' | 'info' }

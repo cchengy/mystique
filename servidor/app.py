@@ -60,7 +60,11 @@ def criar_app(mundo: InterrompivelMixin, persona: str, extras: FerramentasExtras
                 iniciar_ui()
             publicar("missao_iniciada", {"mensagem": corpo.mensagem})
             try:
-                await executar(corpo.mensagem, mundo, corpo.orcamento or _ORCAMENTO_PADRAO, False, persona, extras)
+                persona_pt = persona + (
+                    "\n\nToda comunicação visível deve ser em português brasileiro natural. "
+                    "Converse com os agentes e entregue a resposta final somente em português brasileiro."
+                )
+                await executar(corpo.mensagem, mundo, corpo.orcamento or _ORCAMENTO_PADRAO, False, persona_pt, extras)
             finally:
                 finalizar_ui = getattr(mundo, "finalizar_missao_ui", None)
                 if finalizar_ui:

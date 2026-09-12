@@ -31,6 +31,7 @@ type LiveHandlers = {
   status: (value: string) => void
   dialogue: (from: string, to: string, text: string) => void
   improvement: (value: string) => void
+  decision: (value: string, approved: boolean) => void
   final: (value: string, error: boolean) => void
   mission: (running: boolean, message?: string) => void
 }
@@ -60,6 +61,10 @@ export function connectLive(handlers: LiveHandlers): () => void {
     }
     if (event.type === 'CUSTOM' && event.name === 'melhoria') {
       handlers.improvement((event.value as { texto: string }).texto)
+    }
+    if (event.type === 'CUSTOM' && event.name === 'decisao_automatica') {
+      const value = event.value as { texto: string; aprovado: boolean }
+      handlers.decision(value.texto, value.aprovado)
     }
     if (event.type === 'CUSTOM' && event.name === 'resposta_final') {
       const value = event.value as { texto: string; erro?: boolean }

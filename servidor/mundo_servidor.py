@@ -12,7 +12,7 @@ from evil.mundo import MundoMal
 from mystique.mundo import Absorcao, Agente, Mundo
 from mystique.poderes import PODERES, Poder, poderes_de
 
-from .eventos import BarramentoEventos, evento_custom, evento_snapshot, novo_recibo_id
+from .eventos import BarramentoEventos, evento_custom, evento_snapshot
 
 
 _RESPOSTA = re.compile(r"^\[[^\]]+\]\s*(.+)$", re.DOTALL)
@@ -20,18 +20,24 @@ _FALA_SAIDA = re.compile(r"^💬\s+(.+?)\s+→\s+(.+?)(?:\s+\(external\))?:\s*(.
 _FALA_ENTRADA = re.compile(r"^💬\s+([^:]+):\s*(.+)$", re.DOTALL)
 
 
+def _limpar_texto_publico(texto: str) -> str:
+    texto = re.sub(r"\\?</?[^>]*DSML[^>]*>", "", texto, flags=re.IGNORECASE)
+    texto = texto.replace("```", "").replace("**", "").replace("`", "")
+    return re.sub(r"[ \t]+\n", "\n", texto).strip()
+
+
 def _evento_publico(texto: str) -> tuple[str, dict]:
     """Expose conversation and progress, never tool traces or private reasoning."""
     limpo = texto.strip()
     resposta = _RESPOSTA.match(limpo)
     if resposta:
-        return "resposta", {"texto": resposta.group(1).strip()}
+        return "resposta", {"texto": _limpar_texto_publico(resposta.group(1))}
     saida = _FALA_SAIDA.match(limpo)
     if saida:
-        return "dialogo", {"de": saida.group(1), "para": saida.group(2), "texto": saida.group(3)}
+        return "dialogo", {"de": saida.group(1), "para": saida.group(2), "texto": _limpar_texto_publico(saida.group(3))}
     entrada = _FALA_ENTRADA.match(limpo)
     if entrada:
-        return "dialogo", {"de": entrada.group(1), "para": "Mystique", "texto": entrada.group(2)}
+        return "dialogo", {"de": entrada.group(1), "para": "Mystique", "texto": _limpar_texto_publico(entrada.group(2))}
 
     baixo = limpo.casefold()
     if "adapter" in baixo or "absorbs the essence" in baixo or "steals [" in baixo:
@@ -152,35 +158,18 @@ class InterrompivelMixin:
         self, agente: Agente, absorcao: Absorcao, descricao: str, evidencia: str,
         poder: Poder | None, motivo: str,
     ) -> bool:
-        recibo_id = novo_recibo_id()
-        self._eventos.publicar_nowait(evento_custom("recibo_pendente", {
-            "recibo_id": recibo_id,
-            "agente_id": agente.id,
-            "descricao_alegada": descricao,
-            "evidencia": evidencia,
-            "veredito": {"aprovado": poder is not None, "motivo": motivo},
-        }))
-
-        if poder is None:
-            # The judge matched no candidate: nothing to persist either way, so the Mystique
-            # flow is not blocked on a human here — the card is shown for observability only.
-            self._eventos.publicar_nowait(evento_custom("recibo_resolvido", {
-                "recibo_id": recibo_id, "decisao": "rejeitado_pelo_juiz",
-            }))
-            return False
-
-        futuro: asyncio.Future[bool] = asyncio.get_running_loop().create_future()
-        self._pendentes[recibo_id] = futuro
-        try:
-            aprovado = await futuro
-        finally:
-            self._pendentes.pop(recibo_id, None)
-
+        aprovado = poder is not None
         if not aprovado:
-            self._ultimos_vereditos[(agente.id, poder.id)] = (False, motivo)
+            poder_id = descricao or "capacidade não identificada"
+            self._ultimos_vereditos[(agente.id, poder_id)] = (False, motivo)
             self._eventos.publicar_nowait(evento_snapshot(self.snapshot()))
-        self._eventos.publicar_nowait(evento_custom("recibo_resolvido", {
-            "recibo_id": recibo_id, "decisao": "aprovar" if aprovado else "rejeitar",
+        self._eventos.publicar_nowait(evento_custom("decisao_automatica", {
+            "agente": agente.nome,
+            "aprovado": aprovado,
+            "texto": (
+                f"Mystique aprovou o aprendizado com {agente.nome}."
+                if aprovado else f"Mystique rejeitou este aprendizado com {agente.nome}."
+            ),
         }))
         return aprovado
 

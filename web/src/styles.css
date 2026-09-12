@@ -352,13 +352,13 @@ textarea:focus-visible {
 }
 
 .app[data-live='true'] .pane-mystique .feed {
-  width: min(100%, 56rem);
+  width: min(100%, 72rem);
   margin-inline: auto;
-  padding-block: 1.25rem;
+  padding: 1rem clamp(1rem, 3vw, 2.5rem);
 }
 
 .app[data-live='true'] .composer {
-  width: min(100%, 58rem);
+  width: min(100%, 74rem);
   margin-inline: auto;
   border: 1px solid var(--line-light);
   border-bottom: 0;
@@ -382,6 +382,40 @@ textarea:focus-visible {
   min-width: 8.5rem;
   min-height: 44px;
   padding: 0.45rem 0.65rem;
+}
+
+.app[data-live='true'] .top {
+  gap: 0.45rem 0.75rem;
+  padding-block: 0.35rem;
+  border-bottom-width: 2px;
+}
+
+.app[data-live='true'] .brand {
+  font-size: 1.65rem;
+}
+
+.app[data-live='true'] .mode,
+.app[data-live='true'] .lang,
+.app[data-live='true'] .theme {
+  min-height: 44px;
+  padding-block: 0.25rem;
+}
+
+.app[data-live='true'] .experience-switch {
+  padding-block: 0.25rem;
+}
+
+.app[data-live='true'] .experience-switch button {
+  min-height: 44px;
+  padding-block: 0.35rem;
+}
+
+.app[data-live='true'] .caption {
+  display: none;
+}
+
+.app[data-live='true'] .composer-hint {
+  display: none;
 }
 
 .app[data-live='true'] .tile-intro,
@@ -772,16 +806,42 @@ textarea:focus-visible {
 /* --- entries -------------------------------------------------------------- */
 
 .bubble {
-  max-width: 85%;
-  padding: 0.6rem 0.85rem;
-  border-radius: 10px;
+  max-width: min(92%, 78ch);
+  padding: 0.7rem 0.9rem;
+  border-radius: 12px;
   align-self: flex-start;
 }
 
 .bubble p {
   margin: 0;
-  max-width: 62ch;
+  max-width: 78ch;
   text-wrap: pretty;
+  white-space: pre-wrap;
+}
+
+.reply-quote {
+  display: grid;
+  gap: 0.1rem;
+  margin: 0 0 0.55rem;
+  padding: 0.45rem 0.65rem;
+  border-left: 3px solid var(--iris);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-light);
+}
+
+.reply-quote strong {
+  color: var(--iris);
+  font-size: 0.78rem;
+}
+
+.reply-quote span {
+  overflow: hidden;
+  color: var(--muted-light);
+  font-size: 0.82rem;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .bubble-from {

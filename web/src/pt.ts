@@ -7,6 +7,9 @@ import { AGENTS } from './scenario'
 export const PT: Record<string, string> = {
   // --- UI chrome ---
   'Mystique': 'Mystique',
+  'Care Coordinator': 'Coordenador de Cuidados',
+  'Family Care Partner': 'Familiar Cuidador',
+  'After-Visit Planner': 'Planejador Pós-Consulta',
   'You': 'Você',
   'Pensando': 'Pensando',
   'Consultando fontes': 'Consultando fontes',

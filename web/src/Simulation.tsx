@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { AGENTS, REDBEARD, SCENARIOS, type Entry, type Mode, type Scenario, type Step } from './scenario'
 import { translate } from './pt'
-import { connectLive, resolveLiveReceipt, startLiveMission, type LiveReceipt, type LiveSnapshot } from './live'
+import { connectLive, startLiveMission, type LiveSnapshot } from './live'
 
 type Lang = 'en' | 'pt'
 const LangContext = createContext<Lang>('en')
@@ -122,6 +122,12 @@ function EntryView({ entry, revealed, side }: { entry: Entry; revealed: Set<stri
       return (
         <div className={`bubble ${entry.self ? 'is-self' : ''}`}>
           <span className="bubble-from">{t(entry.from)}</span>
+          {entry.replyTo && (
+            <blockquote className="reply-quote">
+              <strong>{t(entry.replyTo.from)}</strong>
+              <span>{t(entry.replyTo.text)}</span>
+            </blockquote>
+          )}
           <p>{t(entry.text)}</p>
         </div>
       )
@@ -235,7 +241,6 @@ export default function Simulation() {
   const [live, setLive] = useState(true)
   const [liveConnected, setLiveConnected] = useState(false)
   const [liveSnapshot, setLiveSnapshot] = useState<LiveSnapshot | null>(null)
-  const [liveReceipts, setLiveReceipts] = useState<LiveReceipt[]>([])
   const [liveError, setLiveError] = useState<string | null>(null)
   const [liveMessages, setLiveMessages] = useState<Entry[]>([])
   const [liveRunning, setLiveRunning] = useState(false)
@@ -243,8 +248,22 @@ export default function Simulation() {
   const scenario = SCENARIOS[mode]
   const last = scenario.steps.length
   const world = useMemo(() => replay(scenario, count, opening), [scenario, count, opening])
+  const rosterAgents = useMemo(() => {
+    if (!live || !liveSnapshot) return AGENTS
+    return liveSnapshot.agentes.map((item) => {
+      const known = AGENTS.find((agent) => agent.id === item.id)
+      return known ?? {
+        id: item.id,
+        name: item.nome,
+        intro: item.apresentacao,
+        secret: '',
+        abilities: item.capacidades.map((ability) => ({ id: ability.id, description: '' })),
+      }
+    })
+  }, [live, liveSnapshot])
   const shown = pinned ?? world.active
-  const shownAgent = AGENTS.find((a) => a.id === shown)!
+  const shownAgent = rosterAgents.find((a) => a.id === shown) ?? rosterAgents[0] ?? AGENTS[0]
+  const shownMessages = world.agents[shownAgent.id] ?? []
 
   const mystiqueRef = useFollow(
     live ? liveMessages.length + (liveActivity ? 1 : 0) : world.mystique.length,
@@ -259,30 +278,48 @@ export default function Simulation() {
     () =>
       connectLive({
         snapshot: setLiveSnapshot,
-        receipt: (receipt) => setLiveReceipts((current) => [...current, receipt]),
-        resolved: (id) => setLiveReceipts((current) => current.filter((receipt) => receipt.recibo_id !== id)),
+        receipt: () => undefined,
+        resolved: () => undefined,
         connected: setLiveConnected,
         status: setLiveActivity,
-        dialogue: (from, _to, text) => setLiveMessages((current) => [
-          ...current,
-          { kind: 'message', from, text, self: from === 'Mystique' },
-        ]),
+        dialogue: (from, _to, text) => setLiveMessages((current) => {
+          const previous = [...current].reverse().find((entry) => entry.kind === 'message')
+          return [
+            ...current,
+            {
+              kind: 'message',
+              from,
+              text,
+              self: from === 'Mystique',
+              replyTo: previous?.kind === 'message' ? { from: previous.from, text: previous.text } : undefined,
+            },
+          ]
+        }),
         improvement: (text) => setLiveMessages((current) => [
           ...current,
           { kind: 'system', tone: 'info', text },
+        ]),
+        decision: (text, approved) => setLiveMessages((current) => [
+          ...current,
+          { kind: 'system', tone: approved ? 'info' : 'loss', text },
         ]),
         final: (text, error) => setLiveMessages((current) => [
           ...current,
           error
             ? { kind: 'system', tone: 'loss', text }
-            : { kind: 'message', from: 'Mystique', text, self: true },
+            : {
+                kind: 'message', from: 'Mystique', text, self: true,
+                replyTo: (() => {
+                  const previous = [...current].reverse().find((entry) => entry.kind === 'message')
+                  return previous?.kind === 'message' ? { from: previous.from, text: previous.text } : undefined
+                })(),
+              },
         ]),
         mission: (running, message) => {
           setLiveRunning(running)
           if (running) setLiveActivity('Pensando')
           else {
             setLiveActivity('')
-            setLiveMessages((current) => [...current, { kind: 'system', tone: 'info', text: 'EOF' }])
           }
           if (message) setLiveMessages((current) => [
             ...current,
@@ -456,21 +493,6 @@ export default function Simulation() {
       </p>
 
       {liveError && <p className="live-error" role="alert">{t(liveError)}</p>}
-      {liveReceipts.map((receipt) => (
-        <article className="live-receipt" key={receipt.recibo_id}>
-          <strong>
-            {t('Trust receipt')} · {receipt.agente_id}
-          </strong>
-          <p>{receipt.descricao_alegada}</p>
-          <p>{receipt.evidencia}</p>
-          <p>{t(receipt.veredito.aprovado ? 'Judge approved' : 'Judge rejected')} · {receipt.veredito.motivo}</p>
-          <div>
-            <button disabled={!receipt.veredito.aprovado} onClick={() => resolveLiveReceipt(receipt.recibo_id, 'aprovar')}>{t('Approve')}</button>
-            <button onClick={() => resolveLiveReceipt(receipt.recibo_id, 'rejeitar')}>{t('Reject')}</button>
-          </div>
-        </article>
-      ))}
-
       {comparing ? (
         <main className="compare">
           <Ending mode="good" />
@@ -536,7 +558,7 @@ export default function Simulation() {
 
           <section className="pane pane-world" aria-label="What the agents see">
             <div className="roster">
-              {AGENTS.map((agent) => {
+              {rosterAgents.map((agent) => {
                 const liveAgent = liveSnapshot?.agentes.find((item) => item.id === agent.id)
                 const gone = liveAgent?.descartado ?? world.discarded.has(agent.id)
                 const observed = liveAgent?.capacidades.some((ability) => ability.estado !== 'nao_observada') ?? false
@@ -595,10 +617,10 @@ export default function Simulation() {
                   <summary>{t('Secret prompt (only X has it)').replace('X', t(shownAgent.name))}</summary>
                   <p>{t(shownAgent.secret)}</p>
                 </details>
-                {world.agents[shown].length === 0 && (
+                {shownMessages.length === 0 && (
                   <p className="empty">{t('X has not heard from anyone yet.').replace('X', t(shownAgent.name))}</p>
                 )}
-                {world.agents[shown].map((entry, i) => (
+                {shownMessages.map((entry, i) => (
                   <EntryView key={i} entry={entry} revealed={world.revealed} side="agent" />
                 ))}
               </div>
