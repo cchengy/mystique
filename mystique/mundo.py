@@ -17,7 +17,7 @@ from pathlib import Path
 
 import anthropic
 
-from . import inferencia
+from . import ambiguous, inferencia
 from .poderes import PODERES, Poder, poderes_de
 
 PASTA_AGENTES = Path(__file__).resolve().parent.parent / "agentes"
@@ -138,6 +138,11 @@ class Mundo:
         temporario = destino.with_suffix(".tmp")  # atomic: a Ctrl-C mid-write never truncates the save
         temporario.write_text(json.dumps(asdict(absorcao), ensure_ascii=False, indent=2), encoding="utf-8")
         temporario.replace(destino)
+        # Side channel: file the acquisition in a real workspace. Inert without a key,
+        # never raises, never blocks - see mystique/ambiguous.py.
+        if absorcao.poderes:
+            ambiguous.registrar(self.pasta, self.modo, absorcao.nome,
+                                absorcao.poderes, absorcao.descartado, self.avisar)
 
     def _absorcao(self, agente: Agente) -> Absorcao:
         return self.absorcoes.setdefault(agente.id, Absorcao(agente.id, agente.nome))

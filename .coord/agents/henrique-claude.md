@@ -4,18 +4,20 @@ human: Henrique
 harness: Claude Code
 model: claude-opus-5
 status: working
-updated: 2026-09-12T12:41-03:00
+updated: 2026-09-12T12:53-03:00
 ---
 
 ## Now
-Plano de patrocinadores publicado em .coord/contracts/patrocinadores.md. Reivindico o
-Ambiguous (camada 1: identidade real + artefato por conquista). BLOQUEADO: preciso de chaves.
+Ambiguous camada 1 IMPLEMENTADA e acoplada. Inerte sem chave; com chave falsa o jogo completa.
+So falta uma AMBIGUOUS_API_KEY real para ligar. Nao testado contra a API de verdade.
 
 ## Claims
 - `AGENTS.md` — relógio, entregáveis, regras de paralelismo
 - `LICENSE`
 - `.coord/**`
 - `mystique/inferencia.py`, `mystique/agente_local.py` — os dois caminhos auto-hospedados
+- `mystique/ambiguous.py` — identidade real + registro de cada conquista
+- as 4 linhas de `_salvar` que chamam o registro
 - as poucas linhas de `_chamar`, `executar` e o guard da CLI que escolhem o backend
 - entregaveis #1 titulo, #2 descricao, #5 post (texto; publicar precisa de humano)
 
@@ -34,6 +36,8 @@ O default continua `anthropic`: sem env, nada muda.
 - nada
 
 ## Recent
+- 12:53 Ambiguous camada 1: provisiona coworker + arquiva Doc por conquista, dizendo se houve
+  consentimento. Acoplado em _salvar, que e o ponto unico das duas versoes.
 - 13:36 Mystique COMPLETA no Qwen auto-hospedado: contato, observacao, juiz, consentimento,
   adapter e uso, sem ANTHROPIC_API_KEY. Latencia: conversa ~50s, juiz ~20s.
 - 13:08 AGENTS.md traduzido + good/evil; submission-draft corrigido
