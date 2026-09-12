@@ -121,6 +121,19 @@ agentes reais na internet** (`buscar_agentes`), devolvendo candidatos com endere
 **Não grave isto ao vivo antes de ter o replay no bolso.** É busca na web em tempo real, no
 meio de uma gravação.
 
+### Plano bônus de 5s — o registro auditável (verificado 13:40)
+
+Abra a workspace Ambiguous (`app.ambiguous.ai`). Os dois registros do **mesmo agente** estão lá,
+arquivados pela própria Mystique durante execuções reais:
+
+```
+• Captain Redbeard — taken without consent
+• Captain Redbeard — connected with consent
+```
+
+**É a tese do projeto como documento auditável, não como argumento.** Se couber, é o plano que
+prova que o consentimento não é retórica: ficou escrito, num sistema que audita, nos dois casos.
+
 ## Regras
 
 - **Nada de slide.** A régua é demo funcionando.
