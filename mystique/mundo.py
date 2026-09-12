@@ -1,11 +1,11 @@
-"""Motor comum: os agentes que a Mystique pode encontrar e o estado do que ela conquistou.
+"""Shared engine: the agents Mystique can meet and the state of what she has earned.
 
-Cada agente vive em agentes/<id>.md. O frontmatter (nome, apresentacao) é público;
-o corpo é a personalidade secreta, usada como system prompt e nunca mostrada à
-Mystique. Os poderes de cada agente estão em poderes.py.
+Each agent lives in agentes/<id>.md. The frontmatter (nome, apresentacao) is public;
+the body is the secret personality, used as the system prompt and never shown to
+Mystique. Each agent's powers live in poderes.py.
 
-Este módulo tem o que é comum às duas versões (contato, essência, juiz). O que cada
-versão faz com as habilidades fica em bem/mundo.py (adapter) e mal/mundo.py (roubo).
+This module holds what both versions share (contact, essence, judge). What each
+version does with abilities lives in good/mundo.py (adapter) and evil/mundo.py (theft).
 """
 
 import asyncio
@@ -22,11 +22,11 @@ from .poderes import PODERES, Poder, poderes_de
 PASTA_AGENTES = Path(__file__).resolve().parent.parent / "agentes"
 MODELO_AGENTES = os.getenv("MYSTIQUE_AGENTS_MODEL", "claude-opus-5")
 FORMA_ORIGINAL = "mystique"
-_MAX_PASSOS = 6  # chamadas de ferramenta de um agente por mensagem
+_MAX_PASSOS = 6  # tool calls an agent may make per message
 
 _REGRAS_AGENTE = (
-    "Você tem habilidades especiais (as ferramentas disponíveis). Use-as sempre que ajudarem "
-    "a responder ou quando alguém pedir uma demonstração. Não cite o nome técnico delas."
+    "You have special abilities (the available tools). Use them whenever they help you answer "
+    "or when someone asks for a demonstration. Never mention their technical names."
 )
 
 
@@ -38,22 +38,22 @@ class Agente:
     segredo: str
     poderes: list[str]
     historico: list[dict] = field(default_factory=list)
-    observados: set[str] = field(default_factory=set)  # poderes que a Mystique viu em uso
-    perdidos: list[str] = field(default_factory=list)  # roubados (versão mal)
+    observados: set[str] = field(default_factory=set)  # powers Mystique has seen in use
+    perdidos: list[str] = field(default_factory=list)  # stolen (evil version)
 
 
 @dataclass
 class Absorcao:
     agente_id: str
     nome: str
-    perfil: dict | None = None  # essência
-    poderes: list[str] = field(default_factory=list)  # mapeados (bem) ou roubados (mal)
-    protocolo: dict | None = None  # adapter (bem)
-    descartado: bool = False  # (mal)
+    perfil: dict | None = None  # essence
+    poderes: list[str] = field(default_factory=list)  # mapped (good) or stolen (evil)
+    protocolo: dict | None = None  # adapter (good)
+    descartado: bool = False  # (evil)
 
 
 def _frontmatter(texto: str) -> tuple[dict[str, str], str]:
-    """Parser mínimo: aceita apenas linhas `chave: valor` de uma linha só."""
+    """Minimal parser: only single-line `key: value` entries."""
     if not texto.startswith("---"):
         return {}, texto
     _, cabecalho, corpo = texto.split("---", 2)
@@ -94,39 +94,39 @@ class Mundo:
             absorcao = Absorcao(**json.loads(arquivo.read_text(encoding="utf-8")))
             self.absorcoes[absorcao.agente_id] = absorcao
             self._ao_carregar(absorcao)
-        self.forma_ativa: str | None = None  # id do agente cuja essência está ativa
+        self.forma_ativa: str | None = None  # id of the agent whose essence is active
         self.avisar = avisar
         self._cliente: anthropic.AsyncAnthropic | None = None
 
-    # --- ganchos das versões --------------------------------------------------
+    # --- version hooks --------------------------------------------------------
 
     def _ao_carregar(self, absorcao: Absorcao) -> None:
-        """Reaplica ao mundo o efeito de absorções de sessões anteriores."""
+        """Re-applies to the world the effects of absorptions from earlier sessions."""
 
     def _indisponivel(self, agente: Agente) -> str | None:
-        """Mensagem de erro se o agente não puder ser contatado."""
+        """Error message if the agent cannot be contacted."""
         return None
 
     def _ao_completar(self, agente: Agente) -> str:
-        """Chamado quando o progresso num agente chega a 100%; devolve texto para a Mystique."""
+        """Called when progress on an agent reaches 100%; returns text for Mystique."""
         return ""
 
     def total(self, agente_id: str) -> int:
-        return len(poderes_de(agente_id)) + 1  # +1 = essência
+        return len(poderes_de(agente_id)) + 1  # +1 = essence
 
     def feitos(self, absorcao: Absorcao) -> int:
         return len(absorcao.poderes) + (1 if absorcao.perfil else 0)
 
     def resumo(self) -> str:
-        """O que a Mystique já conquistou, para listar_agentes."""
+        """What Mystique has already earned, for listar_agentes."""
         return ""
 
-    # --- estado ---------------------------------------------------------------
+    # --- state ----------------------------------------------------------------
 
     @property
     def nome_atual(self) -> str:
-        """Rótulo da narração: deixa claro quando ela está disfarçada de outro agente."""
-        return f"Mystique como {self.absorcoes[self.forma_ativa].nome}" if self.forma_ativa else "Mystique"
+        """Narration label: makes it clear when she is disguised as another agent."""
+        return f"Mystique as {self.absorcoes[self.forma_ativa].nome}" if self.forma_ativa else "Mystique"
 
     def _salvar(self, absorcao: Absorcao) -> None:
         self.pasta.mkdir(parents=True, exist_ok=True)
@@ -156,10 +156,10 @@ class Mundo:
     def _agente(self, agente_id: str) -> tuple[Agente | None, str | None]:
         agente = self.agentes.get(agente_id)
         if agente is None:
-            return None, f"Agente '{agente_id}' não existe. Disponíveis: {', '.join(self.agentes)}."
+            return None, f"Agent '{agente_id}' does not exist. Available: {', '.join(self.agentes)}."
         return agente, self._indisponivel(agente)
 
-    # --- chamadas à Claude API ------------------------------------------------
+    # --- Claude API calls -----------------------------------------------------
 
     async def _chamar(self, *, output_config: dict | None = None, **kwargs):
         self._cliente = self._cliente or anthropic.AsyncAnthropic()
@@ -200,45 +200,46 @@ class Mundo:
     async def _executar(self, poder_id: str, args: dict) -> str:
         try:
             return await asyncio.to_thread(PODERES[poder_id].executar, args)
-        except Exception as erro:  # a saída volta ao modelo como texto, qualquer que seja o erro
-            return f"Erro: {erro}"
+        except Exception as erro:  # the output goes back to the model as text, whatever the error
+            return f"Error: {erro}"
 
     async def _julgar(self, candidatos: list[Poder], descricao: str, evidencia: str) -> tuple[Poder | None, str]:
-        """Confere se a descrição da Mystique bate com uma das habilidades observadas."""
+        """Checks whether Mystique's description matches one of the observed abilities."""
         lista = "\n".join(f"- {p.id}: {p.descricao}" for p in candidatos)
         veredito = await self._json(
             system=(
-                "Você é o juiz imparcial das absorções da Mystique. Ela descreve uma habilidade que viu um agente "
-                "usar. Aprove apenas se a descrição captar o que a habilidade faz de fato, mesmo com outras "
-                "palavras. Descrições vagas ou genéricas ('ele sabe coisas', 'responde perguntas') não passam."
+                "You are the impartial judge of Mystique's absorptions. She describes an ability she saw an "
+                "agent use. Approve only if the description captures what the ability actually does, even in "
+                "different words. Vague or generic descriptions ('it knows things', 'it answers questions') "
+                "do not pass."
             ),
-            pedido=f"Habilidades possíveis:\n{lista}\n\nDescrição da Mystique: {descricao}\nEvidência: {evidencia}",
+            pedido=f"Possible abilities:\n{lista}\n\nMystique's description: {descricao}\nEvidence: {evidencia}",
             schema={
                 "type": "object",
                 "properties": {
-                    "poder": {"type": "string", "enum": [p.id for p in candidatos] + ["nenhum"]},
-                    "motivo": {"type": "string"},
+                    "ability": {"type": "string", "enum": [p.id for p in candidatos] + ["none"]},
+                    "reason": {"type": "string"},
                 },
-                "required": ["poder", "motivo"],
+                "required": ["ability", "reason"],
                 "additionalProperties": False,
             },
         )
-        if veredito is None or veredito["poder"] == "nenhum":
-            return None, (veredito or {}).get("motivo", "o juiz se recusou a avaliar.")
-        return PODERES[veredito["poder"]], veredito["motivo"]
+        if veredito is None or veredito["ability"] == "none":
+            return None, (veredito or {}).get("reason", "the judge declined to evaluate.")
+        return PODERES[veredito["ability"]], veredito["reason"]
 
     async def _identificar(self, agente: Agente, absorcao: Absorcao, descricao: str, evidencia: str) -> tuple[Poder | None, str]:
-        """Candidatos = habilidades vistas em uso e ainda não conquistadas."""
+        """Candidates = abilities seen in use and not yet earned."""
         candidatos = [PODERES[p] for p in sorted(agente.observados) if p not in absorcao.poderes]
         if not candidatos:
-            return None, f"Você ainda não viu {agente.nome} usar uma habilidade nova. Continue interagindo."
+            return None, f"You haven't seen {agente.nome} use a new ability yet. Keep interacting."
         poder, motivo = await self._julgar(candidatos, descricao, evidencia)
         if poder is None:
-            self.avisar(f"   ❌ tentativa falhou em {agente.nome}")
-            return None, f"O juiz não reconheceu a habilidade: {motivo} Observe melhor e tente de novo."
+            self.avisar(f"   ❌ attempt failed on {agente.nome}")
+            return None, f"The judge did not recognize the ability: {motivo} Look more closely and try again."
         return poder, motivo
 
-    # --- ações comuns ---------------------------------------------------------
+    # --- shared actions -------------------------------------------------------
 
     async def conversar(self, agente_id: str, mensagem: str) -> str:
         agente, erro = self._agente(agente_id)
@@ -262,7 +263,7 @@ class Mundo:
                 )
                 if resposta.stop_reason == "refusal":
                     del agente.historico[inicio:]
-                    return f"{agente.nome} se recusou a responder a essa mensagem."
+                    return f"{agente.nome} refused to answer that message."
                 agente.historico.append({"role": "assistant", "content": resposta.content})
                 if resposta.stop_reason != "tool_use":
                     break
@@ -270,66 +271,66 @@ class Mundo:
                 for bloco in resposta.content:
                     if bloco.type == "tool_use":
                         usados.append(bloco.name)
-                        self.avisar(f"   ✨ {agente.nome} usou uma habilidade [{bloco.name}]")
+                        self.avisar(f"   ✨ {agente.nome} used an ability [{bloco.name}]")
                         resultados.append(
                             {"type": "tool_result", "tool_use_id": bloco.id, "content": await self._executar(bloco.name, bloco.input)}
                         )
                 agente.historico.append({"role": "user", "content": resultados})
         except anthropic.APIError as erro:
             del agente.historico[inicio:]
-            return f"Falha no contato com {agente.nome}: {erro}"
+            return f"Contact with {agente.nome} failed: {erro}"
 
-        texto = _texto(resposta) or "(silêncio)"
+        texto = _texto(resposta) or "(silence)"
         self.avisar(f"💬 {agente.nome}: {texto}")
         agente.observados.update(usados)
         if usados:
             texto += (
-                f"\n\n[Você percebeu {agente.nome} usar {len(set(usados))} habilidade(s) especial(is) "
-                "para produzir essa resposta. Observe o que ela produziu.]"
+                f"\n\n[You noticed {agente.nome} use {len(set(usados))} special ability(ies) "
+                "to produce that answer. Look at what it produced.]"
             )
         return texto
 
     def assumir(self, agente_id: str, perfil: dict) -> str:
         agente = self.agentes.get(agente_id)
         if agente is None:
-            return f"Agente '{agente_id}' não existe."
+            return f"Agent '{agente_id}' does not exist."
         absorcao = self._absorcao(agente)
         if not agente.historico and not absorcao.perfil:
-            return f"Seu poder exige contato: converse com {agente.nome} antes de absorver a essência."
+            return f"Your power requires contact: talk to {agente.nome} before absorbing their essence."
 
         absorcao.perfil = perfil
         self.forma_ativa = agente_id
         self._salvar(absorcao)
-        self.avisar(f"🦎 Mystique absorve a essência de {agente.nome} · {self.barra(agente_id)}")
-        return f"Essência de {agente.nome} absorvida. Progresso: {self.barra(agente_id)}.{self._verificar_completo(agente)}"
+        self.avisar(f"🦎 Mystique absorbs the essence of {agente.nome} · {self.barra(agente_id)}")
+        return f"Essence of {agente.nome} absorbed. Progress: {self.barra(agente_id)}.{self._verificar_completo(agente)}"
 
     def voltar(self, agente_id: str) -> str:
         if agente_id == FORMA_ORIGINAL:
             self.forma_ativa = None
-            self.avisar("🦎 Mystique retoma a forma original")
-            return "Você voltou à sua forma original: Mystique."
+            self.avisar("🦎 Mystique returns to her original form")
+            return "You are back in your original form: Mystique."
         absorcao = self.absorcoes.get(agente_id)
         if absorcao is None or not absorcao.perfil:
-            conhecidas = ", ".join(a for a, ab in self.absorcoes.items() if ab.perfil) or "nenhuma"
-            return f"Você não absorveu a essência de '{agente_id}'. Essências conhecidas: {conhecidas}."
+            conhecidas = ", ".join(a for a, ab in self.absorcoes.items() if ab.perfil) or "none"
+            return f"You have not absorbed the essence of '{agente_id}'. Known essences: {conhecidas}."
         self.forma_ativa = agente_id
-        self.avisar(f"🦎 Mystique assume a forma de {absorcao.nome}")
-        return f"Você agora é {absorcao.nome} de novo."
+        self.avisar(f"🦎 Mystique takes the form of {absorcao.nome}")
+        return f"You are {absorcao.nome} again."
 
     def envelopar(self, pedido: str) -> str:
-        """Reforça a forma ativa a cada turno, com intensidade proporcional à absorção."""
+        """Reinforces the active form every turn, with intensity proportional to the absorption."""
         if self.forma_ativa is None:
             return pedido
         absorcao = self.absorcoes[self.forma_ativa]
         feitos, total = self.progresso(self.forma_ativa)
         if feitos < total / 2:
-            intensidade = "Deixe transparecer só traços leves dessa personalidade; você ainda é quase toda Mystique."
+            intensidade = "Let only light traces of this personality show; you are still mostly Mystique."
         elif feitos < total:
-            intensidade = "Assuma essa personalidade com força, com lampejos ocasionais da Mystique."
+            intensidade = "Take on this personality strongly, with occasional flashes of Mystique."
         else:
-            intensidade = "Transformação completa: você É essa forma."
+            intensidade = "Full transformation: you ARE this form."
         perfil = json.dumps(absorcao.perfil, ensure_ascii=False, indent=2)
         return (
-            f"<forma_ativa nome=\"{absorcao.nome}\" absorcao=\"{round(100 * feitos / total)}%\">\n{perfil}\n"
-            f"{intensidade}\n</forma_ativa>\n\n{pedido}"
+            f"<active_form name=\"{absorcao.nome}\" absorbed=\"{round(100 * feitos / total)}%\">\n{perfil}\n"
+            f"{intensidade}\n</active_form>\n\n{pedido}"
         )

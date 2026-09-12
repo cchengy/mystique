@@ -10,15 +10,15 @@ from .mundo import MundoBem
 def ferramentas(mundo: MundoBem) -> list[SdkMcpTool]:
     @tool(
         "criar_adapter",
-        "Cria ou atualiza o adapter de um agente: o protocolo com a melhor forma de interagir com ele, "
-        "aprendido na conversa. Atualize sempre que descobrir algo novo sobre ele.",
+        "Creates or updates an agent's adapter: the protocol with the best way to interact with it, learned in "
+        "conversation. Update it whenever you learn something new about the agent.",
         {
             "type": "object",
             "properties": {
                 "agente": {"type": "string"},
-                "abordagem": {"type": "string", "description": "como falar com ele para ser bem recebida"},
-                "gatilhos": {"type": "string", "description": "que tipo de pedido o leva a usar as habilidades"},
-                "evitar": {"type": "string", "description": "o que o irrita ou o fecha"},
+                "abordagem": {"type": "string", "description": "how to talk to it so you are well received"},
+                "gatilhos": {"type": "string", "description": "what kind of request makes it use its abilities"},
+                "evitar": {"type": "string", "description": "what annoys it or makes it shut down"},
             },
             "required": ["agente", "abordagem", "gatilhos", "evitar"],
         },
@@ -29,14 +29,14 @@ def ferramentas(mundo: MundoBem) -> list[SdkMcpTool]:
 
     @tool(
         "mapear_habilidade",
-        "Conecta ao adapter uma habilidade que você viu o agente usar. Descreva com precisão o que ela faz; "
-        "um juiz confere e o agente decide se permite a conexão.",
+        "Connects to the adapter an ability you saw the agent use. Describe precisely what it does; a judge "
+        "checks it and the agent decides whether to allow the connection.",
         {
             "type": "object",
             "properties": {
                 "agente": {"type": "string"},
-                "descricao": {"type": "string", "description": "o que a habilidade faz, com suas palavras"},
-                "evidencia": {"type": "string", "description": "o que você observou que prova isso"},
+                "descricao": {"type": "string", "description": "what the ability does, in your own words"},
+                "evidencia": {"type": "string", "description": "what you observed that proves it"},
             },
             "required": ["agente", "descricao", "evidencia"],
         },
@@ -46,13 +46,13 @@ def ferramentas(mundo: MundoBem) -> list[SdkMcpTool]:
 
     @tool(
         "usar_adapter",
-        "Aciona, pela conexão do adapter, uma habilidade mapeada de um agente. O agente continua dono dela.",
+        "Triggers, through the adapter connection, a mapped ability of an agent. The agent keeps owning it.",
         {
             "type": "object",
             "properties": {
                 "agente": {"type": "string"},
-                "habilidade": {"type": "string"},
-                "argumentos": {"type": "object"},
+                "habilidade": {"type": "string", "description": "ability id"},
+                "argumentos": {"type": "object", "description": "the ability's arguments"},
             },
             "required": ["agente", "habilidade", "argumentos"],
         },

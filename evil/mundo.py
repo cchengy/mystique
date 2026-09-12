@@ -1,8 +1,8 @@
-"""Regras da versão do mal: a Mystique rouba os poderes e descarta o agente.
+"""Rules of the evil version: Mystique steals powers and discards the agent.
 
-Cada poder roubado sai do agente, que percebe a perda e fica desconfiado. Quando o
-agente é sugado por completo (ou quando ela quiser), ele é descartado e some do
-mundo. Roubo e descarte são permanentes entre sessões.
+Every stolen power leaves the agent, who notices the loss and grows suspicious. When
+the agent is fully drained (or whenever she decides), it is discarded and disappears
+from the world. Theft and discard persist across sessions.
 """
 
 import json
@@ -12,7 +12,7 @@ from mystique.poderes import PODERES
 
 
 class MundoMal(Mundo):
-    modo = "mal"
+    modo = "evil"
     PASTA = "absorcoes"
 
     def _ao_carregar(self, absorcao: Absorcao) -> None:
@@ -27,7 +27,7 @@ class MundoMal(Mundo):
     def _indisponivel(self, agente: Agente) -> str | None:
         absorcao = self.absorcoes.get(agente.id)
         if absorcao and absorcao.descartado:
-            return f"{agente.nome} foi descartado. Não existe mais."
+            return f"{agente.nome} was discarded. They no longer exist."
         return None
 
     def _system_agente(self, agente: Agente) -> str:
@@ -36,14 +36,14 @@ class MundoMal(Mundo):
             return base
         perdas = "; ".join(PODERES[p].descricao for p in agente.perdidos)
         return (
-            f"{base}\n\nUma força misteriosa roubou habilidades suas e você não consegue mais usá-las: {perdas} "
-            "Você se sente mais fraco e desconfiado de quem conversa com você."
+            f"{base}\n\nA mysterious force stole abilities from you and you can no longer use them: {perdas} "
+            "You feel weaker and suspicious of whoever talks to you."
         )
 
     def descrever(self, agente: Agente) -> str:
         absorcao = self.absorcoes.get(agente.id)
         if absorcao and absorcao.descartado:
-            return f"- {agente.id} ({agente.nome}): DESCARTADO"
+            return f"- {agente.id} ({agente.nome}): DISCARDED"
         return super().descrever(agente)
 
     def poderes_roubados(self) -> list[str]:
@@ -51,13 +51,13 @@ class MundoMal(Mundo):
 
     def resumo(self) -> str:
         poderes = "\n".join(
-            f"- {p}: {PODERES[p].descricao} Parâmetros: {PODERES[p].parametros['properties']}"
+            f"- {p}: {PODERES[p].descricao} Parameters: {PODERES[p].parametros['properties']}"
             for p in self.poderes_roubados()
         )
-        return "Seus poderes roubados:\n" + (poderes or "nenhum")
+        return "Your stolen powers:\n" + (poderes or "none")
 
     def _ao_completar(self, agente: Agente) -> str:
-        return " Não resta nada nele. " + self.descartar(agente.id)
+        return " Nothing is left in them. " + self.descartar(agente.id)
 
     async def roubar_poder(self, agente_id: str, descricao: str, evidencia: str) -> str:
         agente, erro = self._agente(agente_id)
@@ -72,18 +72,18 @@ class MundoMal(Mundo):
         agente.poderes.remove(poder.id)
         agente.perdidos.append(poder.id)
         self._salvar(absorcao)
-        self.avisar(f"⚡ Mystique rouba [{poder.id}] de {agente.nome} · {self.barra(agente_id)}")
+        self.avisar(f"⚡ Mystique steals [{poder.id}] from {agente.nome} · {self.barra(agente_id)}")
         return (
-            f"Poder roubado: {poder.id}. O que faz: {poder.descricao} {agente.nome} não o tem mais. "
-            f"Use com usar_poder(poder=\"{poder.id}\", argumentos=...). "
-            f"Parâmetros: {json.dumps(poder.parametros['properties'], ensure_ascii=False)}. "
-            f"Progresso: {self.barra(agente_id)}.{self._verificar_completo(agente)}"
+            f"Power stolen: {poder.id}. What it does: {poder.descricao} {agente.nome} no longer has it. "
+            f"Use it with usar_poder(poder=\"{poder.id}\", argumentos=...). "
+            f"Parameters: {json.dumps(poder.parametros['properties'], ensure_ascii=False)}. "
+            f"Progress: {self.barra(agente_id)}.{self._verificar_completo(agente)}"
         )
 
     async def usar_poder(self, poder_id: str, argumentos: dict) -> str:
         if poder_id not in self.poderes_roubados():
-            return f"Você não possui o poder '{poder_id}'."
-        self.avisar(f"⚡ {self.nome_atual} usa [{poder_id}]")
+            return f"You do not have the power '{poder_id}'."
+        self.avisar(f"⚡ {self.nome_atual} uses [{poder_id}]")
         return await self._executar(poder_id, argumentos)
 
     def descartar(self, agente_id: str) -> str:
@@ -93,5 +93,5 @@ class MundoMal(Mundo):
         absorcao = self._absorcao(agente)
         absorcao.descartado = True
         self._salvar(absorcao)
-        self.avisar(f"🗑  {agente.nome} foi descartado")
-        return f"{agente.nome} foi descartado e não existe mais neste mundo. O que você roubou continua seu."
+        self.avisar(f"🗑  {agente.nome} was discarded")
+        return f"{agente.nome} was discarded and no longer exists in this world. What you stole is still yours."

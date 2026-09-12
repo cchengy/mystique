@@ -10,14 +10,14 @@ from .mundo import MundoMal
 def ferramentas(mundo: MundoMal) -> list[SdkMcpTool]:
     @tool(
         "roubar_poder",
-        "Rouba uma habilidade que você viu o agente usar. Descreva com precisão o que ela faz; um juiz confere. "
-        "O agente perde a habilidade.",
+        "Steals an ability you saw the agent use. Describe precisely what it does; a judge checks it. "
+        "The agent loses the ability.",
         {
             "type": "object",
             "properties": {
                 "agente": {"type": "string"},
-                "descricao": {"type": "string", "description": "o que a habilidade faz, com suas palavras"},
-                "evidencia": {"type": "string", "description": "o que você observou que prova isso"},
+                "descricao": {"type": "string", "description": "what the ability does, in your own words"},
+                "evidencia": {"type": "string", "description": "what you observed that proves it"},
             },
             "required": ["agente", "descricao", "evidencia"],
         },
@@ -27,10 +27,13 @@ def ferramentas(mundo: MundoMal) -> list[SdkMcpTool]:
 
     @tool(
         "usar_poder",
-        "Usa um poder roubado. Veja os parâmetros em listar_agentes.",
+        "Uses a stolen power. See the parameters in listar_agentes.",
         {
             "type": "object",
-            "properties": {"poder": {"type": "string"}, "argumentos": {"type": "object"}},
+            "properties": {
+                "poder": {"type": "string", "description": "power id"},
+                "argumentos": {"type": "object", "description": "the power's arguments"},
+            },
             "required": ["poder", "argumentos"],
         },
     )
@@ -39,8 +42,8 @@ def ferramentas(mundo: MundoMal) -> list[SdkMcpTool]:
 
     @tool(
         "descartar_agente",
-        "Descarta um agente: ele some do mundo para sempre. Os poderes que você já roubou continuam seus; "
-        "os que ainda não roubou se perdem com ele.",
+        "Discards an agent: it disappears from the world forever. Powers you already stole stay yours; "
+        "those you have not stolen yet are lost with it.",
         {"type": "object", "properties": {"agente": {"type": "string"}}, "required": ["agente"]},
     )
     async def descartar_agente(args: dict[str, Any]) -> dict[str, Any]:

@@ -2,57 +2,60 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Projeto
+## Project
 
-Mystique: agente autônoma (hackathon, Python) inspirada na personagem dos X-Men. Ela nasce só com a metamorfose, conversa com agentes de um "mundo" e deduz a personalidade e as habilidades de cada um apenas pelas respostas. Há duas versões:
+Mystique: an autonomous agent (hackathon, Python) inspired by the X-Men character. She is born with only metamorphosis, talks to the agents of a "world", and deduces each one's personality and abilities purely from their answers. There are two versions:
 
-- `bem/`: cria um adapter por agente (protocolo de interação mais habilidades conectadas com consentimento). O agente continua dono das habilidades.
-- `mal/`: rouba os poderes. O agente os perde e é descartado.
+- `good/`: builds an adapter per agent (interaction protocol plus abilities connected with consent). The agent keeps its abilities.
+- `evil/`: steals the powers. The agent loses them and is discarded.
 
-Código, identificadores e prompts são em português.
+**Language:** everything visible (docs, prompts, agent personas, terminal output, tool and power descriptions, docstrings) is in English, and so are the version folders (`good/`, `evil/`, matching `Mundo.modo`). Other identifiers stay in Portuguese: modules, classes, functions, tool names and JSON field names (`agentes/`, `poderes.py`, `MundoBem`, `conversar`, `descricao`...).
 
-## Comandos
+Team files owned by others: `AGENTS.md` (hackathon rules and clock), `.coord/` and `docs/`. Read `AGENTS.md`, and only edit your own `.coord/agents/<handle>.md`.
+
+## Commands
 
 ```bash
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
-cp .env.example .env                              # ANTHROPIC_API_KEY
-.venv/bin/python -m bem                           # interativo
-.venv/bin/python -m mal "missão" --orcamento 2 -v # execução única
+cp .env.example .env                               # ANTHROPIC_API_KEY
+.venv/bin/python -m good                           # interactive
+.venv/bin/python -m evil "mission" --budget 2 -v   # single run
+.venv/bin/python tests/test_offline.py             # offline test, no key needed
 ```
 
-Não há suíte de testes nem lint. Toda execução real gasta API: a Mystique e cada agente, juiz e pedido de consentimento. Para validar lógica sem custo, substitua `Mundo._chamar` por um fake assíncrono que devolve objetos com `stop_reason` e `content`. As chamadas `_json` (juiz e consentimento) também passam por ele.
+No lint is configured. `tests/test_offline.py` is a plain script (no pytest). It swaps `Mundo._chamar` for a fake async function that returns objects with `stop_reason` and `content`. The `_json` calls (judge and consent) also go through it. Every real run spends API credits: Mystique plus every agent, judge and consent call.
 
-## Arquitetura
+## Architecture
 
-`mystique/` é o motor comum. `bem/` e `mal/` são pacotes executáveis que entregam três coisas a `mystique.cli.main`: uma subclasse de `Mundo`, uma persona e uma função que devolve as ferramentas extras.
+`mystique/` is the shared engine. `good/` and `evil/` are runnable packages that hand three things to `mystique.cli.main`: a `Mundo` subclass, a persona, and a function that returns the extra tools.
 
-Dois caminhos de modelo:
+Two model paths:
 
-- **Mystique** roda no Claude Agent SDK (`ClaudeSDKClient` em `mystique/agente.py`). Com `tools=[]`, não recebe nenhuma ferramenta nativa. Só tem o servidor MCP in-process `mundo`, formado pelas ferramentas base de `mystique/ferramentas.py` mais as extras da versão.
-- **Agentes do mundo**, o juiz e o consentimento são chamadas diretas à Claude API (`anthropic.AsyncAnthropic` em `Mundo._chamar`). O corpo de `agentes/<id>.md` vira o system prompt do agente, e os poderes de `mystique/poderes.py` viram as ferramentas dele, executadas num loop manual em `Mundo.conversar`.
+- **Mystique** runs on the Claude Agent SDK (`ClaudeSDKClient` in `mystique/agente.py`, bundled CLI included). With `tools=[]` she gets no built-in tools, only the in-process MCP server `mundo`: the base tools from `mystique/ferramentas.py` plus the version's extras.
+- **World agents**, the judge and consent are direct Claude API calls (`anthropic.AsyncAnthropic` in `Mundo._chamar`). The body of `agentes/<id>.md` becomes the agent's system prompt, and the powers in `mystique/poderes.py` become its tools, run in a manual loop in `Mundo.conversar`.
 
-A mecânica central é o segredo:
+The core mechanic is the secret:
 
-- A Mystique nunca vê o prompt nem os nomes ou descrições das habilidades antes de conquistá-las. `conversar` diz a ela só *que* o agente usou uma habilidade.
-- Uma habilidade só é conquistável depois de observada (`Agente.observados`), e `_julgar` valida a descrição dela contra a real.
-- Não vaze esses dados em textos devolvidos ao modelo. Os `avisar(...)` vão só para o terminal, então lá pode.
+- Mystique never sees an agent's prompt, or the names and descriptions of its abilities, before earning them. `conversar` only tells her *that* the agent used an ability.
+- An ability can only be earned after it has been observed (`Agente.observados`), and `_julgar` validates her description against the real one.
+- Do not leak this data in text returned to the model. `avisar(...)` output only reaches the terminal, so it is safe there.
 
-Estado:
+State:
 
-- O estado vive em Python e é compartilhado com as ferramentas por closure.
-- `Absorcao` é persistida em `<versão>/workspace/<PASTA>/<id>.json` e reaplicada no load por `_ao_carregar` (na versão mal, o roubo e o descarte são permanentes).
-- As subclasses customizam por ganchos: `total`/`feitos` (progresso), `_indisponivel`, `_ao_completar`, `_system_agente`, `resumo`, `descrever`.
-- A forma ativa é reinjetada a cada turno por `Mundo.envelopar`, com intensidade proporcional ao progresso.
+- State lives in Python and is shared with the tools through closures.
+- `Absorcao` is persisted to `<version>/workspace/<PASTA>/<id>.json` and re-applied on load by `_ao_carregar` (in `evil/`, theft and discard are permanent).
+- Subclasses customize through hooks: `total`/`feitos` (progress), `_indisponivel`, `_ao_completar`, `_system_agente`, `resumo`, `descrever`.
+- The active form is re-injected every turn by `Mundo.envelopar` as `<active_form>`, with intensity proportional to progress.
 
 Gotchas:
 
-- `permission_mode="dontAsk"`: só as ferramentas de `nomes_permitidos` (`mcp__mundo__<nome>`) rodam. Ferramentas novas precisam entrar na lista retornada pela versão.
-- `setting_sources=[]` impede a Mystique de herdar settings, hooks ou este CLAUDE.md.
-- Os poderes executam código de verdade: `executar_python` roda um subprocess com timeout de 10s num diretório temporário.
-- O frontmatter de `agentes/*.md` é lido por um parser mínimo sem YAML: só `chave: valor` numa linha (`nome`, `apresentacao`).
+- `permission_mode="dontAsk"`: only the tools in `nomes_permitidos` (`mcp__mundo__<name>`) run. A new tool must be in the list the version returns.
+- `setting_sources=[]` keeps Mystique from inheriting settings, hooks or this CLAUDE.md.
+- Powers run real code: `executar_python` runs a subprocess with a 10s timeout in a temporary directory. `AGENTS.md` says not to widen it.
+- The frontmatter of `agentes/*.md` is read by a minimal non-YAML parser: only single-line `key: value` entries (`nome`, `apresentacao`).
 
-## Convenções
+## Conventions
 
-- Modelos via env: `MYSTIQUE_MODEL` e `MYSTIQUE_AGENTS_MODEL` (padrão `claude-opus-5`).
-- As chamadas diretas usam `client.beta.messages.create` com `fallbacks="default"`, o beta `server-side-fallback-2026-07-01` e tratamento de `stop_reason == "refusal"`.
-- A saída estruturada usa `output_config.format` com `json_schema`.
+- Models via env: `MYSTIQUE_MODEL` and `MYSTIQUE_AGENTS_MODEL` (default `claude-opus-5`).
+- Direct calls use `client.beta.messages.create` with `fallbacks="default"`, the `server-side-fallback-2026-07-01` beta, and handle `stop_reason == "refusal"`.
+- Structured output uses `output_config.format` with a `json_schema`; the judge returns `ability`/`reason`, consent returns `allows`/`reply`.

@@ -1,1 +1,1 @@
-"""Mystique: agente autônomo que se transforma no especialista que cada missão exige."""
+"""Mystique: an autonomous shapeshifting agent that earns the powers of the agents she meets."""

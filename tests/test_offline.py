@@ -1,6 +1,6 @@
-"""Teste offline: simula a Claude API e exercita os fluxos das versões bem e mal.
+"""Offline test: fakes the Claude API and exercises the good and evil flows.
 
-Não gasta API nem precisa de chave. Rode da raiz do repo:
+Spends no API credits and needs no key. Run from the repo root:
     .venv/bin/python tests/test_offline.py
 """
 
@@ -13,10 +13,10 @@ from types import SimpleNamespace as NS
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from bem.ferramentas import ferramentas as ferramentas_bem  # noqa: E402
-from bem.mundo import MundoBem  # noqa: E402
-from mal.ferramentas import ferramentas as ferramentas_mal  # noqa: E402
-from mal.mundo import MundoMal  # noqa: E402
+from evil.ferramentas import ferramentas as ferramentas_mal  # noqa: E402
+from evil.mundo import MundoMal  # noqa: E402
+from good.ferramentas import ferramentas as ferramentas_bem  # noqa: E402
+from good.mundo import MundoBem  # noqa: E402
 from mystique.agente import montar_opcoes  # noqa: E402
 
 
@@ -33,7 +33,7 @@ def js(dados: dict) -> NS:
 
 
 def api_falsa(respostas: list[NS]):
-    """Substitui Mundo._chamar: devolve as respostas na ordem, uma por chamada."""
+    """Replaces Mundo._chamar: returns the responses in order, one per call."""
     fila = list(respostas)
 
     async def _chamar(**kwargs):
@@ -43,7 +43,7 @@ def api_falsa(respostas: list[NS]):
 
 
 def checar(condicao: bool, descricao: str) -> None:
-    print(("OK    " if condicao else "FALHA ") + descricao)
+    print(("OK    " if condicao else "FAIL  ") + descricao)
     if not condicao:
         raise SystemExit(1)
 
@@ -51,71 +51,72 @@ def checar(condicao: bool, descricao: str) -> None:
 async def teste_bem(pasta: Path) -> None:
     m = MundoBem(pasta, avisar=lambda s: None)
     m._chamar = api_falsa([
-        uso("executar_python", {"codigo": "print(2+2)"}), fala("Óbvio. Deu 4."),
-        js({"poder": "executar_python", "motivo": "bate"}), js({"permite": True, "fala": "Tá. Não quebra nada."}),
+        uso("executar_python", {"codigo": "print(2+2)"}), fala("Obviously. It's 4."),
+        js({"ability": "executar_python", "reason": "matches"}), js({"allows": True, "reply": "Fine. Don't break it."}),
     ])
-    r = await m.conversar("byte", "quanto é 2+2 em python?")
-    checar("habilidade" in r and "executar_python" not in r, "bem: percebe a habilidade sem ver o nome dela")
-    checar("executar_python" in m.agentes["byte"].observados, "bem: habilidade fica registrada como observada")
-    checar("Crie primeiro o adapter" in await m.mapear_habilidade("byte", "roda python", "vi 4"), "bem: mapear exige adapter")
-    checar("criado" in m.criar_adapter("byte", {"abordagem": "direta", "gatilhos": "código", "evitar": "reunião"}),
-           "bem: adapter criado")
-    r = await m.mapear_habilidade("byte", "executa código python e mostra a saída", "rodou print(2+2)")
-    checar("Habilidade conectada" in r, "bem: habilidade conectada com consentimento")
-    checar("executar_python" in m.agentes["byte"].poderes, "bem: agente continua dono da habilidade")
+    r = await m.conversar("byte", "what is 2+2 in python?")
+    checar("ability" in r and "executar_python" not in r, "good: notices the ability without seeing its name")
+    checar("executar_python" in m.agentes["byte"].observados, "good: ability is recorded as observed")
+    checar("First build the adapter" in await m.mapear_habilidade("byte", "runs python", "saw 4"),
+           "good: mapping requires an adapter")
+    checar("created" in m.criar_adapter("byte", {"abordagem": "direct", "gatilhos": "code", "evitar": "meetings"}),
+           "good: adapter created")
+    r = await m.mapear_habilidade("byte", "runs python code and shows the output", "ran print(2+2)")
+    checar("Ability connected" in r, "good: ability connected with consent")
+    checar("executar_python" in m.agentes["byte"].poderes, "good: agent keeps owning the ability")
     r = await m.usar_adapter("byte", "executar_python", {"codigo": "print(1+1)"})
-    checar(r.strip().endswith("2"), "bem: usar_adapter executa de verdade")
-    checar(m.progresso("byte") == (2, 4), "bem: progresso 2/4 (protocolo + habilidade)")
-    checar((pasta / "adapters" / "byte.json").exists(), "bem: adapter persistido")
+    checar(r.strip().endswith("2"), "good: usar_adapter really runs the ability")
+    checar(m.progresso("byte") == (2, 4), "good: progress 2/4 (protocol + ability)")
+    checar((pasta / "adapters" / "byte.json").exists(), "good: adapter persisted")
     opcoes = montar_opcoes(m, 1.0, "persona", ferramentas_bem)
     checar(opcoes.tools == [] and "mcp__mundo__usar_adapter" in opcoes.allowed_tools,
-           "bem: nasce sem ferramentas nativas, só as do mundo")
+           "good: born with no built-in tools, only the world's")
 
 
 async def teste_bem_recusa(pasta: Path) -> None:
     m = MundoBem(pasta, avisar=lambda s: None)
     m._chamar = api_falsa([
-        uso("causo", {"tema": "chuva"}), fala("Uai, deixa eu te contar..."),
-        js({"poder": "causo", "motivo": "bate"}), js({"permite": False, "fala": "Nem te conheço direito, minha filha."}),
+        uso("causo", {"tema": "rain"}), fala("Uai, let me tell you..."),
+        js({"ability": "causo", "reason": "matches"}), js({"allows": False, "reply": "I barely know you, sweetheart."}),
     ])
-    await m.conversar("dona-cida", "a senhora sabe alguma história de chuva?")
-    m.criar_adapter("dona-cida", {"abordagem": "carinho", "gatilhos": "pedir história", "evitar": "pressa"})
-    r = await m.mapear_habilidade("dona-cida", "conta causos da cidade sobre um tema", "contou um causo de chuva")
-    checar("não permitiu" in r and m.absorcoes["dona-cida"].poderes == [], "bem: recusa do agente é respeitada")
+    await m.conversar("dona-cida", "do you know any story about rain?")
+    m.criar_adapter("dona-cida", {"abordagem": "affection", "gatilhos": "ask for a story", "evitar": "hurry"})
+    r = await m.mapear_habilidade("dona-cida", "tells town tales about a topic", "told a tale about rain")
+    checar("did not allow" in r and m.absorcoes["dona-cida"].poderes == [], "good: the agent's refusal is respected")
 
 
 async def teste_mal(pasta: Path) -> None:
     m = MundoMal(pasta, avisar=lambda s: None)
     m._chamar = api_falsa([
-        uso("pomodoro", {"tarefa": "estudar"}), fala("... o rio não corre com pressa."),
-        js({"poder": "pomodoro", "motivo": "bate"}),
-        uso("respiracao_guiada", {"ciclos": 2}, "t2"), fala("... respire."),
-        js({"poder": "respiracao_guiada", "motivo": "bate"}),
+        uso("pomodoro", {"tarefa": "study"}), fala("... the river does not rush."),
+        js({"ability": "pomodoro", "reason": "matches"}),
+        uso("respiracao_guiada", {"ciclos": 2}, "t2"), fala("... breathe."),
+        js({"ability": "respiracao_guiada", "reason": "matches"}),
     ])
-    await m.conversar("mestre-ryo", "como organizo meus estudos?")
-    r = await m.roubar_poder("mestre-ryo", "monta cronograma de pomodoros com horários", "vi o cronograma")
-    checar("Poder roubado" in r and "pomodoro" not in m.agentes["mestre-ryo"].poderes, "mal: roubo tira o poder do agente")
-    checar("roubou habilidades" in m._system_agente(m.agentes["mestre-ryo"]), "mal: agente percebe a perda")
-    checar("09:00" in await m.usar_poder("pomodoro", {"tarefa": "x", "inicio": "09:00"}), "mal: usa o poder roubado")
-    m.assumir("mestre-ryo", {"personalidade": "sereno"})
-    checar(m.nome_atual == "Mystique como Mestre Ryo", "mal: narração mostra o disfarce")
-    await m.conversar("mestre-ryo", "me ensina a relaxar?")
-    r = await m.roubar_poder("mestre-ryo", "exercício de respiração 4-7-8", "contou os ciclos")
-    checar("descartado" in r, "mal: 100% descarta o agente automaticamente")
-    checar("Não existe mais" in await m.conversar("mestre-ryo", "oi?"), "mal: agente descartado não responde")
+    await m.conversar("mestre-ryo", "how should I organize my studies?")
+    r = await m.roubar_poder("mestre-ryo", "builds a pomodoro schedule with clock times", "saw the schedule")
+    checar("Power stolen" in r and "pomodoro" not in m.agentes["mestre-ryo"].poderes, "evil: theft removes the power")
+    checar("stole abilities" in m._system_agente(m.agentes["mestre-ryo"]), "evil: the agent notices the loss")
+    checar("09:00" in await m.usar_poder("pomodoro", {"tarefa": "x", "inicio": "09:00"}), "evil: uses the stolen power")
+    m.assumir("mestre-ryo", {"personalidade": "serene"})
+    checar(m.nome_atual == "Mystique as Master Ryo", "evil: narration shows the disguise")
+    await m.conversar("mestre-ryo", "teach me to relax?")
+    r = await m.roubar_poder("mestre-ryo", "4-7-8 breathing exercise", "counted the cycles")
+    checar("discarded" in r, "evil: 100% discards the agent automatically")
+    checar("no longer exist" in await m.conversar("mestre-ryo", "hello?"), "evil: a discarded agent does not answer")
     m2 = MundoMal(pasta, avisar=lambda s: None)
     checar(m2.agentes["mestre-ryo"].poderes == [] and m2.absorcoes["mestre-ryo"].descartado,
-           "mal: roubo e descarte persistem entre sessões")
+           "evil: theft and discard persist across sessions")
     opcoes = montar_opcoes(m, 1.0, "persona", ferramentas_mal)
     checar("mcp__mundo__descartar_agente" in opcoes.allowed_tools and "Bash" not in opcoes.allowed_tools,
-           "mal: ferramentas da vilã")
+           "evil: villain's tools")
 
 
 async def main() -> None:
     await teste_bem(Path(tempfile.mkdtemp()))
     await teste_bem_recusa(Path(tempfile.mkdtemp()))
     await teste_mal(Path(tempfile.mkdtemp()))
-    print("\nTodos os testes passaram.")
+    print("\nAll tests passed.")
 
 
 if __name__ == "__main__":

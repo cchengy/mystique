@@ -1,9 +1,8 @@
-"""Loop principal: conecta a Mystique ao Agent SDK e narra o que acontece."""
+"""Main loop: connects Mystique to the Agent SDK and narrates what happens."""
 
 import asyncio
 import os
 from collections.abc import Callable
-from pathlib import Path
 
 from claude_agent_sdk import (
     AssistantMessage,
@@ -21,7 +20,7 @@ from .mundo import Mundo
 from .persona import BASE
 
 MODELO = os.getenv("MYSTIQUE_MODEL", "claude-opus-5")
-_EMOJI = {"bem": "🦸", "mal": "🦹"}
+_EMOJI = {"good": "🦸", "evil": "🦹"}
 
 FerramentasExtras = Callable[[Mundo], list[SdkMcpTool]]
 
@@ -31,7 +30,7 @@ def montar_opcoes(mundo: Mundo, orcamento: float, persona: str, extras: Ferramen
     return ClaudeAgentOptions(
         system_prompt=f"{BASE}\n\n{persona}",
         model=MODELO,
-        # Ela nasce só com a metamorfose: nenhuma ferramenta nativa, apenas o servidor do mundo.
+        # She is born with metamorphosis only: no built-in tools, just the world's server.
         tools=[],
         mcp_servers={"mundo": criar_servidor(ferramentas)},
         allowed_tools=nomes_permitidos(ferramentas),
@@ -40,13 +39,13 @@ def montar_opcoes(mundo: Mundo, orcamento: float, persona: str, extras: Ferramen
         max_budget_usd=orcamento,
         effort="high",
         thinking={"type": "adaptive", "display": "summarized"},
-        # Não herda settings/hooks/CLAUDE.md da máquina: comportamento reproduzível.
+        # Does not inherit settings/hooks/CLAUDE.md from the machine: reproducible behavior.
         setting_sources=[],
     )
 
 
 class Narrador:
-    """Imprime o stream do SDK. Contatos e conquistas são narrados pelo próprio Mundo."""
+    """Prints the SDK stream. Contacts and conquests are narrated by the Mundo itself."""
 
     def __init__(self, mundo: Mundo, verbose: bool) -> None:
         self.mundo = mundo
@@ -61,18 +60,18 @@ class Narrador:
                     print(f"   💭 {bloco.thinking}")
         elif isinstance(msg, ResultMessage):
             custo = f"${msg.total_cost_usd:.4f}" if msg.total_cost_usd is not None else "?"
-            print(f"\n— {msg.subtype} · custo acumulado {custo}")
+            print(f"\n— {msg.subtype} · total cost {custo}")
 
 
 async def executar(
     missao: str | None, mundo: Mundo, orcamento: float, verbose: bool, persona: str, extras: FerramentasExtras
 ) -> None:
-    """Com missão: executa uma vez e sai. Sem missão: modo interativo com memória da sessão."""
+    """With a mission: runs once and exits. Without one: interactive mode with session memory."""
     narrador = Narrador(mundo, verbose)
     conquistas = sum(len(a.poderes) for a in mundo.absorcoes.values())
     print(
-        f"{_EMOJI.get(mundo.modo, '🦎')} Mystique ({mundo.modo}) · modelo {MODELO} · {len(mundo.agentes)} agentes · "
-        f"{conquistas} habilidades na memória · orçamento ${orcamento:.2f}"
+        f"{_EMOJI.get(mundo.modo, '🦎')} Mystique ({mundo.modo}) · model {MODELO} · "
+        f"{len(mundo.agentes)} agents · {conquistas} abilities in memory · budget ${orcamento:.2f}"
     )
 
     async with ClaudeSDKClient(options=montar_opcoes(mundo, orcamento, persona, extras)) as client:
@@ -83,7 +82,7 @@ async def executar(
                     pedido = (await asyncio.to_thread(input, f"\n[{mundo.nome_atual}]> ")).strip()
                 except (EOFError, KeyboardInterrupt):
                     break
-                if pedido.lower() in {"sair", "exit", "quit"}:
+                if pedido.lower() in {"exit", "quit", "sair"}:
                     break
                 if not pedido:
                     pedido = None
@@ -93,7 +92,7 @@ async def executar(
                 async for msg in client.receive_response():
                     narrador.mensagem(msg)
             except ClaudeSDKError as erro:
-                print(f"\n⚠ missão interrompida: {erro}")
+                print(f"\n⚠ mission interrupted: {erro}")
             if missao is not None:
                 break
             pedido = None

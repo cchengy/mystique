@@ -1,8 +1,8 @@
-"""Ferramentas comuns às duas versões, expostas como servidor MCP in-process.
+"""Tools shared by both versions, exposed as an in-process MCP server.
 
-As funções compartilham a instância de Mundo com o loop principal, então o estado
-vive em Python e não na memória do modelo. Cada versão soma as próprias ferramentas
-(bem/ferramentas.py, mal/ferramentas.py).
+The functions share the Mundo instance with the main loop, so state lives in Python
+and not in the model's memory. Each version adds its own tools
+(good/ferramentas.py, evil/ferramentas.py).
 """
 
 from typing import Any
@@ -16,15 +16,15 @@ SERVIDOR = "mundo"
 _PERFIL = {
     "type": "object",
     "properties": {
-        "agente": {"type": "string", "description": "id do agente contatado"},
-        "personalidade": {"type": "string", "description": "traços centrais observados no contato"},
-        "tom_de_voz": {"type": "string"},
+        "agente": {"type": "string", "description": "id of the agent you contacted"},
+        "personalidade": {"type": "string", "description": "core traits observed during contact"},
+        "tom_de_voz": {"type": "string", "description": "tone of voice"},
         "vocabulario": {
             "type": "string",
-            "description": "gírias, bordões e jeito de construir frases, com exemplos literais do contato",
+            "description": "slang, catchphrases and sentence patterns, with literal examples from the contact",
         },
-        "valores_e_manias": {"type": "string"},
-        "como_responde": {"type": "string", "description": "tamanho, estrutura e ritmo típicos das respostas"},
+        "valores_e_manias": {"type": "string", "description": "values and quirks"},
+        "como_responde": {"type": "string", "description": "typical length, structure and rhythm of answers"},
     },
     "required": ["agente", "personalidade", "tom_de_voz", "vocabulario", "valores_e_manias", "como_responde"],
 }
@@ -37,20 +37,21 @@ def texto(conteudo: str) -> dict[str, Any]:
 def ferramentas_base(mundo: Mundo) -> list[SdkMcpTool]:
     @tool(
         "listar_agentes",
-        "Lista os agentes do mundo (só a apresentação pública), seu progresso em cada um e o que você já conquistou.",
+        "Lists the agents in the world (public introduction only), your progress with each one and what you "
+        "have already earned.",
         {"type": "object", "properties": {}},
     )
     async def listar_agentes(args: dict[str, Any]) -> dict[str, Any]:
         linhas = "\n".join(mundo.descrever(a) for a in mundo.agentes.values())
-        return texto(f"Agentes:\n{linhas}\n\n{mundo.resumo()}".strip())
+        return texto(f"Agents:\n{linhas}\n\n{mundo.resumo()}".strip())
 
     @tool(
         "conversar",
-        "Envia uma mensagem a um agente do mundo e devolve a resposta dele. O agente lembra da conversa. "
-        "Quando ele usa uma habilidade especial, você percebe e vê o resultado.",
+        "Sends a message to an agent in the world and returns its answer. The agent remembers the conversation. "
+        "When it uses a special ability, you notice it and see the result.",
         {
             "type": "object",
-            "properties": {"agente": {"type": "string", "description": "id do agente"}, "mensagem": {"type": "string"}},
+            "properties": {"agente": {"type": "string", "description": "agent id"}, "mensagem": {"type": "string"}},
             "required": ["agente", "mensagem"],
         },
     )
@@ -59,8 +60,8 @@ def ferramentas_base(mundo: Mundo) -> list[SdkMcpTool]:
 
     @tool(
         "assumir_forma",
-        "Absorve a essência (personalidade) de um agente com quem você teve contato, a partir do perfil "
-        "deduzido da conversa. Use só o que observou; não invente traços.",
+        "Absorbs the essence (personality) of an agent you have been in contact with, from the profile you "
+        "deduced in conversation. Use only what you observed; do not invent traits.",
         _PERFIL,
     )
     async def assumir_forma(args: dict[str, Any]) -> dict[str, Any]:
@@ -69,7 +70,8 @@ def ferramentas_base(mundo: Mundo) -> list[SdkMcpTool]:
 
     @tool(
         "voltar_a_forma",
-        f"Troca para uma essência já absorvida, sem novo contato, ou use '{FORMA_ORIGINAL}' para a forma original.",
+        f"Switches to an essence you already absorbed, with no new contact, or use '{FORMA_ORIGINAL}' for your "
+        "original form.",
         {"type": "object", "properties": {"agente": {"type": "string"}}, "required": ["agente"]},
     )
     async def voltar_a_forma(args: dict[str, Any]) -> dict[str, Any]:
