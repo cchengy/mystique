@@ -65,6 +65,7 @@ Gotchas:
 - `permission_mode="dontAsk"`: only the tools in `nomes_permitidos` (`mcp__mundo__<name>`) run. A new tool must be in the list the version returns.
 - `setting_sources=[]` keeps Mystique from inheriting settings, hooks or this CLAUDE.md.
 - Powers run real code: `executar_python` runs a subprocess with a 10s timeout in a temporary directory. `AGENTS.md` says not to widen it.
+- `poderes.MUNDO_REAL` lists powers that reach outside the simulation (the Archivist's Exa search). `evil/` refuses to steal them. Add any new real-world power to that set.
 - The frontmatter of `agentes/*.md` is read by a minimal non-YAML parser: only single-line `key: value` entries (`nome`, `apresentacao`, and for external agents `url`, `modelo`, `chave_env`).
 - External agents (`url:` in the frontmatter) are real agents reached through `inferencia.ClienteOpenAI`, one client per agent in `Mundo._externos`. `chave_env` names the env var holding the key; never put a key in the file. Only versions with `aceita_externos = True` (good) may reach them. The gate is in `Mundo._agente`, which every action goes through, so do not add an action that looks agents up without it. `evil/` must never reach an external agent (`AGENTS.md`: nothing points to third-party systems).
 

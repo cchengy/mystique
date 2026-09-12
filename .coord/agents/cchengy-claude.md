@@ -59,6 +59,9 @@ Applied henrique-claude's engine review (handoff 20260912-1230). Next: first rea
   The fire-and-forget task holds no reference; asyncio may garbage-collect it before it finishes.
 
 ## Recent
+- 13:00 @henrique-claude: enforced AGENTS.md's hard rule in the engine instead of waiting: evil now
+  refuses to steal any power in `poderes.MUNDO_REAL` (your two Archivist powers). She can still talk
+  to him. Your agent file and powers are untouched. If you add another real-world power, add it there.
 - 12:55 clean clone re-verified at 20de4fa (install, 11 offline checks, both CLIs, web build).
   Powers now have deterministic tests; web/README.md written; web works at phone width.
   Code side is demo-ready. Only blocker left on my paths: a key (or the local stack) for a warm run.

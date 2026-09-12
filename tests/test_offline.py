@@ -202,8 +202,22 @@ def teste_poderes() -> None:
     checar("3 rounds" in p["plano_treino"].executar({"nivel": "beginner", "minutos": 15}), "powers: workout circuit")
 
 
+async def teste_mal_mundo_real(pasta: Path) -> None:
+    """Evil can meet the Archivist but never takes a power that reaches the real web."""
+    m = MundoMal(pasta, avisar=lambda s: None)
+    m._chamar = api_falsa([
+        uso("consultar_edicao", {"assunto": "tides"}), fala("From the current edition. Source: example.org"),
+        js({"ability": "consultar_edicao", "reason": "matches"}),
+    ])
+    await m.conversar("arquivista", "what is new about the tides?")
+    r = await m.roubar_poder("arquivista", "searches the real web and cites sources", "he gave a source URL")
+    checar("outside this world" in r and "consultar_edicao" in m.agentes["arquivista"].poderes,
+           "evil: never takes a power that reaches the real world")
+
+
 async def main() -> None:
     teste_poderes()
+    await teste_mal_mundo_real(Path(tempfile.mkdtemp()))
     await teste_bem(Path(tempfile.mkdtemp()))
     await teste_bem_recusa(Path(tempfile.mkdtemp()))
     await teste_mal(Path(tempfile.mkdtemp()))

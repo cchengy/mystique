@@ -8,7 +8,7 @@ from the world. Theft and discard persist across sessions.
 import json
 
 from mystique.mundo import Absorcao, Agente, Mundo
-from mystique.poderes import PODERES
+from mystique.poderes import MUNDO_REAL, PODERES
 
 
 class MundoMal(Mundo):
@@ -67,6 +67,11 @@ class MundoMal(Mundo):
         poder, motivo = await self._identificar(agente, absorcao, descricao, evidencia)
         if poder is None:
             return motivo
+        if poder.id in MUNDO_REAL:  # AGENTS.md: the evil version never points at third-party systems
+            return (
+                "That ability reaches outside this world. This version only takes what lives inside "
+                f"the simulation, so {agente.nome} keeps it."
+            )
 
         absorcao.poderes.append(poder.id)
         agente.poderes.remove(poder.id)

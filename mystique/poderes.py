@@ -397,6 +397,10 @@ _LISTA += [
 
 PODERES: dict[str, Poder] = {p.id: p for p in _LISTA}
 
+# Powers that reach outside the simulated world. AGENTS.md: the evil version never points at
+# third-party systems, so it may meet the agents that own these but can never take them.
+MUNDO_REAL = {"consultar_edicao", "verificar_boato"}
+
 
 def poderes_de(agente_id: str) -> list[str]:
     return [p.id for p in _LISTA if p.agente == agente_id]
