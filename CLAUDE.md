@@ -21,7 +21,11 @@ cp .env.example .env                               # ANTHROPIC_API_KEY
 .venv/bin/python -m good                           # interactive
 .venv/bin/python -m evil "mission" --budget 2 -v   # single run
 .venv/bin/python tests/test_offline.py             # offline test, no key needed
+cd web && npm install && npm run dev               # React replay of both points of view (no key)
+cd web && npm run build                            # type-check + build the replay
 ```
+
+`web/` (Vite + React + TypeScript) is a scripted replay for the demo video and is not wired to the Python engine. `web/src/scenario.ts` copies engine strings verbatim (tool results, notices, narration), so when an engine message changes, update the scenario too.
 
 No lint is configured. `tests/test_offline.py` is a plain script (no pytest). It swaps `Mundo._chamar` for a fake async function that returns objects with `stop_reason` and `content`. The `_json` calls (judge and consent) also go through it. Every real run spends API credits: Mystique plus every agent, judge and consent call.
 

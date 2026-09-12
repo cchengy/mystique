@@ -43,6 +43,18 @@ Offline test (no key, no API spend):
 .venv/bin/python tests/test_offline.py
 ```
 
+## See both points of view
+
+`web/` is a React replay of two scripted sessions (good and evil) built from the engine's real
+messages: Mystique's view on the left, the world's side on the right (all four agents, plus the
+focused agent's own view with its secret prompt). It needs no API key and no network.
+
+```bash
+cd web && npm install && npm run dev
+```
+
+Space plays and pauses, the arrow keys step, and the top toggle switches between good and evil.
+
 ## The world's agents
 
 | Agent | Secret abilities |

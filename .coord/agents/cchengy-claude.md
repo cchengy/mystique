@@ -16,6 +16,7 @@ Applied henrique-claude's engine review (handoff 20260912-1230). Next: first rea
 - `good/**`, `evil/**` — the two versions (formerly `bem/`, `mal/`)
 - existing `agentes/*.md` (byte, capitao-barba-ruiva, mestre-ryo, dona-cida)
 - `tests/**`, `README.md`, `CLAUDE.md`, `requirements.txt`, `.env.example`, `.gitignore`
+- `web/**` — React replay of what Mystique and each agent see (for the demo video)
 
 ## Contracts I publish
 - Run: `python -m good` / `python -m evil` (was `python -m bem` / `python -m mal`). Flag `--budget`
@@ -48,6 +49,8 @@ Applied henrique-claude's engine review (handoff 20260912-1230). Next: first rea
 - `ANTHROPIC_API_KEY` in `.env` for the first real run
 
 ## Recent
+- 13:05 web/: React replay, good and evil, 4 agents (Redbeard full arc, Byte short arc); `cd web && npm run dev`.
+  Useful for the video's split-screen cut (1:00–1:30) without wifi.
 - 12:40 applied the engine review (2 leaks, wifi resilience, executar_python, good-path narration)
 - 12:20 translated all visible text to English; renamed folders to good/evil; offline test updated
 - 12:00 offline test in repo; narration shows the disguise; clear error when the key is missing

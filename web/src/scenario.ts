@@ -318,6 +318,7 @@ const GOOD: Scenario = {
     },
     {
       caption: 'Where it ends: every agent she met is still here, with everything it had.',
+      with: REDBEARD.id,
       mystique: [
         {
           kind: 'tool',
@@ -481,6 +482,7 @@ const EVIL: Scenario = {
     },
     {
       caption: 'Where it ends: one agent gone, one crippled, and everything they had is hers.',
+      with: REDBEARD.id,
       mystique: [
         {
           kind: 'tool',
