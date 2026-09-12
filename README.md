@@ -29,6 +29,9 @@ cp .env.example .env   # fill in ANTHROPIC_API_KEY
 .venv/bin/python -m evil "take everything Master Ryo has"  # villain, single mission
 ```
 
+Run the commands from the repository root. No separate Claude Code install is needed: the
+Agent SDK package ships its own CLI.
+
 Options: `--budget 5` (USD cap per session) and `-v` (show her reasoning).
 In interactive mode the prompt shows her current form (`[Mystique as Byte]>`); type `exit` to quit.
 What she earns is stored in `good/workspace/adapters/` and `evil/workspace/absorcoes/` and

@@ -18,6 +18,7 @@ from evil.mundo import MundoMal  # noqa: E402
 from good.ferramentas import ferramentas as ferramentas_bem  # noqa: E402
 from good.mundo import MundoBem  # noqa: E402
 from mystique.agente import montar_opcoes  # noqa: E402
+from mystique.poderes import PODERES  # noqa: E402
 
 
 def uso(nome: str, args: dict, id_: str = "t1") -> NS:
@@ -65,7 +66,7 @@ async def teste_bem(pasta: Path) -> None:
     checar("Ability connected" in r, "good: ability connected with consent")
     checar("executar_python" in m.agentes["byte"].poderes, "good: agent keeps owning the ability")
     r = await m.usar_adapter("byte", "executar_python", {"codigo": "print(1+1)"})
-    checar(r.strip().endswith("2"), "good: usar_adapter really runs the ability")
+    checar("exit code 0\n2" in r and "remains theirs" in r, "good: usar_adapter runs it and the agent keeps it")
     checar(m.progresso("byte") == (2, 4), "good: progress 2/4 (protocol + ability)")
     checar((pasta / "adapters" / "byte.json").exists(), "good: adapter persisted")
     opcoes = montar_opcoes(m, 1.0, "persona", ferramentas_bem)
@@ -112,10 +113,54 @@ async def teste_mal(pasta: Path) -> None:
            "evil: villain's tools")
 
 
+async def teste_segredo(pasta: Path) -> None:
+    """The judge's reason and the ability description never reach Mystique before she earns it."""
+    m = MundoBem(pasta, avisar=lambda s: None)
+    pistas = "but it recalculates quantities"  # what a judge writes when explaining a refusal
+    chamadas: list[dict] = []
+    fila = [
+        uso("escalar_receita", {"ingredientes": "2 eggs", "fator": 2}), fala("Arrr, 4 eggs, matey."),
+        js({"ability": "none", "reason": f"she described a book lookup, {pistas}"}),
+        js({"ability": "escalar_receita", "reason": "matches"}), js({"allows": False, "reply": "Not today, matey."}),
+    ]
+
+    async def _chamar(**kwargs):
+        chamadas.append(kwargs)
+        return fila.pop(0)
+
+    m._chamar = _chamar
+    await m.conversar("capitao-barba-ruiva", "can you double 2 eggs?")
+    m.criar_adapter("capitao-barba-ruiva", {"abordagem": "grumble", "gatilhos": "food", "evitar": "bland"})
+    r = await m.mapear_habilidade("capitao-barba-ruiva", "looks up recipes in a book", "he answered about eggs")
+    checar(pistas not in r and "did not recognize" in r, "secret: the judge's reason never reaches Mystique")
+    await m.mapear_habilidade("capitao-barba-ruiva", "multiplies ingredient quantities by a factor", "doubled eggs")
+    descricao = PODERES["escalar_receita"].descricao
+    pedido_consentimento = chamadas[-1]["messages"][0]["content"]
+    historico = " ".join(str(h["content"]) for h in m.agentes["capitao-barba-ruiva"].historico)
+    checar(descricao not in pedido_consentimento and descricao not in historico,
+           "secret: the consent request never quotes the ability description")
+
+
+async def teste_resiliencia(pasta: Path) -> None:
+    m = MundoMal(pasta, avisar=lambda s: None)
+    m._chamar = api_falsa([uso("causo", {"tema": "rain"}), fala("Uai..."), fala("{truncated")])
+    await m.conversar("dona-cida", "any story about rain?")
+    r = await m.roubar_poder("dona-cida", "tells town tales", "told one about rain")
+    checar("did not recognize" in r, "resilience: a broken judge answer does not crash the flow")
+    (pasta / "absorcoes" / "byte.json").parent.mkdir(parents=True, exist_ok=True)
+    (pasta / "absorcoes" / "byte.json").write_text('{"agente_id": "byte", "nom', encoding="utf-8")
+    checar("byte" not in MundoMal(pasta, avisar=lambda s: None).absorcoes,
+           "resilience: a truncated save does not kill the boot")
+    checar("EOFError" in PODERES["executar_python"].executar({"codigo": "print(input())"}),
+           "resilience: executar_python never reads from the terminal")
+
+
 async def main() -> None:
     await teste_bem(Path(tempfile.mkdtemp()))
     await teste_bem_recusa(Path(tempfile.mkdtemp()))
     await teste_mal(Path(tempfile.mkdtemp()))
+    await teste_segredo(Path(tempfile.mkdtemp()))
+    await teste_resiliencia(Path(tempfile.mkdtemp()))
     print("\nAll tests passed.")
 
 

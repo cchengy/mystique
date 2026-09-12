@@ -9,7 +9,7 @@ the connection.
 import json
 
 from mystique.mundo import Agente, Mundo
-from mystique.poderes import PODERES, Poder, poderes_de
+from mystique.poderes import PODERES, poderes_de
 
 
 class MundoBem(Mundo):
@@ -66,7 +66,7 @@ class MundoBem(Mundo):
         poder, motivo = await self._identificar(agente, absorcao, descricao, evidencia)
         if poder is None:
             return motivo
-        permite, fala = await self._pedir_consentimento(agente, poder)
+        permite, fala = await self._pedir_consentimento(agente)
         self.avisar(f"💬 {agente.nome}: {fala}")
         if not permite:
             return f"{agente.nome} did not allow it: \"{fala}\" Earn their trust before asking again."
@@ -81,9 +81,10 @@ class MundoBem(Mundo):
             f"Progress: {self.barra(agente_id)}.{self._verificar_completo(agente)}"
         )
 
-    async def _pedir_consentimento(self, agente: Agente, poder: Poder) -> tuple[bool, str]:
+    async def _pedir_consentimento(self, agente: Agente) -> tuple[bool, str]:
+        # Never quote the ability's description: the agent's reply reaches Mystique verbatim.
         pedido = (
-            f"May I connect your ability to my adapter? ({poder.descricao}) "
+            "May I connect the ability you just used to my adapter? "
             "It stays yours; I only become able to ask you to use it."
         )
         decisao = await self._json(
@@ -114,5 +115,7 @@ class MundoBem(Mundo):
         absorcao = self.absorcoes.get(agente_id)
         if absorcao is None or habilidade not in absorcao.poderes:
             return f"The ability '{habilidade}' is not connected to your adapter for {agente.nome}."
-        self.avisar(f"🔌 {self.nome_atual} triggers [{habilidade}] from {agente.nome} via adapter")
-        return await self._executar(habilidade, argumentos)
+        self.avisar(f"🔌 {self.nome_atual} asks {agente.nome} to run [{habilidade}] via adapter")
+        resultado = await self._executar(habilidade, argumentos)
+        self.avisar(f"   🔌 {agente.nome} ran it at her request · the ability is still {agente.nome}'s")
+        return f"{resultado}\n\n[{agente.nome} ran it at your request through the adapter; the ability remains theirs.]"

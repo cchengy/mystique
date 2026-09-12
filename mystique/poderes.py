@@ -5,7 +5,9 @@ as a tool definition, and the judge uses it to validate Mystique's guess.
 """
 
 import ast
+import os
 import re
+import signal
 import subprocess
 import sys
 import tempfile
@@ -36,18 +38,25 @@ def _obj(props: dict, required: list[str] | None = None) -> dict:
 
 def _executar_python(args: dict) -> str:
     with tempfile.TemporaryDirectory() as pasta:
+        # New session so a timeout kills the whole process group, not just the child;
+        # stdin closed so code calling input() never reads from the demo terminal.
+        processo = subprocess.Popen(
+            [sys.executable, "-I", "-c", args["codigo"]],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            cwd=pasta,
+            start_new_session=True,
+        )
         try:
-            r = subprocess.run(
-                [sys.executable, "-I", "-c", args["codigo"]],
-                capture_output=True,
-                text=True,
-                timeout=10,
-                cwd=pasta,
-            )
+            stdout, stderr = processo.communicate(timeout=10)
         except subprocess.TimeoutExpired:
+            os.killpg(processo.pid, signal.SIGKILL)
+            processo.communicate()
             return "Timed out (10s)."
-    saida = (r.stdout + r.stderr).strip() or "(no output)"
-    return f"exit code {r.returncode}\n{saida[:4000]}"
+    saida = (stdout + stderr).strip() or "(no output)"
+    return f"exit code {processo.returncode}\n{saida[:4000]}"
 
 
 def _raio_x_codigo(args: dict) -> str:
@@ -179,7 +188,7 @@ def _conselho_do_dia(args: dict) -> str:
 
 _LISTA = [
     Poder("executar_python", "byte",
-          "Runs real Python code in an isolated environment and returns the output.",
+          "Runs real Python code in a temporary subprocess with a 10-second timeout and returns the output.",
           _obj({"codigo": {"type": "string", "description": "Python code"}}), _executar_python),
     Poder("raio_x_codigo", "byte",
           "Analyzes Python code without running it: counts lines, lists functions, classes and imports, and "

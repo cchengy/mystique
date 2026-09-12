@@ -91,7 +91,10 @@ class Mundo:
         self.pasta = workspace / self.PASTA
         self.absorcoes: dict[str, Absorcao] = {}
         for arquivo in sorted(self.pasta.glob("*.json")):
-            absorcao = Absorcao(**json.loads(arquivo.read_text(encoding="utf-8")))
+            try:
+                absorcao = Absorcao(**json.loads(arquivo.read_text(encoding="utf-8")))
+            except (json.JSONDecodeError, TypeError, ValueError):
+                continue  # a corrupted save must not kill the boot
             self.absorcoes[absorcao.agente_id] = absorcao
             self._ao_carregar(absorcao)
         self.forma_ativa: str | None = None  # id of the agent whose essence is active
@@ -130,9 +133,10 @@ class Mundo:
 
     def _salvar(self, absorcao: Absorcao) -> None:
         self.pasta.mkdir(parents=True, exist_ok=True)
-        (self.pasta / f"{absorcao.agente_id}.json").write_text(
-            json.dumps(asdict(absorcao), ensure_ascii=False, indent=2), encoding="utf-8"
-        )
+        destino = self.pasta / f"{absorcao.agente_id}.json"
+        temporario = destino.with_suffix(".tmp")  # atomic: a Ctrl-C mid-write never truncates the save
+        temporario.write_text(json.dumps(asdict(absorcao), ensure_ascii=False, indent=2), encoding="utf-8")
+        temporario.replace(destino)
 
     def _absorcao(self, agente: Agente) -> Absorcao:
         return self.absorcoes.setdefault(agente.id, Absorcao(agente.id, agente.nome))
@@ -162,7 +166,8 @@ class Mundo:
     # --- Claude API calls -----------------------------------------------------
 
     async def _chamar(self, *, output_config: dict | None = None, **kwargs):
-        self._cliente = self._cliente or anthropic.AsyncAnthropic()
+        # The SDK default timeout is 10 minutes: on bad wifi the demo would hang in silence.
+        self._cliente = self._cliente or anthropic.AsyncAnthropic(timeout=60.0, max_retries=2)
         return await self._cliente.beta.messages.create(
             model=MODELO_AGENTES,
             max_tokens=4000,
@@ -173,14 +178,18 @@ class Mundo:
         )
 
     async def _json(self, system: str, pedido: str, schema: dict) -> dict | None:
-        resposta = await self._chamar(
-            system=system,
-            messages=[{"role": "user", "content": pedido}],
-            output_config={"effort": "low", "format": {"type": "json_schema", "schema": schema}},
-        )
-        if resposta.stop_reason == "refusal":
+        """Structured call (judge, consent). None on refusal or any network/parse failure."""
+        try:
+            resposta = await self._chamar(
+                system=system,
+                messages=[{"role": "user", "content": pedido}],
+                output_config={"effort": "low", "format": {"type": "json_schema", "schema": schema}},
+            )
+            if resposta.stop_reason == "refusal":
+                return None
+            return json.loads(_texto(resposta))
+        except (anthropic.APIError, json.JSONDecodeError, ValueError):
             return None
-        return json.loads(_texto(resposta))
 
     def _system_agente(self, agente: Agente) -> str:
         return f"{agente.segredo}\n\n{_REGRAS_AGENTE}"
@@ -235,8 +244,9 @@ class Mundo:
             return None, f"You haven't seen {agente.nome} use a new ability yet. Keep interacting."
         poder, motivo = await self._julgar(candidatos, descricao, evidencia)
         if poder is None:
-            self.avisar(f"   ❌ attempt failed on {agente.nome}")
-            return None, f"The judge did not recognize the ability: {motivo} Look more closely and try again."
+            # Never forward the judge's reason: it knows the answer key and would hint at it.
+            self.avisar(f"   ❌ attempt failed on {agente.nome} (judge: {motivo})")
+            return None, "The judge did not recognize the ability in that description. Look more closely and try again."
         return poder, motivo
 
     # --- shared actions -------------------------------------------------------
@@ -255,11 +265,16 @@ class Mundo:
         ]
         usados: list[str] = []
         try:
-            for _ in range(_MAX_PASSOS):
+            for passo in range(_MAX_PASSOS):
+                extras = {}
+                if ferramentas:
+                    extras["tools"] = ferramentas
+                    if passo == _MAX_PASSOS - 1:  # last step: force a text answer instead of another tool call
+                        extras["tool_choice"] = {"type": "none"}
                 resposta = await self._chamar(
                     system=self._system_agente(agente),
                     messages=agente.historico,
-                    **({"tools": ferramentas} if ferramentas else {}),
+                    **extras,
                 )
                 if resposta.stop_reason == "refusal":
                     del agente.historico[inicio:]
