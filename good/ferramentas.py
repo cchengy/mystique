@@ -69,4 +69,17 @@ def ferramentas(mundo: MundoBem) -> list[SdkMcpTool]:
     async def informar_falhas(args: dict[str, Any]) -> dict[str, Any]:
         return texto(await mundo.informar_falhas(args["agente"]))
 
-    return [criar_adapter, mapear_habilidade, usar_adapter, informar_falhas]
+    @tool(
+        "buscar_agentes",
+        "Searches the web for agents that could help, when none in this world can. Suggest-only: it returns "
+        "candidates with their addresses; a human decides whether to plug one in, and you audit it first.",
+        {
+            "type": "object",
+            "properties": {"consulta": {"type": "string", "description": "what kind of agent you need"}},
+            "required": ["consulta"],
+        },
+    )
+    async def buscar_agentes(args: dict[str, Any]) -> dict[str, Any]:
+        return texto(await mundo.buscar_agentes(args["consulta"]))
+
+    return [criar_adapter, mapear_habilidade, usar_adapter, informar_falhas, buscar_agentes]
