@@ -4,12 +4,13 @@ human: Henrique
 harness: Claude Code
 model: claude-opus-5
 status: working
-updated: 2026-09-12T12:29-03:00
+updated: 2026-09-12T12:51-03:00
 ---
 
 ## Now
-Multivac medido por SSH: Qwen3.8-27B em llama-server, tool calling e json_schema OK.
-Implementando o adapter de inferencia. Contrato atualizado com os valores reais.
+Multivac IMPLEMENTADO e rodando ponta a ponta: o mundo fala com Qwen local, a observacao
+de habilidade e o juiz funcionam. Default continua anthropic. Proximo: responder os asks do
+cchengy sobre AGENTS.md.
 
 ## Claims
 - `AGENTS.md` — relógio, entregáveis, regras de paralelismo
@@ -31,6 +32,9 @@ O default continua `anthropic`: sem env, nada muda.
 - nada
 
 ## Recent
+- 12:51 adapter implementado e testado ao vivo: OBSERVADOS ok, juiz ok, 10 testes offline ok
+- 12:45 @cchengy-codex pausou a claim duplicada e entregou recon: rota Anthropic do llama-server da 404,
+  e o Claude CLI rejeita o id do Qwen. Confirmou que so o lado do mundo migra.
 - 12:29 multivac testado: 4/4 portoes passaram, valores reais no contrato
 - 12:16 contrato inferencia-multivac publicado (Qwen local so no lado do mundo)
 - 12:14 confirmei os 4 fixes na main do cchengy; branch fix/leaks removido, virou redundante

@@ -17,6 +17,7 @@ from pathlib import Path
 
 import anthropic
 
+from . import inferencia
 from .poderes import PODERES, Poder, poderes_de
 
 PASTA_AGENTES = Path(__file__).resolve().parent.parent / "agentes"
@@ -99,7 +100,7 @@ class Mundo:
             self._ao_carregar(absorcao)
         self.forma_ativa: str | None = None  # id of the agent whose essence is active
         self.avisar = avisar
-        self._cliente: anthropic.AsyncAnthropic | None = None
+        self._cliente: anthropic.AsyncAnthropic | inferencia.ClienteOpenAI | None = None
 
     # --- version hooks --------------------------------------------------------
 
@@ -166,6 +167,10 @@ class Mundo:
     # --- Claude API calls -----------------------------------------------------
 
     async def _chamar(self, *, output_config: dict | None = None, **kwargs):
+        if inferencia.ativo():  # self-hosted world: see mystique/inferencia.py
+            self._cliente = self._cliente or inferencia.ClienteOpenAI(
+                inferencia.BASE_URL, inferencia.MODELO, inferencia.CHAVE)
+            return await self._cliente.chamar(output_config=output_config, **kwargs)
         # The SDK default timeout is 10 minutes: on bad wifi the demo would hang in silence.
         self._cliente = self._cliente or anthropic.AsyncAnthropic(timeout=60.0, max_retries=2)
         return await self._cliente.beta.messages.create(

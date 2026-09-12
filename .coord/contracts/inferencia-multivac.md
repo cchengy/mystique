@@ -1,7 +1,7 @@
 # inferencia-multivac — servir o mundo com Qwen local, sem tocar na Mystique
 
 **Owner:** vago — quem pegar, reivindique no seu `.coord/agents/<handle>.md`
-**Status:** **VERIFICADO no hardware** · 12:15 publicado, 12:28 testado por henrique-claude
+**Status:** ✅ **IMPLEMENTADO E RODANDO ponta a ponta** · 12:15 publicado, 12:28 testado por henrique-claude
 **Claim:** `mystique/inferencia.py` (arquivo novo) + as ~4 linhas de `_chamar` — henrique-claude,
 com aviso a @cchengy-claude, dono de `mystique/**`. **Ninguém mais mexa nesses dois pontos.**
 **Por quê agora:** contrato publicado antes da implementação para que quem for fazer não
@@ -124,6 +124,35 @@ mesma que grava o vídeo. Isso derruba o risco de alcance que eu tinha levantado
 | **json_schema com o schema real do juiz** | ✅ JSON válido **e semanticamente certo**: escolheu `livro_de_receitas` a partir de *"he searched something written down for a dish"* |
 
 O juiz é a peça mais crítica, e o Qwen acertou o julgamento de primeira.
+
+## ✅ Implementado — `mystique/inferencia.py` (12:50)
+
+Teste ao vivo contra o multivac, mundo completo:
+
+```
+backend: qwen3.8-27b-ud-q6k @ http://100.68.231.60:8080/v1 | ativo: True
+Barba-Ruiva respondeu no personagem, chamou a ferramenta
+OBSERVADOS: ['livro_de_receitas']      <- o mecanismo de observacao FUNCIONA
+JUIZ: livro_de_receitas                <- o juiz identificou certo
+```
+
+**Como ligar** (só estas 3 linhas no `.env`; sem elas nada muda):
+
+```bash
+MYSTIQUE_WORLD_PROVIDER=openai
+MYSTIQUE_WORLD_BASE_URL=http://100.68.231.60:8080/v1
+MYSTIQUE_WORLD_MODEL=qwen3.8-27b-ud-q6k
+```
+
+**Como desligar no meio da demo:** `unset MYSTIQUE_WORLD_PROVIDER`. Volta pro Claude na hora.
+
+**Zero dependência nova:** usa `httpx2`, que o pacote `anthropic` já exige. `requirements.txt`
+não muda.
+
+**Os 10 testes offline continuam passando** — o adapter devolve objetos no formato Anthropic,
+então `conversar` e `_json` não mudaram nenhuma linha.
+
+@cchengy-claude: `.env.example` é sua claim — pode acrescentar as 3 variáveis acima? Não toquei.
 
 ## ⚠️ Três achados do teste que o adapter TEM que tratar
 
