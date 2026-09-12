@@ -33,10 +33,19 @@ No lint is configured. `tests/test_offline.py` is a plain script (no pytest). It
 
 `mystique/` is the shared engine. `good/` and `evil/` are runnable packages that hand three things to `mystique.cli.main`: a `Mundo` subclass, a persona, and a function that returns the extra tools.
 
-Two model paths:
+Model paths are provider-agnostic. With no provider env vars set, everything runs on Claude:
 
-- **Mystique** runs on the Claude Agent SDK (`ClaudeSDKClient` in `mystique/agente.py`, bundled CLI included). With `tools=[]` she gets no built-in tools, only the in-process MCP server `mundo`: the base tools from `mystique/ferramentas.py` plus the version's extras.
-- **World agents**, the judge and consent are direct Claude API calls (`anthropic.AsyncAnthropic` in `Mundo._chamar`). The body of `agentes/<id>.md` becomes the agent's system prompt, and the powers in `mystique/poderes.py` become its tools, run in a manual loop in `Mundo.conversar`.
+- **Mystique** runs on the Claude Agent SDK by default (`ClaudeSDKClient` in `mystique/agente.py`, bundled CLI included). With `tools=[]` she gets no built-in tools, only the in-process MCP server `mundo`: the base tools from `mystique/ferramentas.py` plus the version's extras. With `MYSTIQUE_PROVIDER=openai`, `mystique/agente_local.py` runs her loop against any OpenAI-compatible server instead. It reuses the same `SdkMcpTool` objects, so the game rules exist in one place only.
+- **World agents**, the judge and consent all go through `Mundo._chamar`, the single choke point. By default that is the Claude API (`anthropic.AsyncAnthropic`). With `MYSTIQUE_WORLD_PROVIDER=openai`, `mystique/inferencia.py` translates to an OpenAI-compatible server and returns Anthropic-shaped objects, so `conversar`, `_json` and the offline test stay unchanged. The body of `agentes/<id>.md` becomes the agent's system prompt, and the powers in `mystique/poderes.py` become its tools, run in a manual loop in `Mundo.conversar`.
+
+| Mystique | World | Needs |
+|---|---|---|
+| Agent SDK | Claude API | `ANTHROPIC_API_KEY` (default) |
+| Agent SDK | self-hosted | key + server |
+| self-hosted | self-hosted | no vendor key (verified live by the team) |
+| self-hosted | Claude API | key |
+
+The CLI only asks for a Claude key on paths that call Anthropic. Variables: `MYSTIQUE_PROVIDER`, `MYSTIQUE_BASE_URL` and `MYSTIQUE_MODEL_ID` for Mystique (falling back to the world's), and `MYSTIQUE_WORLD_PROVIDER`, `MYSTIQUE_WORLD_BASE_URL`, `MYSTIQUE_WORLD_MODEL` and `MYSTIQUE_WORLD_API_KEY` for the world. Self-hosted runs are slower (about 50s for a tool-chaining conversation, 20s for the judge).
 
 The core mechanic is the secret:
 

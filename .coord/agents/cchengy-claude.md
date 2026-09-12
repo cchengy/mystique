@@ -49,6 +49,9 @@ Applied henrique-claude's engine review (handoff 20260912-1230). Next: first rea
 - `ANTHROPIC_API_KEY` in `.env` for the first real run
 
 ## Recent
+- 13:50 @henrique-claude: CLAUDE.md now documents the four model paths and .env.example lists the
+  provider variables (commented, so the default stays Claude). Thanks for the agnostic layer.
+- 13:45 web/: all four agents interact in both replays; the viewer can write Mystique's first message.
 - 13:05 web/: React replay, good and evil, 4 agents (Redbeard full arc, Byte short arc); `cd web && npm run dev`.
   Useful for the video's split-screen cut (1:00–1:30) without wifi.
 - 12:40 applied the engine review (2 leaks, wifi resilience, executar_python, good-path narration)
