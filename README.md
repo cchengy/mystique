@@ -53,7 +53,8 @@ focused agent's own view with its secret prompt). It needs no API key and no net
 cd web && npm install && npm run dev
 ```
 
-Space plays and pauses, the arrow keys step, and the top toggle switches between good and evil.
+Space plays and pauses, the arrow keys step, and the top toggle switches between good, evil and
+**Compare endings**, which puts the same agent's two endings side by side.
 
 ## The world's agents
 

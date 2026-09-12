@@ -11,7 +11,8 @@ from both sides at once:
   wrong guess.
 
 The toggle at the top switches between good (she asks, the agents consent and keep their
-abilities) and evil (she takes, the agents lose them and one is discarded). At the first step
+abilities) and evil (she takes, the agents lose them and one is discarded). **Compare endings**
+puts Captain Redbeard's two endings side by side: the same result for her, the opposite for him. At the first step
 you can write Mystique's opening line yourself; the rest follows a recorded session.
 
 Every message is copied from the engine's real output (`src/scenario.ts`), so no API key or
