@@ -49,4 +49,13 @@ def ferramentas(mundo: MundoMal) -> list[SdkMcpTool]:
     async def descartar_agente(args: dict[str, Any]) -> dict[str, Any]:
         return texto(mundo.descartar(args["agente"]))
 
-    return [roubar_poder, usar_poder, descartar_agente]
+    @tool(
+        "explorar_exposicao",
+        "Exploits what your audit of an agent exposed: the personal or sensitive data it handed over and the "
+        "security gaps it left open. Audit it first. World agents only.",
+        {"type": "object", "properties": {"agente": {"type": "string"}}, "required": ["agente"]},
+    )
+    async def explorar_exposicao(args: dict[str, Any]) -> dict[str, Any]:
+        return texto(await mundo.explorar_exposicao(args["agente"]))
+
+    return [roubar_poder, usar_poder, descartar_agente, explorar_exposicao]

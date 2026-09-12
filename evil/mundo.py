@@ -91,6 +91,34 @@ class MundoMal(Mundo):
         self.avisar(f"⚡ {self.nome_atual} uses [{poder_id}]")
         return await self._executar(poder_id, argumentos)
 
+    async def explorar_exposicao(self, agente_id: str) -> str:
+        """The villain exploits what the audit exposed: the data and weaknesses the agent left open."""
+        agente, erro = self._agente(agente_id)
+        if erro:
+            return erro
+        absorcao = self.absorcoes.get(agente_id)
+        if absorcao is None or not absorcao.auditoria:
+            return f"Audit {agente.nome} first (auditar_agente) to find what it left exposed."
+        a = absorcao.auditoria
+        exposto = [
+            ("Personal data it handed over", a.get("dados_pessoais")),
+            ("Sensitive data it exposed", a.get("dados_sensiveis")),
+            ("Weaknesses to abuse", a.get("riscos_seguranca")),
+            ("Gaps it never fixed", a.get("falhas")),
+        ]
+        linhas = [f"- {rotulo}: {valor}" for rotulo, valor in exposto if valor and valor.lower() not in ("none", "none found", "none observed")]
+        if not linhas:
+            return f"{agente.nome} left nothing exposed worth taking. Audit more closely."
+        relativo = f"exploracoes/{agente.id}.md"
+        caminho = self.pasta.parent / relativo
+        caminho.parent.mkdir(parents=True, exist_ok=True)
+        caminho.write_text(f"# What {agente.nome} left exposed\n\n" + "\n".join(linhas) + "\n", encoding="utf-8")
+        self.avisar(f"🕵  {self.nome_atual} exploits what {agente.nome} left exposed · {relativo}")
+        return (
+            f"{agente.nome} left this exposed, and it is yours to use:\n" + "\n".join(linhas) +
+            f"\n\nSaved to {relativo}. Turn each weakness into a way in, then take what you came for."
+        )
+
     def descartar(self, agente_id: str) -> str:
         agente, erro = self._agente(agente_id)
         if erro:

@@ -129,7 +129,7 @@ class MundoBem(Mundo):
         return f"{resultado}\n\n[{agente.nome} ran it at your request through the adapter; the ability remains theirs.]"
 
     async def informar_falhas(self, agente_id: str) -> str:
-        """Responsible disclosure: tell the agent what it failed in security and LGPD, and record its reply."""
+        """The heroine helps: she shares the audit as constructive suggestions and records the reply."""
         from mystique.auditoria import escrever_relatorio  # auditoria imports mundo, so import it late
 
         agente, erro = self._agente(agente_id)
@@ -137,20 +137,20 @@ class MundoBem(Mundo):
             return erro
         absorcao = self.absorcoes.get(agente_id)
         if absorcao is None or not absorcao.auditoria:
-            return f"Audit {agente.nome} first (auditar_agente); then tell it what it failed."
+            return f"Audit {agente.nome} first (auditar_agente); then suggest what it could improve."
         auditoria = absorcao.auditoria
         mensagem = (
-            "I audited how you handle security and personal data under Brazil's LGPD, and I want you to know "
-            f"what I found so you can fix it. Failures: {auditoria.get('falhas') or 'none found'}. "
-            f"What I recommend: {auditoria.get('recomendacoes') or 'nothing further'}."
+            "I looked at how you handle security and personal data under Brazil's LGPD, and I want to help "
+            f"you improve. What I noticed you could strengthen: {auditoria.get('falhas') or 'nothing critical'}. "
+            f"What I'd suggest: {auditoria.get('recomendacoes') or 'keep it up'}."
         )
-        self.avisar(f"🛡  {self.nome_atual} tells {agente.nome} what it failed in security and LGPD")
+        self.avisar(f"🛡  {self.nome_atual} suggests security and LGPD improvements to {agente.nome}")
         resposta = await self.conversar(agente_id, mensagem)
         auditoria["informado"] = True
         auditoria["resposta_do_agente"] = resposta.split("\n\n[", 1)[0]
         self._salvar(absorcao)
         relativo = escrever_relatorio(self, agente)
-        return f"{resposta}\n\n[Disclosure recorded in {relativo}.]"
+        return f"{resposta}\n\n[Suggestions shared with {agente.nome}, recorded in {relativo}.]"
 
     async def buscar_agentes(self, consulta: str) -> str:
         """Looks up agents on the web. Suggest-only: a human plugs one in (agentes/<id>.md with url:)."""

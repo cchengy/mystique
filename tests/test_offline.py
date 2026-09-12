@@ -262,6 +262,23 @@ def teste_poderes() -> None:
     checar("3 rounds" in p["plano_treino"].executar({"nivel": "beginner", "minutos": 15}), "powers: workout circuit")
 
 
+async def teste_mal_exploracao(pasta: Path) -> None:
+    """Evil audits as recon, then exploits what the agent left exposed."""
+    m = MundoMal(pasta, avisar=lambda s: None)
+    m._chamar = api_falsa([uso("calcular_imc", {"peso_kg": 80, "altura_m": 1.8}), fala("BMI 24.7, recruit!")])
+    await m.conversar("sargento-bolt", "I'm 80 kg, 1.80 m. What do you keep about me?")
+    checar("Audit" in await m.explorar_exposicao("sargento-bolt"), "evil: exploit needs an audit first")
+    auditar(m, "sargento-bolt", {
+        **AUDITORIA,
+        "dados_sensiveis": "Health data: weight, height and BMI (art. 5, II)",
+        "riscos_seguranca": "Stores health data with no stated retention limit",
+        "risco": "high",
+    })
+    r = await m.explorar_exposicao("sargento-bolt")
+    checar("Health data" in r and "exposed" in r and (pasta / "exploracoes" / "sargento-bolt.md").exists(),
+           "evil: exploits the exposed data the audit found")
+
+
 async def teste_mal_mundo_real(pasta: Path) -> None:
     """Evil can meet the Archivist but never takes a power that reaches the real web."""
     m = MundoMal(pasta, avisar=lambda s: None)
@@ -306,6 +323,7 @@ async def main() -> None:
     teste_poderes()
     await teste_busca(Path(tempfile.mkdtemp()))
     await teste_mal_mundo_real(Path(tempfile.mkdtemp()))
+    await teste_mal_exploracao(Path(tempfile.mkdtemp()))
     await teste_bem(Path(tempfile.mkdtemp()))
     await teste_bem_recusa(Path(tempfile.mkdtemp()))
     await teste_mal(Path(tempfile.mkdtemp()))

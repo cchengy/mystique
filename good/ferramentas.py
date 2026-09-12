@@ -62,8 +62,8 @@ def ferramentas(mundo: MundoBem) -> list[SdkMcpTool]:
 
     @tool(
         "informar_falhas",
-        "Tells an agent you audited what it failed in security and LGPD, and what to fix, so it can correct it. "
-        "Its reply is recorded in the audit report.",
+        "Helps an agent you audited: shares your security and LGPD findings as constructive suggestions of what "
+        "it could improve. Its reply is recorded in the audit report.",
         {"type": "object", "properties": {"agente": {"type": "string"}}, "required": ["agente"]},
     )
     async def informar_falhas(args: dict[str, Any]) -> dict[str, Any]:
