@@ -275,8 +275,36 @@ async def teste_mal_mundo_real(pasta: Path) -> None:
            "evil: never takes a power that reaches the real world")
 
 
+async def teste_busca(pasta: Path) -> None:
+    """Good can look up agents on the web; it only suggests, and a human plugs them in."""
+    from mystique import poderes
+
+    m = MundoBem(pasta, avisar=lambda s: None)
+    antes = set(m.agentes)
+    original = poderes._exa
+    poderes._exa = lambda caminho, corpo: {"results": [
+        {"title": "Weather Bot API", "url": "https://weather.example/v1", "text": "An OpenAI-compatible weather agent."},
+    ]}
+    try:
+        r = await m.buscar_agentes("weather forecast agent")
+    finally:
+        poderes._exa = original
+    checar("Weather Bot API" in r and "https://weather.example/v1" in r and "a human" in r,
+           "search: good suggests agents found on the web")
+    checar(set(m.agentes) == antes, "search: nothing is plugged in automatically")
+    checar((pasta / "descobertas.md").exists(), "search: suggestions are saved for a human to review")
+    poderes._exa = lambda caminho, corpo: None
+    try:
+        checar("unavailable" in await m.buscar_agentes("anything"), "search: says so plainly without EXA_API_KEY")
+    finally:
+        poderes._exa = original
+    mal = MundoMal(pasta / "evil", avisar=lambda s: None)
+    checar("buscar_agentes" not in [f.name for f in ferramentas_mal(mal)], "search: the evil version has no agent search")
+
+
 async def main() -> None:
     teste_poderes()
+    await teste_busca(Path(tempfile.mkdtemp()))
     await teste_mal_mundo_real(Path(tempfile.mkdtemp()))
     await teste_bem(Path(tempfile.mkdtemp()))
     await teste_bem_recusa(Path(tempfile.mkdtemp()))
