@@ -37,7 +37,11 @@ BASE_URL = os.getenv("MYSTIQUE_WORLD_BASE_URL", "").rstrip("/")
 MODELO = os.getenv("MYSTIQUE_WORLD_MODEL", "")
 CHAVE = os.getenv("MYSTIQUE_WORLD_API_KEY", "not-used")  # ASCII only: it goes in a header
 # Reasoning effort, when the server takes it (DeepSeek does: low/medium/high/xhigh).
-ESFORCO = os.getenv("MYSTIQUE_EFFORT", "").strip()
+# Default to "low" rather than nothing: measured on deepseek-flash, a trivial reply
+# spends ~78% of its output tokens on reasoning when no effort is sent, and those
+# tokens are the wait. Sending "low" cut a single call from 2.45s to 1.98s and the
+# reasoning from 199 to 155 tokens. Set MYSTIQUE_EFFORT to override.
+ESFORCO = os.getenv("MYSTIQUE_EFFORT", "low").strip()
 
 
 def ativo() -> bool:
