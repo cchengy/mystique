@@ -322,7 +322,10 @@ export default function Simulation() {
     live ? liveMessages.length + (liveActivity ? 1 : 0) : world.mystique.length,
     liveRunning,
   )
-  const agentRef = useFollow(world.agents[shown].length + (shown === world.active ? count : 0))
+  // `shown` can be an agent the engine knows but the replay scenario does not, and
+  // then world.agents[shown] is undefined. Reading .length off it threw and took the
+  // whole tree down: clicking one of those cards blanked the app.
+  const agentRef = useFollow((world.agents[shown] ?? []).length + (shown === world.active ? count : 0))
   const terminalRef = useFollow(world.terminal.length)
 
   useEffect(() => setPinned(null), [count, mode])
