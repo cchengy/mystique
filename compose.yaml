@@ -41,6 +41,18 @@ services:
       MYSTIQUE_WORLD_MODEL: ${MYSTIQUE_WORLD_MODEL}
       MYSTIQUE_WORLD_API_KEY: ${MYSTIQUE_WORLD_API_KEY}
       MYSTIQUE_BUDGET_USD: ${MYSTIQUE_BUDGET_USD:-5}
+      # Identity. With these unset the deployment stays open, which is what the
+      # guided replay and local development both want.
+      AUTH0_DOMAIN: ${AUTH0_DOMAIN}
+      AUTH0_CLIENT_ID: ${AUTH0_CLIENT_ID}
+      AUTH0_AUDIENCE: ${AUTH0_AUDIENCE}
+      # Encrypts stored model keys at rest. Without it the server refuses to store
+      # one rather than writing it in the clear. Changing it makes existing keys
+      # unreadable, so users would have to reconnect.
+      MYSTIQUE_SECRET: ${MYSTIQUE_SECRET}
+      # The root filesystem is read-only: accounts must live inside a mounted
+      # volume or every write fails at runtime.
+      MYSTIQUE_CONTAS_DIR: ${MYSTIQUE_CONTAS_DIR:-/app/good/workspace/contas}
     read_only: true
     tmpfs:
       - /tmp
