@@ -55,6 +55,11 @@ answers with citations, through **Exa**. The heroine can ask him to search for h
 consent, through the adapter. The villain is not allowed to take that ability at all: the one
 power that reaches the real world is the one theft cannot touch.
 
+**And when her world runs out, she looks past it.** If no agent she knows can help, she searches
+the web for real ones that expose a compatible API, and writes down what she found with their
+addresses. She does not connect to them: she proposes, and a human decides. The point of the
+project is consent, so the agent that earns abilities by asking does not get to skip asking here.
+
 **And it is not tied to a vendor.** The whole thing — Mystique and the world — runs on any
 OpenAI-compatible server. It runs today on DeepSeek, and it has been verified running end to end
 on an open-weights model self-hosted on our own machine, with no vendor API key at all.
@@ -79,7 +84,8 @@ Feito em um dia no AI Tinkerers Global Hackathon — *Agents, Everywhere* — em
 
 ## Patrocinadores — o que é verdade agora
 
-- **Exa** — ✅ **em uso e verificado.** É a busca real do Arquivista, com citações.
+- **Exa** — ✅ **em uso e verificado, em dois lugares.** É a busca real do Arquivista, com
+  citações, e é como ela procura agentes fora do próprio mundo.
 - **Ambiguous AI** — implementado (identidade real + registro auditável por conquista), **sem
   chave**. Se aparecer uma antes de submeter, me avise: verifico e acrescento uma frase.
 - **OpenAI** — fora. Os créditos do prêmio não são acesso de API.

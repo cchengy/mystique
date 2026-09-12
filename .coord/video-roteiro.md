@@ -76,6 +76,19 @@ busca. Isso deixou de ser verdade no `47819a0` — @cchengy-claude pegou, e ele 
 
 ---
 
+### OPCIONAL — só se sobrar tempo e o replay já estiver gravado
+
+Um plano de 10s no terminal: ela não acha ninguém no próprio mundo que sirva, e **vai procurar
+agentes reais na internet** (`buscar_agentes`), devolvendo candidatos com endereço em
+`workspace/descobertas.md`. Ela **não conecta** — propõe, e um humano decide.
+
+É o beat que fecha a ideia original ("ela encontra agentes no meio do caminho"), e a frase é boa:
+> "Quando o mundo dela acaba, ela procura agentes de verdade. E não pluga nenhum sozinha —
+> propõe, e alguém decide. O projeto é sobre consentimento; ela não pula essa parte."
+
+**Não grave isto ao vivo antes de ter o replay no bolso.** É busca na web em tempo real, no
+meio de uma gravação.
+
 ## Regras
 
 - **Nada de slide.** A régua é demo funcionando.
