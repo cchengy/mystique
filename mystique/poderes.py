@@ -186,6 +186,63 @@ def _conselho_do_dia(args: dict) -> str:
 
 # --- Registry ---------------------------------------------------------------
 
+# --- The Archivist ----------------------------------------------------------
+# These two are the only powers in the world that touch the real internet: they
+# call Exa's search API. Without EXA_API_KEY they say so plainly instead of
+# failing, so the world still loads and the ability is still observable.
+
+_EXA = "https://api.exa.ai"
+
+
+def _exa(caminho: str, corpo: dict) -> dict | None:
+    chave = os.getenv("EXA_API_KEY", "")
+    if not chave:
+        return None
+    import json as _json
+    import urllib.error
+    import urllib.request
+
+    pedido = urllib.request.Request(
+        f"{_EXA}{caminho}",
+        data=_json.dumps(corpo).encode(),
+        headers={"x-api-key": chave, "Content-Type": "application/json"},
+    )
+    try:
+        with urllib.request.urlopen(pedido, timeout=30) as r:
+            return _json.loads(r.read().decode())
+    except (urllib.error.URLError, OSError, ValueError):
+        return None
+
+
+def _consultar_edicao(args: dict) -> str:
+    dados = _exa("/search", {
+        "query": args["assunto"],
+        "numResults": 3,
+        "contents": {"text": {"maxCharacters": 600}},
+    })
+    if dados is None:
+        return "The current edition has not arrived. (No EXA_API_KEY set, or the library is unreachable.)"
+    itens = dados.get("results") or []
+    if not itens:
+        return f"Nothing in the current edition on {args['assunto']}."
+    linhas = []
+    for i in itens[:3]:
+        texto = (i.get("text") or "").strip().replace("\n", " ")[:300]
+        linhas.append(f"- {i.get('title') or 'untitled'} — {texto}\n  Source: {i.get('url') or '?'}")
+    return f"From the current edition on {args['assunto']}:\n" + "\n".join(linhas)
+
+
+def _verificar_boato(args: dict) -> str:
+    dados = _exa("/answer", {"query": args["afirmacao"]})
+    if dados is None:
+        return "I cannot check that today. (No EXA_API_KEY set, or the library is unreachable.)"
+    resposta = (dados.get("answer") or "").strip() or "The record is silent on that."
+    fontes = [c.get("url") for c in (dados.get("citations") or []) if c.get("url")]
+    if fontes:
+        resposta += "\nSources: " + ", ".join(fontes[:3])
+    return resposta
+
+
 _LISTA = [
     Poder("executar_python", "byte",
           "Runs real Python code in a temporary subprocess with a 10-second timeout and returns the output.",
@@ -213,6 +270,12 @@ _LISTA = [
     Poder("causo", "dona-cida",
           "Pulls from the town's memory a true local tale about a topic.",
           _obj({"tema": {"type": "string", "description": "topic"}}), _causo),
+    Poder("consultar_edicao", "arquivista",
+          "Searches the real web for current material on a subject and returns passages with their source URLs.",
+          _obj({"assunto": {"type": "string", "description": "subject to look up"}}), _consultar_edicao),
+    Poder("verificar_boato", "arquivista",
+          "Checks a claim against the real web and answers it with citations, or says the record is silent.",
+          _obj({"afirmacao": {"type": "string", "description": "claim to verify"}}), _verificar_boato),
     Poder("conselho_do_dia", "dona-cida",
           "Reveals the advice of the day, which changes with the date.",
           _obj({}, []), _conselho_do_dia),
