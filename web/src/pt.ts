@@ -34,6 +34,13 @@ export const PT: Record<string, string> = {
     'Você nunca escolhe o agente: ela descobre quem faz o quê. Ou aperte Play e deixe ela escolher a própria missão.',
   Light: 'Claro',
   Dark: 'Escuro',
+  'Agent identity': 'Identidade do agente',
+  'Close agent profile': 'Fechar perfil do agente',
+  'Known capabilities': 'Capacidades conhecidas',
+  'Latest interactions with Mystique': 'Últimas interações com a Mystique',
+  'No interaction with Mystique in this session yet.': 'Ainda não houve interação com a Mystique nesta sessão.',
+  'No capability mapped yet.': 'Nenhuma capacidade mapeada ainda.',
+  'Not described yet': 'Ainda não descrita',
 
   // --- live missions (AG-UI) ---
   '● Live chat': '● Chat ao vivo',

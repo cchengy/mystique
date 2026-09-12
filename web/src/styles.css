@@ -1,3 +1,4 @@
+/* Hallmark · pre-emit critique: P5 H5 E4 S5 R5 V4 */
 :root {
   /* Mystique's side: her skin. Always blue, in either theme. */
   --skin: #1d3ba8;
@@ -25,6 +26,7 @@
   --w-info-line: rgba(29, 59, 168, 0.35);
   --w-info-bg: rgba(29, 59, 168, 0.07);
   --w-stamp-bg: rgba(238, 241, 244, 0.94);
+  --w-shadow: rgba(8, 13, 35, 0.28);
 
   --accent: var(--iris);
   --display: 'Big Shoulders Display', 'Arial Narrow', sans-serif;
@@ -92,18 +94,19 @@ textarea:focus-visible {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.65rem 1.25rem;
+  padding: 0.25rem 1rem;
   background: var(--ink-deep);
   border-bottom: 1px solid var(--line-light);
 }
 
 .experience-switch button {
-  min-height: 44px;
+  min-height: 34px;
   border: 1px solid var(--line-light);
   border-radius: 999px;
-  padding: 0.55rem 1rem;
+  padding: 0.25rem 0.65rem;
   background: transparent;
   color: var(--text-light);
+  font-size: 0.78rem;
   font-weight: 700;
 }
 
@@ -114,7 +117,7 @@ textarea:focus-visible {
 
 .experience-switch span {
   margin-left: auto;
-  font-size: 0.9rem;
+  font-size: 0.75rem;
   font-weight: 700;
 }
 
@@ -133,18 +136,18 @@ textarea:focus-visible {
 .top {
   display: flex;
   align-items: center;
-  gap: 1rem 1.25rem;
+  gap: 0.3rem 0.55rem;
   flex-wrap: wrap;
-  padding: 0.75rem 1.25rem;
+  padding: 0.3rem 1rem;
   background: var(--ink);
-  border-bottom: 3px solid var(--accent);
+  border-bottom: 1px solid var(--accent);
 }
 
 .brand {
   margin: 0;
   font-family: var(--display);
   font-weight: 800;
-  font-size: 2.1rem;
+  font-size: 1.45rem;
   letter-spacing: 0.02em;
   line-height: 1;
   color: var(--iris);
@@ -161,10 +164,11 @@ textarea:focus-visible {
 .mode {
   border: 0;
   border-radius: 999px;
-  padding: 0.35rem 0.9rem;
+  min-height: 34px;
+  padding: 0.2rem 0.65rem;
   background: transparent;
   color: var(--text-light);
-  font-size: 0.95rem;
+  font-size: 0.78rem;
 }
 
 .mode:hover,
@@ -187,10 +191,11 @@ textarea:focus-visible {
 .theme {
   border: 0;
   border-radius: 999px;
-  padding: 0.3rem 0.7rem;
+  min-height: 34px;
+  padding: 0.2rem 0.55rem;
   background: transparent;
   color: var(--text-light);
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   font-weight: 600;
 }
 
@@ -212,11 +217,13 @@ textarea:focus-visible {
 }
 
 .controls button {
+  min-height: 34px;
   border: 1px solid var(--line-light);
   background: transparent;
   color: var(--text-light);
   border-radius: 6px;
-  padding: 0.35rem 0.8rem;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.78rem;
 }
 
 .controls button:hover:not(:disabled) {
@@ -379,35 +386,37 @@ textarea:focus-visible {
 
 .app[data-live='true'] .tile {
   flex: 0 0 auto;
-  min-width: 8.5rem;
-  min-height: 44px;
-  padding: 0.45rem 0.65rem;
+  min-width: 7rem;
+  min-height: 36px;
+  padding: 0.3rem 0.55rem;
 }
 
 .app[data-live='true'] .top {
-  gap: 0.45rem 0.75rem;
-  padding-block: 0.35rem;
-  border-bottom-width: 2px;
+  gap: 0.25rem 0.5rem;
+  padding-block: 0.15rem;
+  border-bottom-width: 1px;
 }
 
 .app[data-live='true'] .brand {
-  font-size: 1.65rem;
+  font-size: 1.25rem;
 }
 
 .app[data-live='true'] .mode,
 .app[data-live='true'] .lang,
 .app[data-live='true'] .theme {
-  min-height: 44px;
-  padding-block: 0.25rem;
+  min-height: 34px;
+  padding: 0.15rem 0.55rem;
+  font-size: 0.75rem;
 }
 
 .app[data-live='true'] .experience-switch {
-  padding-block: 0.25rem;
+  padding-block: 0.1rem;
 }
 
 .app[data-live='true'] .experience-switch button {
-  min-height: 44px;
-  padding-block: 0.35rem;
+  min-height: 32px;
+  padding: 0.1rem 0.55rem;
+  font-size: 0.75rem;
 }
 
 .app[data-live='true'] .caption {
@@ -426,7 +435,45 @@ textarea:focus-visible {
 }
 
 .app[data-live='true'] .tile-state {
-  font-size: 0.75rem;
+  font-size: 0.68rem;
+}
+
+.app[data-live='true'] .tile-name { font-size: 0.78rem; }
+
+.agent-profile {
+  position: absolute;
+  z-index: 12;
+  inset: calc(100% - 0.1rem) 1rem auto auto;
+  width: min(30rem, calc(100vw - 2rem));
+  max-height: min(31rem, calc(100vh - 10rem));
+  overflow: auto;
+  padding: 1rem;
+  border: 1px solid var(--w-line);
+  border-radius: 10px;
+  color: var(--w-fg);
+  background: var(--w-surface);
+  box-shadow: 0 1rem 2.5rem var(--w-shadow);
+}
+
+.pane-world { position: relative; }
+.agent-profile-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+.agent-profile h2 { margin: 0.1rem 0 0; font-size: 1.15rem; }
+.agent-profile h3 { margin: 1rem 0 0.45rem; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; }
+.agent-profile-kicker { color: var(--w-muted); font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
+.agent-profile-close { min-width: 34px; min-height: 34px; border: 1px solid var(--w-line); border-radius: 7px; color: var(--w-fg); background: transparent; font-size: 1.3rem; line-height: 1; }
+.agent-profile-close:hover { background: var(--w-bg); }
+.agent-profile-close:focus-visible { outline: 2px solid var(--w-link); outline-offset: 2px; }
+.agent-profile-role { margin: 0.45rem 0 0; color: var(--w-muted); font-size: 0.88rem; line-height: 1.45; }
+.agent-profile-capabilities, .agent-profile-history { margin: 0; padding: 0; list-style: none; display: grid; gap: 0.4rem; }
+.agent-profile-capabilities li { display: grid; gap: 0.12rem; padding: 0.45rem 0.55rem; border-left: 2px solid var(--w-link); background: var(--w-bg); }
+.agent-profile-capabilities code { font-size: 0.72rem; font-weight: 700; }
+.agent-profile-capabilities span, .agent-profile-history span { color: var(--w-muted); font-size: 0.8rem; line-height: 1.4; }
+.agent-profile-history li { display: grid; gap: 0.12rem; padding: 0.45rem 0.55rem; border-radius: 7px; background: var(--w-bg); }
+.agent-profile-history strong { font-size: 0.75rem; }
+.agent-profile-empty { margin: 0; color: var(--w-muted); font-size: 0.82rem; }
+
+@media (max-width: 40rem) {
+  .agent-profile { inset-inline: 0.5rem; width: auto; }
 }
 
 /* Mystique: her skin, in scales */

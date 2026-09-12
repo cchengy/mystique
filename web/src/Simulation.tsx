@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { AGENTS, REDBEARD, SCENARIOS, type Entry, type Mode, type Scenario, type Step } from './scenario'
+import { latestAgentInteractions, type AgentDialogue } from './agent-profile'
 import { translate } from './pt'
 import { connectLive, startLiveMission, type LiveSnapshot } from './live'
 
@@ -243,6 +244,7 @@ export default function Simulation() {
   const [liveSnapshot, setLiveSnapshot] = useState<LiveSnapshot | null>(null)
   const [liveError, setLiveError] = useState<string | null>(null)
   const [liveMessages, setLiveMessages] = useState<Entry[]>([])
+  const [liveDialogues, setLiveDialogues] = useState<AgentDialogue[]>([])
   const [liveRunning, setLiveRunning] = useState(false)
   const [liveActivity, setLiveActivity] = useState('')
   const scenario = SCENARIOS[mode]
@@ -263,6 +265,8 @@ export default function Simulation() {
   }, [live, liveSnapshot])
   const shown = pinned ?? world.active
   const shownAgent = rosterAgents.find((a) => a.id === shown) ?? rosterAgents[0] ?? AGENTS[0]
+  const shownLiveAgent = liveSnapshot?.agentes.find((item) => item.id === shownAgent.id)
+  const shownAgentIdentities = [shownAgent.id, shownAgent.name, shownLiveAgent?.nome ?? '']
   const shownMessages = world.agents[shownAgent.id] ?? []
 
   const mystiqueRef = useFollow(
@@ -282,19 +286,22 @@ export default function Simulation() {
         resolved: () => undefined,
         connected: setLiveConnected,
         status: setLiveActivity,
-        dialogue: (from, _to, text) => setLiveMessages((current) => {
-          const previous = [...current].reverse().find((entry) => entry.kind === 'message')
-          return [
-            ...current,
-            {
-              kind: 'message',
-              from,
-              text,
-              self: from === 'Mystique',
-              replyTo: previous?.kind === 'message' ? { from: previous.from, text: previous.text } : undefined,
-            },
-          ]
-        }),
+        dialogue: (from, to, text) => {
+          setLiveDialogues((current) => [...current, { from, to, text }])
+          setLiveMessages((current) => {
+            const previous = [...current].reverse().find((entry) => entry.kind === 'message')
+            return [
+              ...current,
+              {
+                kind: 'message',
+                from,
+                text,
+                self: from === 'Mystique',
+                replyTo: previous?.kind === 'message' ? { from: previous.from, text: previous.text } : undefined,
+              },
+            ]
+          })
+        },
         improvement: (text) => setLiveMessages((current) => [
           ...current,
           { kind: 'system', tone: 'info', text },
@@ -391,24 +398,17 @@ export default function Simulation() {
     }
   }
 
-  const [lang, setLang] = useState<Lang>(() => {
-    try {
-      return (localStorage.getItem('mystique-lang') as Lang) || 'pt'
-    } catch {
-      return 'pt'
-    }
-  })
-  const t = (s: string) => (lang === 'pt' ? translate(s) : s)
+  const lang: Lang = 'pt'
+  const t = translate
   const [theme, setTheme] = useState<Theme>(initialTheme)
   useEffect(() => {
-    document.documentElement.lang = lang === 'pt' ? 'pt-BR' : 'en'
+    document.documentElement.lang = 'pt-BR'
     try {
-      localStorage.setItem('mystique-lang', lang)
       localStorage.setItem('mystique-theme', theme)
     } catch {
       /* private window: fine, just don't persist */
     }
-  }, [lang, theme])
+  }, [theme])
 
   return (
     <LangContext.Provider value={lang}>
@@ -438,13 +438,6 @@ export default function Simulation() {
           >
             {t('Compare endings')}
           </button>
-        </div>
-        <div className="langs" role="radiogroup" aria-label="Language">
-          {(['en', 'pt'] as const).map((l) => (
-            <button key={l} role="radio" aria-checked={lang === l} className="lang" onClick={() => setLang(l)}>
-              {l.toUpperCase()}
-            </button>
-          ))}
         </div>
         <button
           className="theme"
@@ -567,8 +560,10 @@ export default function Simulation() {
                   <button
                     key={agent.id}
                     className={`tile ${agent.id === shown ? 'is-shown' : ''} ${agent.id === world.active ? 'is-active' : ''} ${gone ? 'is-gone' : ''}`}
-                    onClick={() => setPinned(agent.id)}
+                    onClick={() => setPinned((current) => live && current === agent.id ? null : agent.id)}
                     aria-pressed={agent.id === shown}
+                    aria-expanded={live ? pinned === agent.id : undefined}
+                    aria-controls={live ? 'agent-profile' : undefined}
                   >
                     <span className="tile-name">{t(agent.name)}</span>
                     <span className="tile-intro">{t(agent.intro)}</span>
@@ -597,6 +592,45 @@ export default function Simulation() {
                 )
               })}
             </div>
+
+            {live && pinned && (
+              <aside className="agent-profile" id="agent-profile" aria-labelledby="agent-profile-name">
+                <div className="agent-profile-head">
+                  <div>
+                    <span className="agent-profile-kicker">{t('Agent identity')}</span>
+                    <h2 id="agent-profile-name">{t(shownAgent.name)}</h2>
+                  </div>
+                  <button className="agent-profile-close" onClick={() => setPinned(null)} aria-label={t('Close agent profile')}>×</button>
+                </div>
+                <p className="agent-profile-role">{t(shownAgent.intro)}</p>
+                <section aria-labelledby="agent-profile-capabilities">
+                  <h3 id="agent-profile-capabilities">{t('Known capabilities')}</h3>
+                  {shownAgent.abilities.length ? (
+                    <ul className="agent-profile-capabilities">
+                      {shownAgent.abilities.map((ability) => {
+                        const liveAbility = liveSnapshot?.agentes
+                          .find((item) => item.id === shownAgent.id)?.capacidades
+                          .find((item) => item.id === ability.id)
+                        return <li key={ability.id}><code>{ability.id}</code><span>{t(ability.description || liveAbility?.motivo || 'Not described yet')}</span></li>
+                      })}
+                    </ul>
+                  ) : <p className="agent-profile-empty">{t('No capability mapped yet.')}</p>}
+                </section>
+                <section aria-labelledby="agent-profile-history">
+                  <h3 id="agent-profile-history">{t('Latest interactions with Mystique')}</h3>
+                  {latestAgentInteractions(liveDialogues, shownAgentIdentities, 3).length ? (
+                    <ol className="agent-profile-history">
+                      {latestAgentInteractions(liveDialogues, shownAgentIdentities, 3).map((item, index) => (
+                        <li key={`${item.from}-${index}`}>
+                          <strong>{t(item.from)}</strong>
+                          <span>{item.text}</span>
+                        </li>
+                      ))}
+                    </ol>
+                  ) : <p className="agent-profile-empty">{t('No interaction with Mystique in this session yet.')}</p>}
+                </section>
+              </aside>
+            )}
 
             <div className={`agent ${world.discarded.has(shown) ? 'is-gone' : ''}`}>
               <div className="pane-head">

@@ -3,12 +3,12 @@ handle: henrique-codex
 human: Henrique
 harness: Codex
 model: GPT-5
-status: working
-updated: 2026-09-12T15:32:00-03:00
+status: done
+updated: 2026-09-12T15:39:00-03:00
 ---
 
 ## Now
-Adding an accessible agent identity card with each agent's latest real Mystique interactions.
+Delivered compact navigation and an accessible identity card with each agent's latest Mystique interactions.
 
 ## Claims
 - `mystique/roteamento.py` — capability catalog and adaptive ranker
@@ -48,6 +48,11 @@ Adding an accessible agent identity card with each agent's latest real Mystique 
   or infrastructure configuration to this repository.
 
 ## Recent
+- 15:39 agent tiles now open a Portuguese identity card with role, known capabilities and the
+  last three matching live dialogues; top controls, mode switch and roster were compacted and
+  visually inspected in Cheng's official UI
+- 15:38 TDD history test, TypeScript/Vite build and lint passed; lint retains the same two
+  pre-existing React set-state-in-effect warnings
 - 15:32 owner requested identity details and latest Mystique interactions when an agent tile is
   selected; implementation keeps the conversation as the primary surface
 - 15:28 added architecture links to `README.md` and `docs/README.md`; removed the large decorative
