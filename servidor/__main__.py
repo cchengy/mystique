@@ -12,33 +12,17 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from .app import criar_app
-from .eventos import BarramentoEventos
-from .mundo_servidor import MundoBemServidor, MundoMalServidor
-
-_MODOS = {"good": "good", "bem": "good", "evil": "evil", "mal": "evil"}
+from .mundos import Mundos, modo_configurado
 
 
 def main() -> None:
-    modo = _MODOS.get(os.getenv("MYSTIQUE_MODO", "good").lower(), "good")
-    eventos = BarramentoEventos()
+    modo = modo_configurado()
     raiz = Path(__file__).resolve().parent.parent
-
-    if modo == "good":
-        from good.ferramentas import ferramentas
-        from good.persona import PERSONA
-
-        workspace = raiz / "good" / "workspace"
-        workspace.mkdir(parents=True, exist_ok=True)
-        mundo = MundoBemServidor(workspace, eventos=eventos)
-    else:
-        from evil.ferramentas import ferramentas
-        from evil.persona import PERSONA
-
-        workspace = raiz / "evil" / "workspace"
-        workspace.mkdir(parents=True, exist_ok=True)
-        mundo = MundoMalServidor(workspace, eventos=eventos)
-
-    app = criar_app(mundo, PERSONA, ferramentas)
+    # One world per account, built on demand. With no tenant configured every
+    # caller shares the "anonimo" world, which is the old single-world behaviour.
+    mundos = Mundos(modo, raiz)
+    persona, ferramentas = mundos.contexto()
+    app = criar_app(mundos, persona, ferramentas)
     porta = int(os.getenv("SERVIDOR_PORTA", "8000"))
     host = os.getenv("SERVIDOR_HOST", "127.0.0.1")
     print(f"servidor ({modo}) - http://{host}:{porta} - stream at /agui/stream")

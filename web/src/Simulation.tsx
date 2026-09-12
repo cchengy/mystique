@@ -295,6 +295,7 @@ export default function Simulation() {
   // only ever renders on the live side.
   const [authExigida, setAuthExigida] = useState(false)
   const [liberado, setLiberado] = useState(false)
+  const [token, setToken] = useState<string | undefined>(undefined)
   const [liveRunning, setLiveRunning] = useState(false)
   const [liveActivity, setLiveActivity] = useState('')
   const scenario = SCENARIOS[mode]
@@ -343,6 +344,7 @@ export default function Simulation() {
   useEffect(
     () =>
       connectLive({
+        token,
         snapshot: setLiveSnapshot,
         receipt: () => undefined,
         resolved: () => undefined,
@@ -453,7 +455,7 @@ export default function Simulation() {
     try {
       setLive(true)
       setPlaying(false)
-      await startLiveMission(text)
+      await startLiveMission(text, token)
       setDraft('')
     } catch (error) {
       setLiveError(error instanceof Error ? error.message : String(error))
@@ -611,7 +613,7 @@ export default function Simulation() {
               )}
             </div>
             {live && authExigida && !liberado && (
-              <PortaoConta t={t} aoLiberar={setLiberado} />
+              <PortaoConta t={t} aoLiberar={(ok, tk) => { setLiberado(ok); setToken(tk) }} />
             )}
 
             {learned && (

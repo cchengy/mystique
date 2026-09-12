@@ -30,6 +30,7 @@ type LiveHandlers = {
   connected: (value: boolean) => void
   status: (value: string) => void
   dialogue: (from: string, to: string, text: string) => void
+  token?: string
   improvement: (value: string) => void
   decision: (value: string, approved: boolean) => void
   final: (value: string, error: boolean) => void
@@ -37,7 +38,12 @@ type LiveHandlers = {
 }
 
 export function connectLive(handlers: LiveHandlers): () => void {
-  const source = new EventSource(`${API_BASE}/agui/stream`)
+  // EventSource cannot set an Authorization header, so the token rides as a query
+  // parameter. The server verifies it exactly the same way it verifies a header.
+  const token = handlers.token
+  const source = new EventSource(
+    `${API_BASE}/agui/stream${token ? `?token=${encodeURIComponent(token)}` : ''}`,
+  )
   source.onopen = () => handlers.connected(true)
   source.onerror = () => handlers.connected(false)
   source.onmessage = (message) => {
@@ -78,10 +84,13 @@ export function connectLive(handlers: LiveHandlers): () => void {
   return () => source.close()
 }
 
-export async function startLiveMission(message: string): Promise<void> {
+export async function startLiveMission(message: string, token?: string): Promise<void> {
   const response = await fetch(`${API_BASE}/api/missoes`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
     body: JSON.stringify({ mensagem: message }),
   })
   if (!response.ok) throw new Error(`Mission could not start (${response.status})`)

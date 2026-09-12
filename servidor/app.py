@@ -16,6 +16,7 @@ from mystique.agente import FerramentasExtras, executar
 from . import contas
 from .eventos import evento_custom, evento_snapshot
 from .mundo_servidor import InterrompivelMixin
+from .mundos import ANONIMO, Mundos
 
 _ORCAMENTO_PADRAO = float(os.getenv("MYSTIQUE_BUDGET_USD", "5"))
 
@@ -36,7 +37,7 @@ class MissaoBody(BaseModel):
     orcamento: float | None = None
 
 
-def criar_app(mundo: InterrompivelMixin, persona: str, extras: FerramentasExtras) -> FastAPI:
+def criar_app(mundos: Mundos, persona: str, extras: FerramentasExtras) -> FastAPI:
     app = FastAPI(title="Mystique — trust broker")
     origens = [
         origem.strip()
@@ -51,7 +52,11 @@ def criar_app(mundo: InterrompivelMixin, persona: str, extras: FerramentasExtras
     # this set just keeps one until it finishes.
     tarefas_em_curso: set[asyncio.Task] = set()
 
-    def publicar(nome: str, valor: dict) -> None:
+    async def _sub_do_pedido(request: Request) -> str:
+        usuario = await _exigir_conta(request)
+        return usuario.get("sub", ANONIMO)
+
+    def publicar(mundo, nome: str, valor: dict) -> None:
         eventos = getattr(mundo, "_eventos", None)
         if eventos is not None:
             eventos.publicar_nowait(evento_custom(nome, valor))
@@ -69,7 +74,7 @@ def criar_app(mundo: InterrompivelMixin, persona: str, extras: FerramentasExtras
     @app.get("/api/config")
     def config() -> dict:
         return {
-            "modo": mundo.modo,
+            "modo": mundos.modo,
             # The front end needs this to decide whether to show the login at all.
             "auth": {
                 "exigida": contas.auth_configurada(),
@@ -134,12 +139,13 @@ def criar_app(mundo: InterrompivelMixin, persona: str, extras: FerramentasExtras
 
     @app.post("/api/missoes", status_code=202)
     async def iniciar_missao(corpo: MissaoBody, request: Request) -> dict:
-        await _exigir_conta(request)
+        sub = await _sub_do_pedido(request)
+        mundo = mundos.para(sub)
         async def executar_com_estado() -> None:
             iniciar_ui = getattr(mundo, "iniciar_missao_ui", None)
             if iniciar_ui:
                 iniciar_ui()
-            publicar("missao_iniciada", {"mensagem": corpo.mensagem})
+            publicar(mundo, "missao_iniciada", {"mensagem": corpo.mensagem})
             try:
                 persona_pt = persona + (
                     "\n\nToda comunicação visível deve ser em português brasileiro natural. "
@@ -150,8 +156,8 @@ def criar_app(mundo: InterrompivelMixin, persona: str, extras: FerramentasExtras
                 finalizar_ui = getattr(mundo, "finalizar_missao_ui", None)
                 if finalizar_ui:
                     texto, erro = finalizar_ui()
-                    publicar("resposta_final", {"texto": texto, "erro": erro})
-                publicar("missao_finalizada", {"eof": True})
+                    publicar(mundo, "resposta_final", {"texto": texto, "erro": erro})
+                publicar(mundo, "missao_finalizada", {"eof": True})
 
         tarefa = asyncio.create_task(executar_com_estado())
         tarefas_em_curso.add(tarefa)
@@ -159,15 +165,29 @@ def criar_app(mundo: InterrompivelMixin, persona: str, extras: FerramentasExtras
         return {"ok": True}
 
     @app.post("/api/recibos/{recibo_id}/decisao")
-    def decidir_recibo(recibo_id: str, corpo: DecisaoBody) -> dict:
+    async def decidir_recibo(recibo_id: str, corpo: DecisaoBody, request: Request) -> dict:
         if corpo.decisao not in ("aprovar", "rejeitar"):
             raise HTTPException(400, "decisao must be 'aprovar' or 'rejeitar'")
+        mundo = mundos.para(await _sub_do_pedido(request))
         if not mundo.decidir(recibo_id, corpo.decisao == "aprovar"):
             raise HTTPException(409, "receipt not found, already resolved, or not approved by the judge")
         return {"ok": True}
 
     @app.get("/agui/stream")
     async def stream(request: Request) -> StreamingResponse:
+        # EventSource cannot set an Authorization header, so the token may also
+        # arrive as a query parameter. It is verified exactly the same way.
+        autorizacao = request.headers.get("authorization") or (
+            f"Bearer {request.query_params['token']}" if request.query_params.get("token") else None
+        )
+        if contas.auth_configurada():
+            usuario = await contas.usuario_do_token(autorizacao)
+            if usuario is None:
+                raise HTTPException(401, "Sign in to watch the live stream.")
+            sub = usuario.get("sub", ANONIMO)
+        else:
+            sub = ANONIMO
+        mundo = mundos.para(sub)
         fila = mundo.assinar_eventos()
 
         async def gerador():

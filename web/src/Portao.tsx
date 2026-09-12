@@ -41,7 +41,7 @@ export function BannerPrivacidade({ t }: { t: (s: string) => string }) {
   )
 }
 
-export function PortaoConta({ t, aoLiberar }: { t: (s: string) => string; aoLiberar: (ok: boolean) => void }) {
+export function PortaoConta({ t, aoLiberar }: { t: (s: string) => string; aoLiberar: (ok: boolean, token?: string) => void }) {
   const { isLoading, isAuthenticated, loginWithRedirect, logout, user, getAccessTokenSilently } = useAuth0()
   const [eu, setEu] = useState<Eu | null>(null)
   const [estado, setEstado] = useState<EstadoChave | null>(null)
@@ -59,7 +59,10 @@ export function PortaoConta({ t, aoLiberar }: { t: (s: string) => string; aoLibe
         const dados = await lerEu(token)
         if (!vivo) return
         setEu(dados)
-        aoLiberar(dados.chave.tem)
+        // The token goes up with the verdict: Simulation must never call useAuth0
+        // itself, because outside a provider that hook throws and the open,
+        // no-tenant deployment would stop rendering at all.
+        aoLiberar(dados.chave.tem, token)
         if (dados.chave.tem) setEstado(await estadoDaChave(token).catch(() => null))
       } catch (e) {
         if (vivo) setErro(String(e).slice(0, 200))
@@ -118,7 +121,7 @@ export function PortaoConta({ t, aoLiberar }: { t: (s: string) => string; aoLibe
             <a href={MODELOS} target="_blank" rel="noreferrer">{t('See every model the key can reach')}</a>
           </p>
           <button disabled={ocupado} onClick={() => comToken(async (tk) => {
-            await esquecerChave(tk); setEu({ ...eu, chave: { tem: false } }); setEstado(null); aoLiberar(false)
+            await esquecerChave(tk); setEu({ ...eu, chave: { tem: false } }); setEstado(null); aoLiberar(false, tk)
           })}>{t('Disconnect and erase my key')}</button>
         </>
       ) : (
@@ -140,7 +143,7 @@ export function PortaoConta({ t, aoLiberar }: { t: (s: string) => string; aoLibe
               />
               <button disabled={ocupado || !colada.trim()} onClick={() => comToken(async (tk) => {
                 const r = await guardarChave({ chave: colada.trim() }, tk)
-                setColada(''); setEstado(r.estado); setEu(await lerEu(tk)); aoLiberar(true)
+                setColada(''); setEstado(r.estado); setEu(await lerEu(tk)); aoLiberar(true, tk)
               })}>{t('Save')}</button>
             </div>
           </details>
