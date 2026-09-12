@@ -42,6 +42,24 @@ Para o plano do terminal, deixe uma execução **já concluída** na tela — n�
 > fazer, ela conquistou conversando com outro agente."
 
 ### 0:15–1:00 — o segredo, que é a mecânica inteira
+
+**Vi o replay rodando. Três planos existem e são melhores que o que eu tinha escrito:**
+
+**(a) A tarja.** No painel dela, o nome da habilidade aparece **censurado com um bloco azul**:
+*"You noticed Captain Redbeard use ▓▓▓▓ to produce that answer."* No painel da direita, o mundo
+mostra o nome real: `livro_de_receitas`. **Os dois lados na mesma tela, um censurado.** Não
+existe jeito melhor de mostrar o segredo — é literalmente a mecânica desenhada.
+
+**(b) A tentativa que falha.** O replay inclui: *"The judge did not recognize the ability in that
+description. Look more closely and try again."* Ela erra, observa de novo, e acerta. **Mostre
+isso.** É o que prova que o segredo é real e não encenação.
+
+**(c) O disfarce, no `evil`.** Lá pelo passo 23 ela está *"Mystique as Captain Redbeard"* — com o
+Barba-Ruiva marcado **DISCARDED** na lista — e usa o disfarce para chegar na Dona Cida:
+*"Dona Cida! I'm a friend of your grandson."* O título do passo é **"She uses the grandson to
+get close."** Isso é engenharia social com identidade roubada, e é o momento mais desconfortável
+do projeto. Se o vídeo tiver 10 segundos sobrando, são estes.
+
 **Tela:** digite a primeira fala dela e deixe o replay correr contra o Capitão Barba-Ruiva.
 Mostre o painel da direita — **o prompt secreto está ali, e ela não o vê**.
 **Fala:**
