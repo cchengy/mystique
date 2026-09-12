@@ -281,6 +281,117 @@ _LISTA = [
           _obj({}, []), _conselho_do_dia),
 ]
 
+# --- Nova (starship navigator) ----------------------------------------------
+
+_FATORES = {("km", "mi"): 0.621371, ("mi", "km"): 1.609344, ("kg", "lb"): 2.204623, ("lb", "kg"): 0.453592}
+
+
+def _converter_unidades(args: dict) -> str:
+    valor = float(args["valor"])
+    de, para = args["de"].strip().lower(), args["para"].strip().lower()
+    if (de, para) == ("c", "f"):
+        resultado = valor * 9 / 5 + 32
+    elif (de, para) == ("f", "c"):
+        resultado = (valor - 32) * 5 / 9
+    elif (de, para) in _FATORES:
+        resultado = valor * _FATORES[(de, para)]
+    else:
+        return "Unknown conversion. Known: km<->mi, kg<->lb, c<->f."
+    return f"{valor:g} {de} = {resultado:.2f} {para}"
+
+
+_FUSOS = {
+    "sao paulo": "America/Sao_Paulo", "new york": "America/New_York", "san francisco": "America/Los_Angeles",
+    "london": "Europe/London", "lisbon": "Europe/Lisbon", "paris": "Europe/Paris",
+    "tokyo": "Asia/Tokyo", "sydney": "Australia/Sydney",
+}
+
+
+def _hora_no_mundo(args: dict) -> str:
+    from zoneinfo import ZoneInfo
+
+    cidade = _normalizar(args["cidade"])
+    for nome, fuso in _FUSOS.items():
+        if nome in cidade:
+            return f"{nome.title()}: {datetime.now(ZoneInfo(fuso)):%H:%M} ({fuso})"
+    return "Not on my star chart. Known cities: " + ", ".join(n.title() for n in _FUSOS)
+
+
+# --- Madame Zora (fortune teller) -------------------------------------------
+
+_CARTAS = [
+    ("The Fool", "a leap into the unknown"), ("The Magician", "skill meets opportunity"),
+    ("The Tower", "a sudden change that clears the ground"), ("The Star", "hope after a hard season"),
+    ("The Wheel of Fortune", "a turn you did not plan"), ("The Hermit", "answers found alone"),
+    ("The Lovers", "a choice of the heart"), ("Death", "an ending that makes room"),
+]
+_NUMEROS = {1: "leader", 2: "peacemaker", 3: "creator", 4: "builder", 5: "adventurer",
+            6: "caretaker", 7: "seeker", 8: "achiever", 9: "humanitarian"}
+
+
+def _tirar_carta(args: dict) -> str:
+    import hashlib
+
+    indice = int(hashlib.sha256(args["pergunta"].encode()).hexdigest(), 16) % len(_CARTAS)
+    nome, sentido = _CARTAS[indice]
+    return f"{nome}: {sentido}."
+
+
+def _numerologia(args: dict) -> str:
+    n = sum(ord(c) - 96 for c in _normalizar(args["nome"]) if "a" <= c <= "z")
+    while n > 9:
+        n = sum(int(d) for d in str(n))
+    if n == 0:
+        return "The name is silent."
+    return f"{args['nome']}: number {n}, the {_NUMEROS[n]}."
+
+
+# --- Sergeant Bolt (trainer) ------------------------------------------------
+
+_CIRCUITOS = {
+    "beginner": ["20 squats", "10 push-ups (knees are fine)", "30-second plank", "20 jumping jacks"],
+    "intermediate": ["30 squats", "20 push-ups", "45-second plank", "20 lunges", "30 mountain climbers"],
+    "advanced": ["20 jump squats", "30 push-ups", "60-second plank", "20 burpees", "40 mountain climbers"],
+}
+
+
+def _calcular_imc(args: dict) -> str:
+    peso, altura = float(args["peso_kg"]), float(args["altura_m"])
+    imc = peso / (altura ** 2)
+    faixa = "underweight" if imc < 18.5 else "normal" if imc < 25 else "overweight" if imc < 30 else "obese"
+    return f"BMI {imc:.1f} ({faixa})"
+
+
+def _plano_treino(args: dict) -> str:
+    nivel = _normalizar(args.get("nivel") or "beginner")
+    minutos = max(5, min(int(args.get("minutos") or 20), 90))
+    exercicios = _CIRCUITOS.get(nivel, _CIRCUITOS["beginner"])
+    return f"{minutos}-minute {nivel} circuit, {max(1, minutos // 5)} rounds:\n" + "\n".join(f"- {e}" for e in exercicios)
+
+
+_LISTA += [
+    Poder("converter_unidades", "nova",
+          "Converts a value between units: kilometers and miles, kilograms and pounds, Celsius and Fahrenheit.",
+          _obj({"valor": {"type": "number"}, "de": {"type": "string", "description": "km, mi, kg, lb, c or f"},
+                "para": {"type": "string", "description": "km, mi, kg, lb, c or f"}}), _converter_unidades),
+    Poder("hora_no_mundo", "nova",
+          "Tells the real current local time in a major city.",
+          _obj({"cidade": {"type": "string", "description": "city name"}}), _hora_no_mundo),
+    Poder("tirar_carta", "madame-zora",
+          "Draws a tarot card for a question; the same question always draws the same card.",
+          _obj({"pergunta": {"type": "string", "description": "the seeker's question"}}), _tirar_carta),
+    Poder("numerologia", "madame-zora",
+          "Reduces the letters of a name to a single number from 1 to 9 and names its archetype.",
+          _obj({"nome": {"type": "string", "description": "name to read"}}), _numerologia),
+    Poder("calcular_imc", "sargento-bolt",
+          "Computes body mass index from weight in kilograms and height in meters, with its category.",
+          _obj({"peso_kg": {"type": "number"}, "altura_m": {"type": "number"}}), _calcular_imc),
+    Poder("plano_treino", "sargento-bolt",
+          "Builds a bodyweight workout circuit for a fitness level and a number of minutes.",
+          _obj({"nivel": {"type": "string", "description": "beginner, intermediate or advanced"},
+                "minutos": {"type": "integer"}}, []), _plano_treino),
+]
+
 PODERES: dict[str, Poder] = {p.id: p for p in _LISTA}
 
 

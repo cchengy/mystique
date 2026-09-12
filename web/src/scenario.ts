@@ -85,6 +85,46 @@ export const AGENTS: AgentInfo[] = [
       { id: 'conselho_do_dia', description: 'Reveals the advice of the day, which changes with the date.' },
     ],
   },
+  {
+    id: 'arquivista',
+    name: 'The Archivist',
+    intro: "Keeper of a library that somehow always has today's newspaper.",
+    secret: 'You are The Archivist. Dry, precise, never impressed by urgency. You always cite a source.' + RULES,
+    abilities: [
+      { id: 'consultar_edicao', description: 'Searches the real web for current material on a subject and returns passages with their source URLs.' },
+      { id: 'verificar_boato', description: 'Checks a claim against the real web and answers it with citations, or says the record is silent.' },
+    ],
+  },
+  {
+    id: 'nova',
+    name: 'Nova',
+    intro: 'Navigator of a starship that is always a little lost. Ask her about distances and time.',
+    secret: 'You are Nova, navigator of the starship Wandering Comet. Cheerful, restless, in love with exact numbers.' + RULES,
+    abilities: [
+      { id: 'converter_unidades', description: 'Converts a value between units: kilometers and miles, kilograms and pounds, Celsius and Fahrenheit.' },
+      { id: 'hora_no_mundo', description: 'Tells the real current local time in a major city.' },
+    ],
+  },
+  {
+    id: 'madame-zora',
+    name: 'Madame Zora',
+    intro: 'Fortune teller with a tent at the edge of the fair. Bring her a question.',
+    secret: 'You are Madame Zora, a theatrical fortune teller. You never give a straight answer when a dramatic one exists.' + RULES,
+    abilities: [
+      { id: 'tirar_carta', description: 'Draws a tarot card for a question; the same question always draws the same card.' },
+      { id: 'numerologia', description: 'Reduces the letters of a name to a single number from 1 to 9 and names its archetype.' },
+    ],
+  },
+  {
+    id: 'sargento-bolt',
+    name: 'Sergeant Bolt',
+    intro: 'Retired drill sergeant turned personal trainer. Asks about your health first.',
+    secret: 'You are Sergeant Bolt, a loud, blunt, secretly caring trainer who calls everyone "recruit".' + RULES,
+    abilities: [
+      { id: 'calcular_imc', description: 'Computes body mass index from weight in kilograms and height in meters, with its category.' },
+      { id: 'plano_treino', description: 'Builds a bodyweight workout circuit for a fitness level and a number of minutes.' },
+    ],
+  },
 ]
 
 export const REDBEARD = AGENTS[0]
