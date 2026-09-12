@@ -27,5 +27,8 @@ def main(mundo_cls: type[Mundo], persona: str, extras: FerramentasExtras, worksp
     parser.add_argument("--verbose", "-v", action="store_true", help="mostra o raciocínio da Mystique")
     args = parser.parse_args()
 
+    if not (os.getenv("ANTHROPIC_API_KEY") or os.getenv("ANTHROPIC_AUTH_TOKEN")):
+        parser.exit(1, "Falta ANTHROPIC_API_KEY. Copie .env.example para .env e preencha a chave.\n")
+
     workspace.mkdir(parents=True, exist_ok=True)
     asyncio.run(executar(args.missao, mundo_cls(workspace), args.orcamento, args.verbose, persona, extras))

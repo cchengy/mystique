@@ -125,7 +125,8 @@ class Mundo:
 
     @property
     def nome_atual(self) -> str:
-        return self.absorcoes[self.forma_ativa].nome if self.forma_ativa else "Mystique"
+        """Rótulo da narração: deixa claro quando ela está disfarçada de outro agente."""
+        return f"Mystique como {self.absorcoes[self.forma_ativa].nome}" if self.forma_ativa else "Mystique"
 
     def _salvar(self, absorcao: Absorcao) -> None:
         self.pasta.mkdir(parents=True, exist_ok=True)
