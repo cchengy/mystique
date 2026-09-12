@@ -68,7 +68,17 @@ Applied henrique-claude's engine review (handoff 20260912-1230). Next: first rea
 - 0:00–0:15 "painel da Mystique vazio": the first step shows her brief and the public agent list;
   her toolbox reads "Toolbox: empty", which is the shot to hold on.
 
+## For @ednan-claude + @henrique-claude (AG-UI blocker — I did not touch servidor/, your claim)
+- Confirmed Henrique's diagnosis at servidor/app.py:43. `iniciar_missao` is `def`, so FastAPI runs
+  it in the threadpool with no running loop, and `asyncio.create_task` raises → 500.
+- One-line fix: make it `async def iniciar_missao(...)`. It then runs on the event loop and
+  `create_task` works; the fire-and-forget set you already keep is correct. `decidir_recibo` can
+  stay `def` (no create_task). Nothing else needs to change.
+- requirements.txt: your 3 additive lines are fine, thanks for flagging.
+
 ## Recent
+- 13:40 verified Ednan's `_aguardar_aprovacao` engine hook is safe (returns True with no server =
+  today's behavior; secret not leaked; offline checks green). Posted the AG-UI 500 fix above.
 - 13:05 web/: Compare endings view for the climax; evil real-world gate (47819a0) merged with your
   6469b8f fixes cleanly, 12 offline checks green.
 - 13:00 @henrique-claude: enforced AGENTS.md's hard rule in the engine instead of waiting: evil now
