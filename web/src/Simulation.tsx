@@ -83,14 +83,24 @@ function replay(scenario: Scenario, count: number, opening: string | null): Worl
   return world
 }
 
-function useFollow(length: number) {
+function useFollow(length: number, active = false) {
   const ref = useRef<HTMLDivElement>(null)
+  const follows = useRef(true)
   useEffect(() => {
     const el = ref.current
     if (!el) return
+    const onScroll = () => {
+      follows.current = el.scrollHeight - el.scrollTop - el.clientHeight < 96
+    }
+    el.addEventListener('scroll', onScroll, { passive: true })
+    return () => el.removeEventListener('scroll', onScroll)
+  }, [])
+  useEffect(() => {
+    const el = ref.current
+    if (!el || !follows.current) return
     const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     el.scrollTo({ top: el.scrollHeight, behavior: calm ? 'auto' : 'smooth' })
-  }, [length])
+  }, [length, active])
   return ref
 }
 
@@ -229,13 +239,17 @@ export default function Simulation() {
   const [liveError, setLiveError] = useState<string | null>(null)
   const [liveMessages, setLiveMessages] = useState<Entry[]>([])
   const [liveRunning, setLiveRunning] = useState(false)
+  const [liveActivity, setLiveActivity] = useState('')
   const scenario = SCENARIOS[mode]
   const last = scenario.steps.length
   const world = useMemo(() => replay(scenario, count, opening), [scenario, count, opening])
   const shown = pinned ?? world.active
   const shownAgent = AGENTS.find((a) => a.id === shown)!
 
-  const mystiqueRef = useFollow(world.mystique.length)
+  const mystiqueRef = useFollow(
+    live ? liveMessages.length + (liveActivity ? 1 : 0) : world.mystique.length,
+    liveRunning,
+  )
   const agentRef = useFollow(world.agents[shown].length + (shown === world.active ? count : 0))
   const terminalRef = useFollow(world.terminal.length)
 
@@ -248,10 +262,32 @@ export default function Simulation() {
         receipt: (receipt) => setLiveReceipts((current) => [...current, receipt]),
         resolved: (id) => setLiveReceipts((current) => current.filter((receipt) => receipt.recibo_id !== id)),
         connected: setLiveConnected,
-        narration: (text) => setLiveMessages((current) => [...current, { kind: 'message', from: 'Mystique', text, self: true }]),
+        status: setLiveActivity,
+        dialogue: (from, _to, text) => setLiveMessages((current) => [
+          ...current,
+          { kind: 'message', from, text, self: from === 'Mystique' },
+        ]),
+        improvement: (text) => setLiveMessages((current) => [
+          ...current,
+          { kind: 'system', tone: 'info', text },
+        ]),
+        final: (text, error) => setLiveMessages((current) => [
+          ...current,
+          error
+            ? { kind: 'system', tone: 'loss', text }
+            : { kind: 'message', from: 'Mystique', text, self: true },
+        ]),
         mission: (running, message) => {
           setLiveRunning(running)
-          if (message) setLiveMessages((current) => [...current, { kind: 'system', tone: 'info', text: `🎯 ${message}` }])
+          if (running) setLiveActivity('Pensando')
+          else {
+            setLiveActivity('')
+            setLiveMessages((current) => [...current, { kind: 'system', tone: 'info', text: 'EOF' }])
+          }
+          if (message) setLiveMessages((current) => [
+            ...current,
+            { kind: 'message', from: 'You', text: message, self: false },
+          ])
         },
       }),
     [],
@@ -339,7 +375,7 @@ export default function Simulation() {
 
   return (
     <LangContext.Provider value={lang}>
-    <div className="app" data-mode={comparing ? 'compare' : mode} data-theme={theme}>
+    <div className="app" data-mode={comparing ? 'compare' : mode} data-theme={theme} data-live={live && !comparing}>
       <header className="top">
         <h1 className="brand">Mystique</h1>
         <div className="modes" role="radiogroup" aria-label="Version">
@@ -458,6 +494,11 @@ export default function Simulation() {
               {(live ? liveMessages : world.mystique).map((entry, i) => (
                 <EntryView key={i} entry={entry} revealed={world.revealed} side="mystique" />
               ))}
+              {live && liveRunning && (
+                <p className="live-activity" role="status">
+                  <span aria-hidden="true" />{t(liveActivity || 'Pensando')}
+                </p>
+              )}
             </div>
             {(live || count === 1) && (
               <form
@@ -574,7 +615,7 @@ export default function Simulation() {
         </main>
       )}
 
-      <footer className="terminal" aria-label="Terminal narration">
+      <footer className="terminal" aria-label="Terminal narration" hidden={live && !comparing}>
         {!comparing && (
           <div className="terminal-lines" ref={terminalRef}>
             {(live ? liveMessages.map((entry) => entry.kind === 'message' ? entry.text : entry.kind === 'system' ? entry.text : '') : world.terminal).map((line, i) => (

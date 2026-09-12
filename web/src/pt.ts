@@ -7,6 +7,12 @@ import { AGENTS } from './scenario'
 export const PT: Record<string, string> = {
   // --- UI chrome ---
   'Mystique': 'Mystique',
+  'You': 'Você',
+  'Pensando': 'Pensando',
+  'Consultando fontes': 'Consultando fontes',
+  'Consultando agentes': 'Consultando agentes',
+  'Atualizando habilidades': 'Atualizando habilidades',
+  'Verificando a resposta': 'Verificando a resposta',
   '🦸 Good: she asks': '🦸 Bem: ela pede',
   '🦹 Evil: she takes': '🦹 Mal: ela toma',
   'Compare endings': 'Comparar finais',

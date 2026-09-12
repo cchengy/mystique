@@ -28,7 +28,10 @@ type LiveHandlers = {
   receipt: (value: LiveReceipt) => void
   resolved: (id: string) => void
   connected: (value: boolean) => void
-  narration: (value: string) => void
+  status: (value: string) => void
+  dialogue: (from: string, to: string, text: string) => void
+  improvement: (value: string) => void
+  final: (value: string, error: boolean) => void
   mission: (running: boolean, message?: string) => void
 }
 
@@ -48,8 +51,19 @@ export function connectLive(handlers: LiveHandlers): () => void {
     if (event.type === 'CUSTOM' && event.name === 'recibo_resolvido') {
       handlers.resolved((event.value as { recibo_id: string }).recibo_id)
     }
-    if (event.type === 'CUSTOM' && event.name === 'narracao') {
-      handlers.narration((event.value as { texto: string }).texto)
+    if (event.type === 'CUSTOM' && event.name === 'status') {
+      handlers.status((event.value as { texto: string }).texto)
+    }
+    if (event.type === 'CUSTOM' && event.name === 'dialogo') {
+      const value = event.value as { de: string; para: string; texto: string }
+      handlers.dialogue(value.de, value.para, value.texto)
+    }
+    if (event.type === 'CUSTOM' && event.name === 'melhoria') {
+      handlers.improvement((event.value as { texto: string }).texto)
+    }
+    if (event.type === 'CUSTOM' && event.name === 'resposta_final') {
+      const value = event.value as { texto: string; erro?: boolean }
+      handlers.final(value.texto, Boolean(value.erro))
     }
     if (event.type === 'CUSTOM' && event.name === 'missao_iniciada') {
       handlers.mission(true, (event.value as { mensagem: string }).mensagem)

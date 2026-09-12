@@ -5,6 +5,7 @@ untouched beyond the one-line gate already added there; only the _aguardar_aprov
 """
 
 import asyncio
+import re
 
 from good.mundo import MundoBem
 from evil.mundo import MundoMal
@@ -12,6 +13,40 @@ from mystique.mundo import Absorcao, Agente, Mundo
 from mystique.poderes import PODERES, Poder, poderes_de
 
 from .eventos import BarramentoEventos, evento_custom, evento_snapshot, novo_recibo_id
+
+
+_RESPOSTA = re.compile(r"^\[[^\]]+\]\s*(.+)$", re.DOTALL)
+_FALA_SAIDA = re.compile(r"^💬\s+(.+?)\s+→\s+(.+?)(?:\s+\(external\))?:\s*(.+)$", re.DOTALL)
+_FALA_ENTRADA = re.compile(r"^💬\s+([^:]+):\s*(.+)$", re.DOTALL)
+
+
+def _evento_publico(texto: str) -> tuple[str, dict]:
+    """Expose conversation and progress, never tool traces or private reasoning."""
+    limpo = texto.strip()
+    resposta = _RESPOSTA.match(limpo)
+    if resposta:
+        return "resposta", {"texto": resposta.group(1).strip()}
+    saida = _FALA_SAIDA.match(limpo)
+    if saida:
+        return "dialogo", {"de": saida.group(1), "para": saida.group(2), "texto": saida.group(3)}
+    entrada = _FALA_ENTRADA.match(limpo)
+    if entrada:
+        return "dialogo", {"de": entrada.group(1), "para": "Mystique", "texto": entrada.group(2)}
+
+    baixo = limpo.casefold()
+    if "adapter" in baixo or "absorbs the essence" in baixo or "steals [" in baixo:
+        agente = re.search(r"(?:with|from|of)\s+([^·]+)", limpo)
+        nome = agente.group(1).strip() if agente else "um agente"
+        return "melhoria", {"texto": f"Mystique melhorou ao aprender com {nome}."}
+    if "searched the web" in baixo:
+        status = "Consultando fontes"
+    elif "audit" in baixo or "judge" in baixo or "attempt failed" in baixo:
+        status = "Verificando a resposta"
+    elif limpo.startswith("⚠"):
+        return "erro", {"texto": limpo.removeprefix("⚠").strip()}
+    else:
+        status = "Pensando"
+    return "status", {"texto": status}
 
 
 def _serializar_absorcao(absorcao: Absorcao) -> dict:
@@ -69,11 +104,21 @@ class InterrompivelMixin:
     def __init__(self, *args, eventos: BarramentoEventos, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self._eventos = eventos
+        self._resposta_publica = ""
+        self._erro_publico = ""
+        self._status_publico = ""
         saida_original = self.avisar
 
         def narrar(texto: str) -> None:
             saida_original(texto)
-            self._eventos.publicar_nowait(evento_custom("narracao", {"texto": texto}))
+            nome, valor = _evento_publico(texto)
+            if nome == "resposta":
+                self._resposta_publica = valor["texto"]
+            elif nome == "erro":
+                self._erro_publico = valor["texto"]
+            elif nome != "status" or valor["texto"] != self._status_publico:
+                self._status_publico = valor["texto"] if nome == "status" else self._status_publico
+                self._eventos.publicar_nowait(evento_custom(nome, valor))
 
         self.avisar = narrar
         self._pendentes: dict[str, "asyncio.Future[bool]"] = {}
@@ -81,6 +126,18 @@ class InterrompivelMixin:
         self._ja_descartados: set[str] = {
             aid for aid, absorcao in self.absorcoes.items() if absorcao.descartado
         }
+
+    def iniciar_missao_ui(self) -> None:
+        self._resposta_publica = ""
+        self._erro_publico = ""
+        self._status_publico = ""
+
+    def finalizar_missao_ui(self) -> tuple[str, bool]:
+        if self._resposta_publica:
+            return self._resposta_publica, False
+        if self._erro_publico:
+            return self._erro_publico, True
+        return "A missão terminou sem uma resposta final.", True
 
     def snapshot(self) -> dict:
         return _construir_snapshot(self)

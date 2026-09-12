@@ -55,11 +55,18 @@ def criar_app(mundo: InterrompivelMixin, persona: str, extras: FerramentasExtras
     @app.post("/api/missoes", status_code=202)
     async def iniciar_missao(corpo: MissaoBody) -> dict:
         async def executar_com_estado() -> None:
+            iniciar_ui = getattr(mundo, "iniciar_missao_ui", None)
+            if iniciar_ui:
+                iniciar_ui()
             publicar("missao_iniciada", {"mensagem": corpo.mensagem})
             try:
                 await executar(corpo.mensagem, mundo, corpo.orcamento or _ORCAMENTO_PADRAO, False, persona, extras)
             finally:
-                publicar("missao_finalizada", {})
+                finalizar_ui = getattr(mundo, "finalizar_missao_ui", None)
+                if finalizar_ui:
+                    texto, erro = finalizar_ui()
+                    publicar("resposta_final", {"texto": texto, "erro": erro})
+                publicar("missao_finalizada", {"eof": True})
 
         tarefa = asyncio.create_task(executar_com_estado())
         tarefas_em_curso.add(tarefa)
