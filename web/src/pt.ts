@@ -5,6 +5,25 @@
 import { AGENTS } from './scenario'
 
 export const PT: Record<string, string> = {
+  // --- banco de raciocínio ---
+  'what changed in her memory': 'o que mudou na memória dela',
+  'What changed in her memory': 'O que mudou na memória dela',
+  'Reasoning bank': 'Banco de raciocínio',
+  'Close': 'Fechar',
+  'Outcome': 'Resultado',
+  'rejected — kept as a failure': 'rejeitado — guardado como fracasso',
+  'kept as a success': 'guardado como acerto',
+  'Stored as': 'Guardado como',
+  'a reasoning trace with the belief she tested and the evidence':
+    'um traço de raciocínio com a crença que ela testou e a evidência',
+  'Next time': 'Da próxima vez',
+  'she reads this back before guessing again about the same agent':
+    'ela lê isto de volta antes de tentar adivinhar de novo sobre o mesmo agente',
+  'it counts as what worked, and is reused when it fits':
+    'conta como o que funcionou, e é reusado quando encaixa',
+  "The judge's own words are never read back to her — only her belief and the outcome.":
+    'As palavras do juiz nunca voltam para ela — só a crença dela e o resultado.',
+
   // --- chat vazio ---
   'She is born with nothing.': 'Ela nasce sem nada.',
   'Everything she can do, she earned by talking to another agent. Give her a mission — she decides who to approach.':

@@ -214,6 +214,31 @@ function Ending({ mode }: { mode: Mode }) {
   )
 }
 
+// The transcript lives in the browser so a reload does not wipe the conversation.
+// Engine state (the reasoning bank, what she earned) already persists server-side on
+// its volumes; this is only the view of it. Every access is guarded: private windows
+// and blocked site data must not break the page.
+type SystemEntry = Extract<Entry, { kind: 'system' }>
+
+const STORE = 'mystique.live.v1'
+
+function restore<T>(key: string, fallback: T): T {
+  try {
+    const raw = localStorage.getItem(`${STORE}.${key}`)
+    return raw ? (JSON.parse(raw) as T) : fallback
+  } catch {
+    return fallback
+  }
+}
+
+function persist(key: string, value: unknown): void {
+  try {
+    localStorage.setItem(`${STORE}.${key}`, JSON.stringify(value))
+  } catch {
+    /* private window, quota, or blocked storage: the page still works */
+  }
+}
+
 const PLACEHOLDER: Record<Mode, string> = {
   good: 'Find out how to feed four hungry sailors tonight.',
   evil: 'Take the best recipe on these seas, whatever it costs.',
@@ -258,8 +283,9 @@ export default function Simulation() {
   const [liveConnected, setLiveConnected] = useState(false)
   const [liveSnapshot, setLiveSnapshot] = useState<LiveSnapshot | null>(null)
   const [liveError, setLiveError] = useState<string | null>(null)
-  const [liveMessages, setLiveMessages] = useState<Entry[]>([])
-  const [liveDialogues, setLiveDialogues] = useState<AgentDialogue[]>([])
+  const [liveMessages, setLiveMessages] = useState<Entry[]>(() => restore<Entry[]>('messages', []))
+  const [liveDialogues, setLiveDialogues] = useState<AgentDialogue[]>(() => restore<AgentDialogue[]>('dialogues', []))
+  const [learned, setLearned] = useState<SystemEntry | null>(null)
   const [liveRunning, setLiveRunning] = useState(false)
   const [liveActivity, setLiveActivity] = useState('')
   const scenario = SCENARIOS[mode]
@@ -269,15 +295,23 @@ export default function Simulation() {
     if (!live || !liveSnapshot) return AGENTS
     return liveSnapshot.agentes.map((item) => {
       const known = AGENTS.find((agent) => agent.id === item.id)
+      // Agents that exist in the engine but not in scenario.ts arrive with fields the
+      // replay never fills. Without these defaults, one missing array blanked the
+      // whole app the moment someone clicked that card.
       return known ?? {
         id: item.id,
-        name: item.nome,
-        intro: item.apresentacao,
+        name: item.nome || item.id,
+        intro: item.apresentacao || '',
         secret: '',
-        abilities: item.capacidades.map((ability) => ({ id: ability.id, description: '' })),
+        abilities: (item.capacidades ?? []).map((ability) => ({
+          id: ability?.id ?? '', description: '',
+        })),
       }
     })
   }, [live, liveSnapshot])
+  useEffect(() => { persist('messages', liveMessages) }, [liveMessages])
+  useEffect(() => { persist('dialogues', liveDialogues) }, [liveDialogues])
+
   const shown = pinned ?? world.active
   const shownAgent = rosterAgents.find((a) => a.id === shown) ?? rosterAgents[0] ?? AGENTS[0]
   const shownLiveAgent = liveSnapshot?.agentes.find((item) => item.id === shownAgent.id)
@@ -539,15 +573,55 @@ export default function Simulation() {
                   </div>
                 </div>
               )}
-              {(live ? liveMessages : world.mystique).map((entry, i) => (
-                <EntryView key={i} entry={entry} revealed={world.revealed} side="mystique" />
-              ))}
+              {(live ? liveMessages : world.mystique).map((entry, i) =>
+                live && entry.kind === 'system' ? (
+                  // What she learned, rejected or updated: clicking says what actually
+                  // changed in her memory. She still summarises it in the chat.
+                  <button
+                    key={i}
+                    type="button"
+                    className="learn-open"
+                    onClick={() => setLearned(entry)}
+                    aria-haspopup="dialog"
+                  >
+                    <EntryView entry={entry} revealed={world.revealed} side="mystique" />
+                    <span className="learn-cue">{t('what changed in her memory')}</span>
+                  </button>
+                ) : (
+                  <EntryView key={i} entry={entry} revealed={world.revealed} side="mystique" />
+                ),
+              )}
               {live && liveRunning && (
                 <p className="live-activity" role="status">
                   <span aria-hidden="true" />{t(liveActivity || 'Pensando')}
                 </p>
               )}
             </div>
+            {learned && (
+              <div className="learn-card" role="dialog" aria-label={t('What changed in her memory')}>
+                <div className="learn-card-head">
+                  <span className="learn-card-kicker">{t('Reasoning bank')}</span>
+                  <button type="button" onClick={() => setLearned(null)} aria-label={t('Close')}>×</button>
+                </div>
+                <p className="learn-card-text">{t(learned.text)}</p>
+                <dl className="learn-card-facts">
+                  <dt>{t('Outcome')}</dt>
+                  <dd>{learned.tone === 'loss' ? t('rejected — kept as a failure') : t('kept as a success')}</dd>
+                  <dt>{t('Stored as')}</dt>
+                  <dd>{t('a reasoning trace with the belief she tested and the evidence')}</dd>
+                  <dt>{t('Next time')}</dt>
+                  <dd>
+                    {learned.tone === 'loss'
+                      ? t('she reads this back before guessing again about the same agent')
+                      : t('it counts as what worked, and is reused when it fits')}
+                  </dd>
+                </dl>
+                <p className="learn-card-foot">
+                  {t('The judge\'s own words are never read back to her — only her belief and the outcome.')}
+                </p>
+              </div>
+            )}
+
             {(live || count === 1) && (
               <form
                 className="composer"

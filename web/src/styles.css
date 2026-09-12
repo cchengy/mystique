@@ -1422,3 +1422,163 @@ textarea:focus-visible {
     max-height: 70vh;
   }
 }
+
+/* ===== Denser chat + the memory card ===============================
+   Smaller type fits noticeably more conversation on screen, which matters
+   because the transcript is the demo. */
+
+.app[data-live='true'] .feed {
+  font-size: 0.88rem;
+  line-height: 1.5;
+  gap: 0.7rem;
+}
+
+.app[data-live='true'] .feed .bubble {
+  padding: 0.6rem 0.8rem;
+  border-radius: 12px;
+}
+
+.app[data-live='true'] .feed .bubble p {
+  margin: 0.2rem 0 0;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.app[data-live='true'] .feed .bubble-from {
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+.app[data-live='true'] .feed .system {
+  font-size: 0.82rem;
+  margin: 0;
+}
+
+.app[data-live='true'] .feed .call,
+.app[data-live='true'] .feed .call-sig {
+  font-size: 0.76rem;
+}
+
+/* --- learning entries are clickable ------------------------------- */
+
+.learn-open {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  padding: 0.2rem 0.35rem;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.learn-open:hover,
+.learn-open:focus-visible {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--line-light);
+  outline: none;
+}
+
+.learn-cue {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--iris, #f2c230);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.learn-open:hover .learn-cue,
+.learn-open:focus-visible .learn-cue {
+  opacity: 0.9;
+}
+
+/* --- the card ----------------------------------------------------- */
+
+.learn-card {
+  position: fixed;
+  inset: auto auto 1rem 1rem;
+  z-index: 70;
+  width: min(28rem, calc(100vw - 2rem));
+  max-height: min(28rem, calc(100vh - 6rem));
+  overflow: auto;
+  padding: 0.9rem 1rem 1rem;
+  border: 1px solid var(--line-light);
+  border-radius: 14px;
+  background: var(--composer-bg, rgba(8, 16, 46, 0.97));
+  box-shadow: 0 1.5rem 3rem rgba(0, 0, 0, 0.5);
+  font-size: 0.85rem;
+}
+
+.learn-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.learn-card-kicker {
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--iris, #f2c230);
+}
+
+.learn-card-head button {
+  min-width: 30px;
+  min-height: 30px;
+  border: 1px solid var(--line-light);
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font-size: 1.15rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.learn-card-text {
+  margin: 0 0 0.75rem;
+  line-height: 1.5;
+}
+
+.learn-card-facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.3rem 0.7rem;
+  margin: 0;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--line-light);
+}
+
+.learn-card-facts dt {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted-light);
+  white-space: nowrap;
+}
+
+.learn-card-facts dd {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.learn-card-foot {
+  margin: 0.75rem 0 0;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--line-light);
+  font-size: 0.74rem;
+  line-height: 1.45;
+  color: var(--muted-light);
+}
