@@ -139,6 +139,14 @@ class Mundo:
         """What Mystique has already earned, for listar_agentes."""
         return ""
 
+    async def _aguardar_aprovacao(
+        self, agente: Agente, absorcao: Absorcao, descricao: str, evidencia: str,
+        poder: Poder | None, motivo: str,
+    ) -> bool:
+        """Pauses before an earned ability is persisted. With no server attached, approves right
+        away (identical to today's behavior). Overridden by servidor/ to wait for a human decision."""
+        return True
+
     # --- state ----------------------------------------------------------------
 
     @property

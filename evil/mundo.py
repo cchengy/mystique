@@ -72,6 +72,8 @@ class MundoMal(Mundo):
                 "That ability reaches outside this world. This version only takes what lives inside "
                 f"the simulation, so {agente.nome} keeps it."
             )
+        if not await self._aguardar_aprovacao(agente, absorcao, descricao, evidencia, poder, motivo):
+            return f"Recognition of {poder.id} rejected. Observe more and try again."
 
         absorcao.poderes.append(poder.id)
         agente.poderes.remove(poder.id)

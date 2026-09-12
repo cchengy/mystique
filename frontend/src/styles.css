@@ -1,0 +1,82 @@
+:root {
+  color-scheme: light dark;
+  --bg: #0f1117;
+  --panel: #1a1d27;
+  --border: #2c303c;
+  --text: #e8e9ee;
+  --muted: #9297a8;
+  --accent: #7c6cf0;
+  --ok: #3ecf8e;
+  --warn: #f0b64c;
+  --bad: #f0616c;
+  font-family: "Segoe UI", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body { margin: 0; background: var(--bg); color: var(--text); }
+
+.app { max-width: 1080px; margin: 0 auto; padding: 24px 16px 64px; }
+
+.app-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+.app-header h1 { font-size: 1.3rem; margin: 0; flex: 1; }
+
+.badge {
+  padding: 2px 10px; border-radius: 999px; font-size: 0.75rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.03em; border: 1px solid var(--border);
+}
+.badge--good { color: var(--ok); border-color: var(--ok); }
+.badge--evil { color: var(--bad); border-color: var(--bad); }
+.badge--externo { color: var(--accent); border-color: var(--accent); margin-left: 6px; }
+.badge--descartado { color: var(--bad); border-color: var(--bad); margin-left: 6px; }
+.badge--completo { color: var(--ok); border-color: var(--ok); margin-left: 6px; }
+
+.indicador { font-size: 0.75rem; padding: 2px 8px; border-radius: 999px; }
+.indicador--ok { color: var(--ok); }
+.indicador--off { color: var(--warn); }
+
+.missao-form { display: flex; gap: 8px; margin-bottom: 24px; }
+.missao-form input {
+  flex: 1; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--panel); color: var(--text);
+}
+.missao-form button, .recibo-acoes button {
+  padding: 10px 16px; border-radius: 8px; border: none; background: var(--accent);
+  color: white; font-weight: 600; cursor: pointer;
+}
+.missao-form button:disabled, .recibo-acoes button:disabled { opacity: 0.5; cursor: not-allowed; }
+.recibo-acoes button.secundario { background: transparent; border: 1px solid var(--border); color: var(--text); }
+
+.recibos-pilha { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
+.recibo-cartao {
+  background: var(--panel); border: 1px solid var(--accent); border-radius: 12px; padding: 16px;
+}
+.recibo-cartao header { font-weight: 700; margin-bottom: 8px; }
+.recibo-cartao dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; margin: 0 0 12px; }
+.recibo-cartao dt { color: var(--muted); font-size: 0.8rem; }
+.recibo-cartao dd { margin: 0; }
+.veredito--aprovado { color: var(--ok); }
+.veredito--rejeitado { color: var(--bad); }
+.recibo-acoes { display: flex; gap: 8px; }
+
+.carregando { color: var(--muted); }
+
+.passaporte-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+.agente-card {
+  background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 16px;
+}
+.agente-card--descartado { opacity: 0.6; border-color: var(--bad); }
+.agente-card header { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.agente-card h3 { margin: 0; font-size: 1rem; flex: 1; }
+.apresentacao { color: var(--muted); font-size: 0.85rem; margin: 8px 0; }
+
+.barra { height: 6px; border-radius: 999px; background: var(--border); overflow: hidden; }
+.barra__preenchimento { height: 100%; background: var(--accent); }
+.progresso-texto { color: var(--muted); font-size: 0.75rem; margin: 6px 0 10px; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { padding: 3px 8px; border-radius: 999px; font-size: 0.7rem; border: 1px solid var(--border); }
+.chip--nao_observada { color: var(--muted); }
+.chip--observada_pendente { color: var(--warn); border-color: var(--warn); }
+.chip--confirmada { color: var(--ok); border-color: var(--ok); }
+.chip--rejeitada { color: var(--bad); border-color: var(--bad); cursor: help; }

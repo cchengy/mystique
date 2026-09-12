@@ -72,6 +72,8 @@ class MundoBem(Mundo):
             )
 
         poder, motivo = await self._identificar(agente, absorcao, descricao, evidencia)
+        if not await self._aguardar_aprovacao(agente, absorcao, descricao, evidencia, poder, motivo):
+            return f"Recognition of {poder.id} rejected. Observe more and try again." if poder else motivo
         if poder is None:
             return motivo
         permite, fala = await self._pedir_consentimento(agente)
