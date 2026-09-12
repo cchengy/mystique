@@ -380,8 +380,29 @@ async def teste_busca(pasta: Path) -> None:
     checar("buscar_agentes" not in [f.name for f in ferramentas_mal(mal)], "search: the evil version has no agent search")
 
 
+async def teste_roteamento_segredo(pasta: Path) -> None:
+    """The capability map and routing never reveal an unearned ability's description."""
+    m = MundoBem(pasta, avisar=lambda s: None)
+    descricoes = [p.descricao for p in PODERES.values()]
+    mapa = m.mapa_capacidades()
+    rota = m.rotear_tarefa('run some python code and double a recipe')
+    vazou = [d for d in descricoes if d in mapa or d in rota]
+    checar(not vazou, f'routing: no unearned ability description leaks (leaked: {vazou[:1]})')
+    # Once earned, the capability may appear — that is allowed.
+    m._chamar = api_falsa([uso('executar_python', {'codigo': 'print(1)'}), fala('Obviously.'),
+                           js({'ability': 'executar_python', 'reason': 'matches'}),
+                           js({'allows': True, 'reply': 'Fine.'})])
+    await m.conversar('byte', 'run print(1)')
+    m.criar_adapter('byte', {'abordagem': 'x', 'gatilhos': 'y', 'evitar': 'z'})
+    auditar(m, 'byte', AUDITORIA)
+    await m.mapear_habilidade('byte', 'runs python code and shows the output', 'ran it')
+    checar(PODERES['executar_python'].descricao in m.mapa_capacidades(),
+           'routing: an earned ability does appear in the capability map')
+
+
 async def main() -> None:
     teste_poderes()
+    await teste_roteamento_segredo(Path(tempfile.mkdtemp()))
     teste_roteamento_por_capacidade(Path(tempfile.mkdtemp()))
     teste_roteamento_aprende_com_resultados(Path(tempfile.mkdtemp()))
     await teste_roteamento_antes_do_contato(Path(tempfile.mkdtemp()))

@@ -32,7 +32,19 @@ class Roteador:
         self.mundo = mundo
 
     def capacidades(self, agente) -> tuple[str, ...]:
-        return tuple(PODERES[p].descricao for p in agente.poderes if p in PODERES)
+        # Secret (AGENTS.md hard rule): Mystique never sees an ability's description before she
+        # earns it. Route only by capabilities she has actually learned; unearned agents rank on
+        # their public introduction alone.
+        absorcao = self.mundo.absorcoes.get(agente.id)
+        ganhos = set(absorcao.poderes) if absorcao else set()
+        return tuple(PODERES[p].descricao for p in agente.poderes if p in PODERES and p in ganhos)
+
+    def _texto_ranqueamento(self, agente) -> str:
+        # Scoring may consider what an agent can do, so routing can point Mystique at the right
+        # agent to discover; but this text is used only to compute a score and matched TASK words,
+        # never returned verbatim — capacidades() (earned-only) is what is shown to her.
+        todas = tuple(PODERES[p].descricao for p in agente.poderes if p in PODERES)
+        return " ".join((agente.nome, agente.apresentacao, *todas))
 
     def ranquear(self, tarefa: str) -> list[Candidato]:
         procurados = _termos(tarefa)
@@ -45,9 +57,8 @@ class Roteador:
             _, erro = self.mundo._agente(agente.id)
             if erro:
                 continue
-            capacidades = self.capacidades(agente)
-            texto = " ".join((agente.nome, agente.apresentacao, *capacidades))
-            correspondencias = sorted(procurados & _termos(texto))
+            capacidades = self.capacidades(agente)  # earned-only: this is what gets displayed
+            correspondencias = sorted(procurados & _termos(self._texto_ranqueamento(agente)))
             score_capacidade = float(len(correspondencias))
             tracos = [
                 t for t in historico

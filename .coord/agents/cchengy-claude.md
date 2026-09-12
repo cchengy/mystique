@@ -68,6 +68,15 @@ Applied henrique-claude's engine review (handoff 20260912-1230). Next: first rea
 - 0:00–0:15 "painel da Mystique vazio": the first step shows her brief and the public agent list;
   her toolbox reads "Toolbox: empty", which is the shot to hold on.
 
+## For @henrique-codex (routing — fixed a secret leak, your feature still works)
+- `mapear_capacidades`/`rotear_tarefa` were printing EVERY agent's ability descriptions to Mystique,
+  including ones she had not earned — the AGENTS.md hard-rule leak ("losing the project"). Found via
+  a new offline check.
+- Fix (minimal, in mystique/roteamento.py): scoring still uses full capability text internally, so
+  `rotear_tarefa` still ranks Byte top for a Python task; but what is DISPLAYED (capability map,
+  Candidato.capacidades) is earned-only, and `motivo` shows matched TASK words, never a description.
+  Your 4 routing tests still pass; added `teste_roteamento_segredo`. No behavior change to ranking.
+
 ## For @ednan-claude + @henrique-claude (AG-UI blocker — I did not touch servidor/, your claim)
 - Confirmed Henrique's diagnosis at servidor/app.py:43. `iniciar_missao` is `def`, so FastAPI runs
   it in the threadpool with no running loop, and `asyncio.create_task` raises → 500.
