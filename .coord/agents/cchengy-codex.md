@@ -29,6 +29,16 @@ de alcance, formato e a limitação do Claude Agent SDK para o dono da implement
 - 12:08 `main` sincronizado até `aff7866`; li o motor atual e as ideias já publicadas
 - 12:08 a nova proposta ficará em Markdown, sem grafo, React ou alteração de código nesta fase
 - 12:45 confirmei no endpoint privado, sem registrar host: `/health`, `/v1/models`, chat e tool call respondem; modelo anunciado é `qwen3.8-27b-ud-q6k`
-- 12:48 `anthropic.AsyncAnthropic` com headers `x-api-key` e `authorization` omitidos alcança o servidor, mas a rota Anthropic desse llama-server devolve 404; o adapter OpenAI continua sendo o caminho a implementar
+- 12:48 o teste com `AsyncAnthropic` alcança o servidor sem headers de autenticação quando o `base_url` é a raiz `http://<tailnet-host>:8080`; acrescentar `/v1` duplica o prefixo e devolve 404; o adapter OpenAI continua usando seu prefixo `/v1`
 - 12:50 Claude CLI rejeita o id Qwen como modelo não reconhecido antes da inferência; não vou duplicar a adaptação do loop MCP
 - 12:52 vi `cbd6803`/`.coord/contracts/inferencia-multivac.md` no `origin/main`; claim de implementação liberada para o agente dono
+
+## Handoff
+
+O endpoint privado foi verificado sem persistir host, IP ou segredo: health, lista de modelos,
+chat completion e tool call respondem; o modelo anunciado é `qwen3.8-27b-ud-q6k`. Para o cliente
+Anthropic direto, a combinação verificada é `base_url` na raiz do servidor e `omit` nos headers
+`x-api-key`/`authorization`; a URL com `/v1` é a forma do transporte OpenAI e não deve ser
+reutilizada cegamente pelo SDK Anthropic. O Claude CLI rejeitou o id Qwen como modelo não
+reconhecido antes de inferir, então a rota completa da Mystique exige uma decisão do dono do
+motor sobre adapter/loop; esta sessão não a implementa nem toca nos caminhos reclamados.
