@@ -25,6 +25,16 @@ export const PT: Record<string, string> = {
     'Você nunca escolhe o agente: ela descobre quem faz o quê. Ou aperte Play e deixe ela escolher a própria missão.',
   Light: 'Claro',
   Dark: 'Escuro',
+
+  // --- live missions (AG-UI) ---
+  '● LIVE · DeepSeek mission running through AG-UI': '● AO VIVO · missão DeepSeek rodando via AG-UI',
+  'Live backend disconnected': 'Motor ao vivo desconectado',
+  'Trust receipt': 'Recibo de confiança',
+  'Judge approved': 'Juiz aprovou',
+  'Judge rejected': 'Juiz rejeitou',
+  Approve: 'Aprovar',
+  Reject: 'Rejeitar',
+  'Live state comes from the Mystique engine over AG-UI.': 'O estado ao vivo vem do motor da Mystique via AG-UI.',
   'in contact': 'em contato',
   'not met yet': 'ainda não conhecido',
   DISCARDED: 'DESCARTADO',
@@ -436,6 +446,8 @@ const FRAGMENTS = ([
   ['exam revision', 'revisão para a prova'],
   ['exit code ', 'código de saída '],
   ['🎯 mission: ', '🎯 missão: '],
+  ['Mission could not start', 'Não foi possível iniciar a missão'],
+  ['Decision was refused', 'A decisão foi recusada'],
 ] as [string, string][]).sort((a, b) => b[0].length - a[0].length)
 
 PT['one thing, chosen with care'] = 'uma coisa, escolhida com cuidado'

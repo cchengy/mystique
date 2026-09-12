@@ -316,14 +316,15 @@ export default function Simulation() {
 
   const [lang, setLang] = useState<Lang>(() => {
     try {
-      return (localStorage.getItem('mystique-lang') as Lang) || 'en'
+      return (localStorage.getItem('mystique-lang') as Lang) || 'pt'
     } catch {
-      return 'en'
+      return 'pt'
     }
   })
   const t = (s: string) => (lang === 'pt' ? translate(s) : s)
   const [theme, setTheme] = useState<Theme>(initialTheme)
   useEffect(() => {
+    document.documentElement.lang = lang === 'pt' ? 'pt-BR' : 'en'
     try {
       localStorage.setItem('mystique-lang', lang)
       localStorage.setItem('mystique-theme', theme)
@@ -397,23 +398,25 @@ export default function Simulation() {
       <p className="caption" aria-live="polite">
         {live
           ? liveConnected
-            ? '● LIVE · DeepSeek mission running through AG-UI'
-            : 'Live backend disconnected'
+            ? t('● LIVE · DeepSeek mission running through AG-UI')
+            : t('Live backend disconnected')
           : comparing
             ? t('Same engine, same result for her. The only difference is consent.')
             : t(world.caption)}
       </p>
 
-      {liveError && <p className="live-error" role="alert">{liveError}</p>}
+      {liveError && <p className="live-error" role="alert">{t(liveError)}</p>}
       {liveReceipts.map((receipt) => (
         <article className="live-receipt" key={receipt.recibo_id}>
-          <strong>Trust receipt · {receipt.agente_id}</strong>
+          <strong>
+            {t('Trust receipt')} · {receipt.agente_id}
+          </strong>
           <p>{receipt.descricao_alegada}</p>
           <p>{receipt.evidencia}</p>
-          <p>{receipt.veredito.aprovado ? 'Judge approved' : 'Judge rejected'} · {receipt.veredito.motivo}</p>
+          <p>{t(receipt.veredito.aprovado ? 'Judge approved' : 'Judge rejected')} · {receipt.veredito.motivo}</p>
           <div>
-            <button disabled={!receipt.veredito.aprovado} onClick={() => resolveLiveReceipt(receipt.recibo_id, 'aprovar')}>Approve</button>
-            <button onClick={() => resolveLiveReceipt(receipt.recibo_id, 'rejeitar')}>Reject</button>
+            <button disabled={!receipt.veredito.aprovado} onClick={() => resolveLiveReceipt(receipt.recibo_id, 'aprovar')}>{t('Approve')}</button>
+            <button onClick={() => resolveLiveReceipt(receipt.recibo_id, 'rejeitar')}>{t('Reject')}</button>
           </div>
         </article>
       ))}
@@ -566,7 +569,7 @@ export default function Simulation() {
           </div>
         )}
         <p className="disclaimer">
-          {live ? 'Live state comes from the Mystique engine over AG-UI.' : t(
+          {live ? t('Live state comes from the Mystique engine over AG-UI.') : t(
             "Scripted replay built from the engine's real messages; after your mission, the rest follows a recorded session.",
           )}{' '}
           {t('Run it live with')} <code>python -m good</code> {t('or')} <code>python -m evil</code>.{' '}
