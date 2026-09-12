@@ -203,6 +203,17 @@ async def teste_resiliencia(pasta: Path) -> None:
            "resilience: a truncated save does not kill the boot")
     checar("EOFError" in PODERES["executar_python"].executar({"codigo": "print(input())"}),
            "resilience: executar_python never reads from the terminal")
+    import os
+
+    antes = os.environ.get("ANTHROPIC_API_KEY")
+    os.environ["ANTHROPIC_API_KEY"] = antes or "sk-test-not-real"
+    try:
+        saida = PODERES["executar_python"].executar(
+            {"codigo": "import os; print(sorted(k for k in os.environ if 'KEY' in k or 'TOKEN' in k))"})
+    finally:
+        if antes is None:
+            del os.environ["ANTHROPIC_API_KEY"]
+    checar(saida.strip().endswith("[]"), "security: executar_python never exposes API keys to the code it runs")
 
 
 async def teste_externo(pasta: Path) -> None:

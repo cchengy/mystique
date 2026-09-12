@@ -48,6 +48,9 @@ def _executar_python(args: dict) -> str:
             text=True,
             cwd=pasta,
             start_new_session=True,
+            # Only PATH: the child must never inherit API keys (ANTHROPIC, EXA, AMBIGUOUS...),
+            # or code the agent writes could print them into a model's context.
+            env={"PATH": os.environ.get("PATH", ""), "PYTHONIOENCODING": "utf-8"},
         )
         try:
             stdout, stderr = processo.communicate(timeout=10)
