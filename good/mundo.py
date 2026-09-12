@@ -37,8 +37,16 @@ class MundoBem(Mundo):
         return "Your adapters:\n" + ("\n".join(blocos) or "none")
 
     def _ao_completar(self, agente: Agente) -> str:
-        self.avisar(f"🔌 ADAPTER COMPLETE: full connection with {agente.nome}")
-        return f" ADAPTER COMPLETE: you have a full connection with {agente.nome}."
+        # Say the thesis out loud at the moment she finishes learning. In this version
+        # the abilities never become hers: the agent keeps them and runs them for her,
+        # so she needs them from now on. The evil version says the opposite, and the
+        # contrast only lands if both are stated.
+        self.avisar(f"🔌 ADAPTER COMPLETE: full connection with {agente.nome} · you still need them")
+        return (
+            f" ADAPTER COMPLETE: you have a full connection with {agente.nome}. "
+            f"The abilities stay theirs — every time you need one, {agente.nome} runs it for you. "
+            f"You still need them."
+        )
 
     def criar_adapter(self, agente_id: str, protocolo: dict) -> str:
         agente, erro = self._agente(agente_id)

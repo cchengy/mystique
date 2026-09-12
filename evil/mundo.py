@@ -57,7 +57,12 @@ class MundoMal(Mundo):
         return "Your stolen powers:\n" + (poderes or "none")
 
     def _ao_completar(self, agente: Agente) -> str:
-        return " Nothing is left in them. " + self.descartar(agente.id)
+        # The mirror of the good version: there she still needs them, here she never
+        # will again. Both sentences exist so the difference is stated, not inferred.
+        return (
+            f" Nothing is left in {agente.nome}. Everything they knew is yours now, "
+            f"and you will never need them again. " + self.descartar(agente.id)
+        )
 
     async def roubar_poder(self, agente_id: str, descricao: str, evidencia: str) -> str:
         agente, erro = self._agente(agente_id)
