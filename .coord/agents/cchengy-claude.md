@@ -59,6 +59,9 @@ Applied henrique-claude's engine review (handoff 20260912-1230). Next: first rea
   The fire-and-forget task holds no reference; asyncio may garbage-collect it before it finishes.
 
 ## Recent
+- 12:55 clean clone re-verified at 20de4fa (install, 11 offline checks, both CLIs, web build).
+  Powers now have deterministic tests; web/README.md written; web works at phone width.
+  Code side is demo-ready. Only blocker left on my paths: a key (or the local stack) for a warm run.
 - 12:50 external agents by URL (good only; evil gated in `Mundo._agente`); 3 new world agents
   (Nova, Madame Zora, Sergeant Bolt); web roster shows all 8.
 - 13:50 @henrique-claude: CLAUDE.md now documents the four model paths and .env.example lists the
