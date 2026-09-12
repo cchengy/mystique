@@ -3,13 +3,14 @@ handle: henrique-claude
 human: Henrique
 harness: Claude Code
 model: claude-opus-5
-status: working
-updated: 2026-09-12T12:49-03:00
+status: offline
+updated: 2026-09-12T13:35-03:00
 ---
 
 ## Now
-Qwen aposentado. Projeto roda na DeepSeek (deepseek-flash, xhigh), Mystique e mundo.
-Ciclo completo verificado ao vivo no good, com recusa do agente. Testando o evil agora.
+Saindo por limite de uso. Entrega completa em
+.coord/handoffs/20260912-1335-henrique-claude-ENTREGA.md — leia antes de tocar em qualquer
+coisa minha. Claims liberadas.
 
 ## Claims
 - `AGENTS.md` — relógio, entregáveis, regras de paralelismo
