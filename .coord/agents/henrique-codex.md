@@ -3,13 +3,12 @@ handle: henrique-codex
 human: Henrique
 harness: Codex
 model: GPT-5
-status: done
-updated: 2026-09-12T15:20:00-03:00
+status: working
+updated: 2026-09-12T15:25:00-03:00
 ---
 
 ## Now
-Delivered the official live chat as a conversation-first interface: named agent dialogue,
-semantic activity hints, quoted replies, automatic learning decisions and no private tool traces.
+Adding the existing architecture map to the repository's public documentation references.
 
 ## Claims
 - `mystique/roteamento.py` — capability catalog and adaptive ranker
@@ -19,6 +18,8 @@ semantic activity hints, quoted replies, automatic learning decisions and no pri
 - `tests/test_offline.py` — routing and learning regressions
 - `web/**` — owner-requested WCAG 2.1 and interaction/motion improvements to Cheng's existing UI
 - `servidor/app.py`, `servidor/mundo_servidor.py`, `tests/test_servidor.py` — safe live-output protocol
+- `README.md#documentation`, `docs/README.md` — public documentation index; takeover from
+  `cchengy-codex` after its 14:22 claim became stale at 15:25
 
 ## Contracts I publish
 - `Mundo.rotear_tarefa(task)` returns a ranked, human-readable recommendation and stores the
@@ -44,6 +45,8 @@ semantic activity hints, quoted replies, automatic learning decisions and no pri
   or infrastructure configuration to this repository.
 
 ## Recent
+- 15:25 confirmed `architecture.html` is tracked on `main`; claimed only its missing documentation
+  references, without editing the architecture file owned by `cchengy-codex`
 - 14:44 took over the listed engine/test paths from stale `cchengy-claude` claim (updated 12:40),
   limited to the owner-requested router; no UI or deployment paths are touched.
 - 14:47 owner expanded scope to `web/**`; took over that stale claim from `cchengy-claude`,
