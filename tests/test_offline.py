@@ -185,7 +185,25 @@ async def teste_externo(pasta: Path) -> None:
            "external: evil cannot steal from a plugged-in agent")
 
 
+def teste_poderes() -> None:
+    """Deterministic powers return exactly what the judge and the replay expect."""
+    p = PODERES
+    checar(p["escalar_receita"].executar({"ingredientes": "2 eggs; 500 g flour", "fator": 2}) == "4 eggs\n1000 g flour",
+           "powers: scale a recipe")
+    checar(p["converter_unidades"].executar({"valor": 10, "de": "km", "para": "mi"}) == "10 km = 6.21 mi",
+           "powers: kilometers to miles")
+    checar(p["converter_unidades"].executar({"valor": 100, "de": "c", "para": "f"}) == "100 c = 212.00 f",
+           "powers: Celsius to Fahrenheit")
+    checar(p["hora_no_mundo"].executar({"cidade": "Tokyo"}).startswith("Tokyo: "), "powers: real local time in a city")
+    carta = p["tirar_carta"].executar({"pergunta": "Will we win?"})
+    checar(carta == p["tirar_carta"].executar({"pergunta": "Will we win?"}), "powers: same question, same card")
+    checar(p["numerologia"].executar({"nome": "Mystique"}) == "Mystique: number 3, the creator.", "powers: numerology")
+    checar(p["calcular_imc"].executar({"peso_kg": 70, "altura_m": 1.75}) == "BMI 22.9 (normal)", "powers: BMI")
+    checar("3 rounds" in p["plano_treino"].executar({"nivel": "beginner", "minutos": 15}), "powers: workout circuit")
+
+
 async def main() -> None:
+    teste_poderes()
     await teste_bem(Path(tempfile.mkdtemp()))
     await teste_bem_recusa(Path(tempfile.mkdtemp()))
     await teste_mal(Path(tempfile.mkdtemp()))

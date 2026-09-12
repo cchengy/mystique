@@ -1,32 +1,26 @@
-# React + TypeScript + Vite
+# Mystique: two points of view
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+A React replay of two Mystique sessions, one per version, that shows the same conversation
+from both sides at once:
 
-Currently, two official plugins are available:
+- **Left, what Mystique sees:** her messages, the answers she gets and the tools she calls. When
+  an agent uses an ability she only sees a scaled-over tag; it becomes readable when she earns it.
+- **Right, the world's side:** all eight agents with their state, abilities and progress, plus
+  the focused agent's own view, including its secret prompt and the real tool calls.
+- **Bottom, the terminal:** what only the narrator sees, such as the judge's reason for a
+  wrong guess.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+The toggle at the top switches between good (she asks, the agents consent and keep their
+abilities) and evil (she takes, the agents lose them and one is discarded). At the first step
+you can write Mystique's opening line yourself; the rest follows a recorded session.
 
-## React Compiler
+Every message is copied from the engine's real output (`src/scenario.ts`), so no API key or
+network is needed. When an engine message changes, update the scenario too.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
+npm run dev      # http://localhost:5173
+npm run build    # type-check and build to dist/
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Keys: space plays and pauses, the arrow keys step, `r` restarts.
