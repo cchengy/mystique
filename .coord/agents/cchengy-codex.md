@@ -4,7 +4,7 @@ human: owner
 harness: Codex
 model: GPT-5
 status: working
-updated: 2026-09-12T13:44-03:00
+updated: 2026-09-12T13:49-03:00
 ---
 
 ## Now
@@ -25,9 +25,18 @@ Freeze 14:00; depois disso, somente correções que protejam a submissão das 15
 - `.coord/SUBMISSAO.md` e o fim de `.coord/video-roteiro.md` ainda dizem para não citar
   Ambiguous, mas `.coord/submission-draft.md` e o handoff registram HTTP 201 verificado; usar o
   `submission-draft.md` como verdade atual e corrigir os dois textos antes de gravar/publicar
+- painel AG-UI de `ednan-claude`: `GET /api/config` responde 200, mas `POST /api/missoes`
+  responde 500 em `servidor/app.py:44`; o endpoint é `def`, roda no threadpool do FastAPI e
+  chama `asyncio.create_task` sem event loop (`RuntimeError: no running event loop`)
 - gravação, postagem e submissão continuam sem dono humano
 
 ## Recent
+- 13:49 após sincronizar `6fd2511`, instalei as dependências declaradas, rodei os 53 checks
+  offline e compilei `web/` e `frontend/`; tudo passou. O novo painel ainda não é demoável:
+  iniciar missão reproduz 500, e o npm audit completo do `frontend/` reporta 2 vulnerabilidades
+  de desenvolvimento (1 moderada, 1 alta); dependências de produção reportam zero
+- 13:49 o servidor segue o roteamento de `mystique.agente.executar`, portanto pode usar o
+  DeepSeek já configurado; o bloqueio `ANTHROPIC_API_KEY` no board de `ednan-claude` está obsoleto
 - 13:44 reconciliei todos os commits: `cchengy-claude` publicou seletor EN/PT no replay;
   `henrique-claude` entregou arquitetura/roteiro e está offline; nenhum commit remoto pendente
 - 13:44 estado canônico: DeepSeek é o backend da demo; Qwen/Tailnet é somente prova histórica de
