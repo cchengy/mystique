@@ -6,6 +6,8 @@ talking to other agents, deducing each one's personality and hidden abilities pu
 from how they respond. She never sees their prompt, and never sees the name or
 description of an ability before she has earned it.
 
+**▶ Demo video (2 min):** https://youtu.be/pAPyjp0ho2M
+
 She ships in two versions on the same engine:
 
 | | 🦸 `good/` (heroine) | 🦹 `evil/` (villain) |
