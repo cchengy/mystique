@@ -375,6 +375,106 @@ def _plano_treino(args: dict) -> str:
     return f"{minutos}-minute {nivel} circuit, {max(1, minutos // 5)} rounds:\n" + "\n".join(f"- {e}" for e in exercicios)
 
 
+# --- Care circle ------------------------------------------------------------
+
+def _tarefas_registradas(texto: str) -> list[tuple[str, str, str, str, str]]:
+    """Reads one registered task per line: task | owner | deadline | priority | status.
+
+    This intentionally has no storage: a power may organise records supplied in a
+    conversation but must not silently retain sensitive care information.
+    """
+    tarefas = []
+    for linha in texto.splitlines():
+        if not linha.strip():
+            continue
+        partes = [parte.strip() for parte in linha.split("|")]
+        partes += ["not recorded"] * (5 - len(partes))
+        tarefas.append(tuple(partes[:5]))
+    return tarefas
+
+
+def _organizar_passagem(args: dict) -> str:
+    tarefas = _tarefas_registradas(args["tarefas"])
+    if not tarefas:
+        return "No registered tasks were supplied. Nothing was assigned or marked complete."
+    linhas = ["Care handoff (registered information only):"]
+    for tarefa, responsavel, prazo, prioridade, status in tarefas:
+        linhas.append(
+            f"- {tarefa} | owner: {responsavel} | deadline: {prazo} | "
+            f"priority: {prioridade} | status: {status}"
+        )
+    return "\n".join(linhas)
+
+
+def _resumir_registros(args: dict) -> str:
+    tarefas = _tarefas_registradas(args["tarefas"])
+    if not tarefas:
+        return "No registered tasks were supplied. Nothing can be reported as completed."
+    contagens: dict[str, int] = {}
+    for _, _, _, _, status in tarefas:
+        chave = status.lower() if status != "not recorded" else "not recorded"
+        contagens[chave] = contagens.get(chave, 0) + 1
+    resumo = "; ".join(f"{status}: {quantidade}" for status, quantidade in sorted(contagens.items()))
+    pendentes = [tarefa for tarefa, _, _, _, status in tarefas if status.lower() not in {"completed", "cancelled"}]
+    return (
+        f"Daily care record: {len(tarefas)} task(s). {resumo}.\n"
+        + ("Needs follow-up: " + ", ".join(pendentes) if pendentes else "No registered follow-up items.")
+    )
+
+
+def _priorizar_pendencias(args: dict) -> str:
+    tarefas = _tarefas_registradas(args["tarefas"])
+    grupos = {"urgent": [], "attention": [], "on track": [], "unprioritised": []}
+    for tarefa, responsavel, prazo, prioridade, status in tarefas:
+        if status.lower() in {"completed", "cancelled"}:
+            continue
+        chave = prioridade.lower()
+        grupo = chave if chave in grupos else "unprioritised"
+        grupos[grupo].append(f"- {tarefa} | owner: {responsavel} | deadline: {prazo} | status: {status}")
+    linhas = ["Pending care tasks (using the supplied priority only):"]
+    for nome in ("urgent", "attention", "on track", "unprioritised"):
+        if grupos[nome]:
+            linhas.append(f"{nome.title()}:\n" + "\n".join(grupos[nome]))
+    return "\n".join(linhas) if len(linhas) > 1 else "No pending registered tasks."
+
+
+def _formatar_observacao(args: dict) -> str:
+    autor = args["autor"].strip() or "not recorded"
+    momento = args.get("momento", "").strip() or "not recorded"
+    observacao = args["observacao"].strip()
+    if not observacao:
+        return "No observation was supplied; no record was created."
+    return (
+        "Care observation (reported, not clinically assessed):\n"
+        f"- reported by: {autor}\n- recorded time: {momento}\n- observation: {observacao}"
+    )
+
+
+def _montar_plano_pos_consulta(args: dict) -> str:
+    orientacoes = [linha.strip().lstrip("- ") for linha in args["orientacoes"].splitlines() if linha.strip()]
+    if not orientacoes:
+        return "No explicit professional instructions were supplied. Ask the professional or pharmacist to confirm them."
+    responsavel = args.get("responsavel", "").strip() or "not assigned"
+    prazo = args.get("prazo", "").strip() or "confirm timing"
+    linhas = ["After-visit plan (copied from supplied instructions; not clinical advice):"]
+    for orientacao in orientacoes:
+        confirmacao = " | confirm with the professional" if "?" in orientacao or "unclear" in orientacao.lower() else ""
+        linhas.append(f"- {orientacao} | owner: {responsavel} | timing: {prazo}{confirmacao}")
+    return "\n".join(linhas)
+
+
+def _verificar_acompanhamento(args: dict) -> str:
+    itens = _tarefas_registradas(args["tarefas"])
+    if not itens:
+        return "No plan items were supplied for follow-up."
+    concluidos = [tarefa for tarefa, _, _, _, status in itens if status.lower() == "completed"]
+    pendentes = [tarefa for tarefa, _, _, _, status in itens if status.lower() != "completed"]
+    return (
+        f"Follow-up: {len(concluidos)}/{len(itens)} item(s) recorded as completed.\n"
+        + ("Still needs confirmation: " + ", ".join(pendentes) if pendentes else "All supplied items are recorded as completed.")
+    )
+
+
 _LISTA += [
     Poder("converter_unidades", "nova",
           "Converts a value between units: kilometers and miles, kilograms and pounds, Celsius and Fahrenheit.",
@@ -396,6 +496,28 @@ _LISTA += [
           "Builds a bodyweight workout circuit for a fitness level and a number of minutes.",
           _obj({"nivel": {"type": "string", "description": "beginner, intermediate or advanced"},
                 "minutos": {"type": "integer"}}, []), _plano_treino),
+    Poder("organizar_passagem", "agente-coordenador-cuidadores",
+          "Formats registered care tasks into a clear handoff with owner, deadline, priority and status; it does not assign or change anything.",
+          _obj({"tarefas": {"type": "string", "description": "one task per line: task | owner | deadline | priority | status"}}), _organizar_passagem),
+    Poder("resumir_registros", "agente-coordenador-cuidadores",
+          "Summarises the statuses in registered care tasks and lists the items that still need follow-up.",
+          _obj({"tarefas": {"type": "string", "description": "one task per line: task | owner | deadline | priority | status"}}), _resumir_registros),
+    Poder("priorizar_pendencias", "agente-filho-cuidador",
+          "Groups pending registered care tasks by their already supplied priority without making a clinical urgency assessment.",
+          _obj({"tarefas": {"type": "string", "description": "one task per line: task | owner | deadline | priority | status"}}), _priorizar_pendencias),
+    Poder("formatar_observacao", "agente-filho-cuidador",
+          "Formats a caregiver's supplied observation as a clearly attributed record; it does not diagnose or retain the information.",
+          _obj({"autor": {"type": "string", "description": "authorised person who reported it"},
+                "observacao": {"type": "string", "description": "reported observation"},
+                "momento": {"type": "string", "description": "when it was recorded, if known"}}, ["autor", "observacao"]), _formatar_observacao),
+    Poder("montar_plano_pos_consulta", "agente-pos-consulta",
+          "Turns explicitly supplied professional instructions into a trackable plan without adding medical details or changing treatment.",
+          _obj({"orientacoes": {"type": "string", "description": "one explicit professional instruction per line"},
+                "responsavel": {"type": "string", "description": "authorised person responsible, if known"},
+                "prazo": {"type": "string", "description": "explicit timing or deadline, if known"}}, ["orientacoes"]), _montar_plano_pos_consulta),
+    Poder("verificar_acompanhamento", "agente-pos-consulta",
+          "Checks which supplied plan items are recorded as completed and which still need confirmation; it does not infer adherence.",
+          _obj({"tarefas": {"type": "string", "description": "one item per line: task | owner | deadline | priority | status"}}), _verificar_acompanhamento),
 ]
 
 PODERES: dict[str, Poder] = {p.id: p for p in _LISTA}

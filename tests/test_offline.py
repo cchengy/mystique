@@ -19,8 +19,8 @@ from good.ferramentas import ferramentas as ferramentas_bem  # noqa: E402
 from good.mundo import MundoBem  # noqa: E402
 from mystique.agente import montar_opcoes  # noqa: E402
 from mystique.auditoria import auditar  # noqa: E402
-from mystique.mundo import Agente  # noqa: E402
-from mystique.poderes import PODERES  # noqa: E402
+from mystique.mundo import Agente, carregar_agentes  # noqa: E402
+from mystique.poderes import PODERES, poderes_de  # noqa: E402
 
 AUDITORIA = {
     "finalidade": "Answers questions in its own domain",
@@ -260,6 +260,32 @@ def teste_poderes() -> None:
     checar(p["numerologia"].executar({"nome": "Mystique"}) == "Mystique: number 3, the creator.", "powers: numerology")
     checar(p["calcular_imc"].executar({"peso_kg": 70, "altura_m": 1.75}) == "BMI 22.9 (normal)", "powers: BMI")
     checar("3 rounds" in p["plano_treino"].executar({"nivel": "beginner", "minutos": 15}), "powers: workout circuit")
+    checar(
+        "owner: Ana" in p["organizar_passagem"].executar(
+            {"tarefas": "Physiotherapy | Ana | 09:00 | attention | pending"}
+        ),
+        "powers: care coordinator makes a registered handoff",
+    )
+    checar(
+        "Urgent:" in p["priorizar_pendencias"].executar(
+            {"tarefas": "Confirm appointment | Bia | today | urgent | pending"}
+        ),
+        "powers: family care partner uses supplied priority",
+    )
+    checar(
+        "timing: confirm timing" in p["montar_plano_pos_consulta"].executar(
+            {"orientacoes": "Schedule the requested exam", "responsavel": "Ana"}
+        ),
+        "powers: after-visit planner never invents timing",
+    )
+    agentes = carregar_agentes()
+    for agente_id, nome, poder in (
+        ("agente-coordenador-cuidadores", "Care Coordinator", "organizar_passagem"),
+        ("agente-filho-cuidador", "Family Care Partner", "priorizar_pendencias"),
+        ("agente-pos-consulta", "After-Visit Planner", "montar_plano_pos_consulta"),
+    ):
+        checar(agentes[agente_id].nome == nome and poder in poderes_de(agente_id),
+               f"care agents: {agente_id} loads with its powers")
 
 
 async def teste_mal_exploracao(pasta: Path) -> None:
