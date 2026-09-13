@@ -79,3 +79,20 @@ test('the gate is a modal scene that plays out before it lets go', () => {
   // Every spatial animation needs its reduced-motion path.
   assert.match(css, /prefers-reduced-motion: reduce\)\s*\{\s*\.portao-fundo/)
 })
+
+test('the gate keeps the keyboard inside it, and gives focus back', () => {
+  const ui = readFileSync(new URL('./Simulation.tsx', import.meta.url), 'utf8')
+  assert.match(ui, /function useFocoPreso/)
+  assert.match(ui, /const focoPortao = useFocoPreso/)
+  assert.match(ui, /ref=\{focoPortao\}/)
+  assert.match(ui, /anterior\?\.focus\?\.\(\)/)
+})
+
+test('a new account inherits nothing from the browser', () => {
+  const ui = readFileSync(new URL('./Simulation.tsx', import.meta.url), 'utf8')
+  const api = readFileSync(new URL('./live.ts', import.meta.url), 'utf8')
+  // The pre-accounts transcript must never become a new account's first session.
+  assert.doesNotMatch(ui, /importSession/)
+  assert.doesNotMatch(api, /importSession/)
+  assert.match(ui, /localStorage\.removeItem\('mystique\.live\.v1\.messages'\)/)
+})

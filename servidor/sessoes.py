@@ -55,15 +55,6 @@ class Sessoes:
         self._gravar(sub, sessao)
         return sessao
 
-    def importar(self, sub: str, mensagens: list[dict], modo: str = "good") -> dict:
-        sessao = self.criar(sub, titulo="Previous conversation", modo=modo)
-        for mensagem in mensagens[:80]:
-            role = mensagem.get("role")
-            content = str(mensagem.get("content") or "").strip()
-            if role in {"user", "assistant"} and content:
-                self.adicionar(sub, sessao["id"], role, content[:20000])
-        return self.obter(sub, sessao["id"]) or sessao
-
     def obter(self, sub: str, sessao_id: str) -> dict | None:
         try:
             return json.loads(self._arquivo(sub, sessao_id).read_text(encoding="utf-8"))

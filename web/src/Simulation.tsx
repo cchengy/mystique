@@ -3,7 +3,7 @@ import { AGENTS, REDBEARD, SCENARIOS, type Entry, type Mode, type Scenario, type
 import { latestAgentInteractions, type AgentDialogue } from './agent-profile'
 import { translate } from './pt'
 import {
-  connectLive, createSession, getSession, getWiki, importSession, listSessions, startLiveMission,
+  connectLive, createSession, getSession, getWiki, listSessions, startLiveMission,
   type ChatSession, type LiveSnapshot, type WikiPage,
 } from './live'
 import { aceitouPrivacidade, BannerPrivacidade, PortaoConta } from './Portao'
@@ -190,6 +190,53 @@ function Wiki({ texto }: { texto: string }) {
   )
 }
 
+/** Keeps the keyboard inside a modal for as long as it is open, and gives focus
+ *  back to wherever it came from afterwards. The gate claims `aria-modal`, and a
+ *  modal you can Tab out of is lying: the screen behind it is inert to the mouse
+ *  and was still reachable by keyboard. There is no Escape here on purpose — the
+ *  gate is the only way in, so there is nothing to escape to. */
+function useFocoPreso(ativo: boolean) {
+  const alvo = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!ativo) return
+    const anterior = document.activeElement as HTMLElement | null
+    const focaveis = () => Array.from(
+      alvo.current?.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), summary, [tabindex]:not([tabindex="-1"])',
+      ) ?? [],
+    ).filter((el) => el.offsetParent !== null || el === document.activeElement)
+
+    const aoTeclar = (event: KeyboardEvent) => {
+      if (event.key !== 'Tab') return
+      const itens = focaveis()
+      if (!itens.length) return
+      const primeiro = itens[0]
+      const ultimo = itens[itens.length - 1]
+      const atual = document.activeElement as HTMLElement | null
+      if (!alvo.current?.contains(atual)) {
+        event.preventDefault()
+        ;(event.shiftKey ? ultimo : primeiro).focus()
+        return
+      }
+      if (event.shiftKey && atual === primeiro) {
+        event.preventDefault()
+        ultimo.focus()
+      } else if (!event.shiftKey && atual === ultimo) {
+        event.preventDefault()
+        primeiro.focus()
+      }
+    }
+
+    document.addEventListener('keydown', aoTeclar, true)
+    return () => {
+      document.removeEventListener('keydown', aoTeclar, true)
+      // Only take focus back if it is still inside the modal we are closing.
+      if (alvo.current?.contains(document.activeElement)) anterior?.focus?.()
+    }
+  }, [ativo])
+  return alvo
+}
+
 type SystemEntry = Extract<Entry, { kind: 'system' }>
 
 function entriesFromSession(session: ChatSession): Entry[] {
@@ -200,14 +247,15 @@ function entriesFromSession(session: ChatSession): Entry[] {
     : { kind: 'message', from: message.role === 'user' ? 'You' : 'Mystique', text: message.content, self: message.role === 'assistant' })
 }
 
-function legacySession() {
+/** The pre-accounts build kept the transcript in the browser. That key now
+ *  belongs to nobody: it is not this account's history and must never become
+ *  it, so it is thrown away the first time we see it. */
+function descartarTranscricaoAntiga() {
   try {
-    const raw = localStorage.getItem('mystique.live.v1.messages')
-    const entries = raw ? JSON.parse(raw) as Entry[] : []
-    return entries.flatMap((entry) => entry.kind === 'message' && (entry.from === 'You' || entry.from === 'Você' || entry.from === 'Mystique')
-      ? [{ role: entry.from === 'Mystique' ? 'assistant' as const : 'user' as const, content: entry.text }]
-      : [])
-  } catch { return [] }
+    localStorage.removeItem('mystique.live.v1.messages')
+  } catch {
+    /* private window: there was nothing to inherit anyway */
+  }
 }
 
 const PLACEHOLDER: Record<Mode, string> = {
@@ -317,6 +365,7 @@ export default function Simulation() {
       }
     })
   }, [live, liveSnapshot])
+  useEffect(() => { descartarTranscricaoAntiga() }, [])
   useEffect(() => { lerConfig().then((c) => setAuthExigida(Boolean(c.auth?.exigida))).catch(() => setAuthExigida(false)) }, [])
   const refreshSessions = useCallback(async () => {
     const items = await listSessions(token)
@@ -328,9 +377,10 @@ export default function Simulation() {
     void refreshSessions().then(async (items) => {
       let selected = sessionId && items.some((item) => item.id === sessionId) ? sessionId : items[0]?.id
       if (!selected) {
-        const legacy = legacySession()
-        const created = legacy.length ? await importSession(legacy, mode, token) : await createSession(mode, token)
-        if (legacy.length) localStorage.removeItem('mystique.live.v1.messages')
+        // A new account starts empty. It used to inherit the browser's old
+        // pre-accounts transcript, so anyone who signed up on a machine that
+        // still had one opened somebody else's conversation on their first day.
+        const created = await createSession(mode, token)
         selected = created.id
         await refreshSessions()
       }
@@ -513,6 +563,9 @@ export default function Simulation() {
   // The gate does not vanish the instant the account unlocks: it plays out, and
   // only then hands the screen over. See the panel-wipe in styles.css.
   const [portaoSaindo, setPortaoSaindo] = useState(false)
+  // Trapped while the gate is up; released the moment it starts leaving, so the
+  // app behind takes the keyboard back as it comes into focus.
+  const focoPortao = useFocoPreso(Boolean(live && travada))
   const travadaAntes = useRef(travada)
   useEffect(() => {
     if (travadaAntes.current && !travada) {
@@ -1015,7 +1068,7 @@ export default function Simulation() {
       {live && (travada || portaoSaindo) && (
         <div className="portao-cena" data-saindo={portaoSaindo ? 'true' : undefined} aria-hidden={portaoSaindo}>
           <div className="portao-fundo" />
-          <div className="portao-palco" role="dialog" aria-modal="true" aria-label={t('The live chat needs an account')}>
+          <div className="portao-palco" ref={focoPortao} role="dialog" aria-modal="true" aria-label={t('The live chat needs an account')}>
             <PortaoConta t={t} aoLiberar={liberarConta} aoAbrirPrivacidade={() => setPrivacidadeAberta(true)} compacto />
           </div>
         </div>

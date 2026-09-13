@@ -52,12 +52,27 @@ def test_reasoning_traces_are_exposed_as_evidence_not_model_context() -> None:
         assert store.contexto("alice", sessao["id"]) == []
 
 
-def test_legacy_browser_chat_can_be_imported_once() -> None:
+def test_a_new_account_starts_with_nothing() -> None:
+    """A fresh account inherits nothing - not from the browser, not from anyone.
+
+    The client used to import the pre-accounts transcript kept in localStorage
+    into the first session it created, so signing up on a machine that still had
+    one opened somebody else's conversation.
+    """
     with tempfile.TemporaryDirectory() as pasta:
         store = Sessoes(Path(pasta))
-        imported = store.importar("alice", [
-            {"role": "user", "content": "Oi"},
-            {"role": "assistant", "content": "Olá"},
-        ])
-        assert imported["titulo"] == "Oi"
-        assert len(store.listar("alice")) == 1
+        assert store.listar("auth0|newcomer") == []
+        sessao = store.criar("auth0|newcomer")
+        assert sessao["mensagens"] == []
+        assert sessao["evidencias"] == []
+        assert len(store.listar("auth0|newcomer")) == 1
+        # and still nothing of anyone else's
+        assert store.listar("auth0|someone-else") == []
+
+
+if __name__ == "__main__":
+    test_sessions_are_account_scoped_and_reopen_with_messages()
+    test_context_excludes_failed_system_notices()
+    test_reasoning_traces_are_exposed_as_evidence_not_model_context()
+    test_a_new_account_starts_with_nothing()
+    print("OK    sessions: account-scoped, mode and evidence kept, a new account starts empty")

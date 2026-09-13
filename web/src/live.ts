@@ -135,15 +135,6 @@ export async function createSession(mode: 'good' | 'evil', token?: string): Prom
   return response.json()
 }
 
-export async function importSession(messages: SessionMessage[], mode: 'good' | 'evil', token?: string): Promise<ChatSession> {
-  const response = await fetch(`${API_BASE}/api/sessoes/importar`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
-    body: JSON.stringify({ mensagens: messages, modo: mode }),
-  })
-  if (!response.ok) throw new Error(`Previous chat could not be imported (${response.status})`)
-  return response.json()
-}
-
 export async function getSession(id: string, token?: string): Promise<ChatSession> {
   const response = await fetch(`${API_BASE}/api/sessoes/${id}`, { headers: authHeaders(token) })
   if (!response.ok) throw new Error(`Session could not load (${response.status})`)

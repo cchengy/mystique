@@ -79,6 +79,11 @@ touch targets 44 px. Spacing follows a 4 px rhythm; pills are reserved for statu
   it: at rail width the email loses to the button every time.
 - What she has learned is readable by the person who owns it: the engine's own `WIKI.md`,
   per profile, at the foot of each ledger.
+- The gate is modal in behaviour, not just in appearance: the way in takes focus when it
+  opens, Tab cycles inside it, and focus returns to where it came from when it lets go.
+  There is no Escape — the gate is the only way in, so there is nothing to escape to.
+- A new account starts empty. Nothing in the browser — least of all the pre-accounts
+  transcript — may become an account's first conversation.
 - Provider failures are shown, never swallowed. Returning from an OAuth redirect that did
   not complete must say so in the panel; silence is indistinguishable from a no-op.
 

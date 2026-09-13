@@ -60,16 +60,6 @@ class SessaoBody(BaseModel):
     modo: str = "good"
 
 
-class MensagemImportada(BaseModel):
-    role: str
-    content: str
-
-
-class ImportarSessaoBody(BaseModel):
-    mensagens: list[MensagemImportada]
-    modo: str = "good"
-
-
 class ModeloBody(BaseModel):
     modelo: str
 
@@ -244,15 +234,6 @@ def criar_app(mundos: Mundos, persona: str, extras: FerramentasExtras) -> FastAP
         if corpo.modo not in {"good", "evil"}:
             raise HTTPException(400, "modo must be good or evil")
         return sessoes.criar(await _sub_do_pedido(request), titulo=corpo.titulo, modo=corpo.modo)
-
-    @app.post("/api/sessoes/importar", status_code=201)
-    async def importar_sessao(corpo: ImportarSessaoBody, request: Request) -> dict:
-        if corpo.modo not in {"good", "evil"} or len(corpo.mensagens) > 80:
-            raise HTTPException(400, "Invalid legacy session")
-        mensagens = [{"role": m.role, "content": m.content} for m in corpo.mensagens]
-        if any(m["role"] not in {"user", "assistant"} or len(m["content"]) > 20000 for m in mensagens):
-            raise HTTPException(400, "Invalid legacy message")
-        return sessoes.importar(await _sub_do_pedido(request), mensagens, corpo.modo)
 
     @app.get("/api/sessoes/{sessao_id}")
     async def obter_sessao(sessao_id: str, request: Request) -> dict:
