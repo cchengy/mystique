@@ -90,9 +90,21 @@ touch targets 44 px. Spacing follows a 4 px rhythm; pills are reserved for statu
   composer, in that order — with the control itself raised through the veil and still
   usable — the highlight is the control's own outline, never a second box drawn near it,
   so it cannot drift out of register with what it is pointing at. The card moves by
-  transform only, and carries her second colour with it: each change plays the violet the
-  gate shifts through on its way out, trailing behind the card in the direction it came
-  from, then letting go. Its copy is the product's own words; the tour
+  transform only, and it does not glide between controls — it is taken apart and put back
+  together at the other end:
+
+  | Beat | Duration | Easing | What moves |
+  |---|---|---|---|
+  | Anticipation + funnel out | 170ms | `cubic-bezier(.55,0,1,.45)` | the card leans back, then is drawn into a sliver toward its destination — `transform-origin` sits on the side it is heading for, which is what makes it a funnel and not a shrink |
+  | Streak | 420ms | `cubic-bezier(.2,.8,.2,1)` | a line in `--secundaria` crosses the gap it just jumped, wiped in and then out |
+  | Unfold + settle | 300ms | `cubic-bezier(.16,1,.3,1)` | it opens from the sliver with one counter-squash, colour draining back to rest |
+
+  Peaks sit early in each beat, so it reads as a flash rather than a slow stretch, and there
+  is no overshoot. `--secundaria` is the violet the gate shifts through on its way out; it
+  belongs to motion and never to a resting surface. The positioned element carries only its
+  place on screen — the shape, the frame, the shadow and the pointer all live on one inner
+  layer, because a funnel that leaves its own border standing still reads as the contents
+  draining out of a box. Its copy is the product's own words; the tour
   explains what is there and never invents a second story about it. The last card reads the
   account: connect a key, or connect Exa for sourced search, or just send a mission.
 - Seeing the tour is remembered on the account, not in the browser: it does not reappear on

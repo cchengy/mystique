@@ -2338,52 +2338,118 @@ input:focus-visible {
   box-shadow: 0 0 0 7px color-mix(in srgb, var(--accent) 26%, transparent);
 }
 
+/* Outer: nothing but a place on screen. Every pixel of the card lives on
+   .guia-forma inside it, so when the shape is pulled into a sliver the frame,
+   the shadow and the pointer go with it - a funnel that left its own border
+   standing still would read as the contents draining out of a box. */
 .guia-carta {
   position: absolute;
   top: 0;
   left: 0;
   pointer-events: auto;
+  color: var(--text-light);
+  /* No transition on the position: the card does not glide from one control to
+     the next, it is pulled apart and put back together at the other end. The
+     positioned element only ever carries `transform` as its place on screen;
+     everything that squashes, flashes and fades happens on .guia-forma inside
+     it, which is free to use transform for shape. */
+  animation: guia-entra 200ms ease-out both;
+}
+
+/* Anticipation, action, settle. The card winds up against the direction of
+   travel, is drawn into a sliver towards its destination - origin on the side
+   it is heading for, which is what makes it read as a funnel rather than a
+   shrink - and unfolds at the other end with one counter-squash. Peaks sit
+   early, so it reads as a flash and not as a slow stretch. */
+.guia-forma {
+  position: relative;
   padding: 1.1rem 1.15rem 1rem;
   border: 1px solid rgba(226, 232, 255, 0.4);
   border-radius: 14px;
   background: var(--composer-bg, rgba(8, 16, 46, 0.97));
-  color: var(--text-light);
   box-shadow:
     0.4rem 0.4rem 0 rgba(4, 8, 26, 0.45),
     0 1.5rem 3rem rgba(0, 0, 0, 0.45);
-  transition: transform 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
-  /* Never transform here: the card's transform is its position on screen, and
-     an animation touching it would override that and park the card at 0,0.
-     The travel is carried by colour instead - the same violet the gate shifts
-     through on its way out, dragged behind the card in the direction it came
-     from, then let go. */
-  animation: guia-troca 460ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  transform-origin: var(--origem-x, 50%) var(--origem-y, 50%);
+  will-change: transform, filter;
 }
 
-@keyframes guia-troca {
+.guia-carta[data-fase='saindo'] .guia-forma {
+  animation: teleporte-sai 170ms cubic-bezier(0.55, 0, 1, 0.45) both;
+}
+
+.guia-carta[data-fase='chegando'] .guia-forma {
+  animation: teleporte-chega 300ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes teleporte-sai {
   0% {
-    opacity: 0.35;
-    filter: saturate(2) hue-rotate(26deg);
-    box-shadow:
-      var(--rastro-x, 0) var(--rastro-y, 0) 0 color-mix(in srgb, var(--secundaria) 70%, transparent),
-      0 1.5rem 3rem rgba(0, 0, 0, 0.45);
-  }
-  45% {
+    transform: scale(1, 1);
+    filter: none;
     opacity: 1;
-    filter: saturate(1.5) hue-rotate(16deg);
+  }
+  30% {
+    /* the wind-up: it leans back before it goes */
+    transform: scale(1.04, 0.96);
+    filter: saturate(1.6) hue-rotate(18deg);
+    opacity: 1;
   }
   100% {
-    opacity: 1;
-    filter: none;
-    box-shadow:
-      0.4rem 0.4rem 0 rgba(4, 8, 26, 0.45),
-      0 1.5rem 3rem rgba(0, 0, 0, 0.45);
+    transform: scale(0.08, 1.22);
+    filter: saturate(2.4) hue-rotate(30deg) brightness(1.5);
+    opacity: 0;
   }
+}
+
+@keyframes teleporte-chega {
+  0% {
+    transform: scale(0.08, 1.22);
+    filter: saturate(2.4) hue-rotate(30deg) brightness(1.5);
+    opacity: 0;
+  }
+  45% {
+    transform: scale(1.03, 0.97);
+    filter: saturate(1.5) hue-rotate(16deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1, 1);
+    filter: none;
+    opacity: 1;
+  }
+}
+
+/* The streak that crosses the gap while the card is a sliver: her second
+   colour, drawn from where it left to where it lands. */
+.guia-raio {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 3px;
+  margin-top: -1.5px;
+  transform-origin: 0 50%;
+  border-radius: 999px;
+  background: linear-gradient(90deg,
+    color-mix(in srgb, var(--secundaria) 10%, transparent),
+    var(--secundaria),
+    color-mix(in srgb, var(--secundaria) 10%, transparent));
+  animation: guia-raio 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes guia-raio {
+  0% { opacity: 0; clip-path: inset(0 100% 0 0); }
+  22% { opacity: 0.95; clip-path: inset(0 0 0 0); }
+  100% { opacity: 0; clip-path: inset(0 0 0 92%); }
+}
+
+@keyframes guia-entra {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 /* The comic gutter again, this time as the card's pointer at the control. */
-.guia-carta[data-seta='cima']::before,
-.guia-carta[data-seta='baixo']::before {
+.guia-carta[data-seta='cima'] .guia-forma::before,
+.guia-carta[data-seta='baixo'] .guia-forma::before {
   content: '';
   position: absolute;
   left: 50%;
@@ -2394,12 +2460,12 @@ input:focus-visible {
   transform: translateX(-50%) rotate(45deg);
 }
 
-.guia-carta[data-seta='cima']::before {
+.guia-carta[data-seta='cima'] .guia-forma::before {
   top: -0.48rem;
   border-width: 1px 0 0 1px;
 }
 
-.guia-carta[data-seta='baixo']::before {
+.guia-carta[data-seta='baixo'] .guia-forma::before {
   bottom: -0.48rem;
   border-width: 0 1px 1px 0;
 }
@@ -2463,11 +2529,10 @@ input:focus-visible {
 
 @media (prefers-reduced-motion: reduce) {
   .guia-veu,
-  .guia-carta {
+  .guia-carta,
+  .guia-forma,
+  .guia-raio {
     animation-duration: 1ms;
-  }
-  .guia-carta {
-    transition-duration: 1ms;
   }
 }
 

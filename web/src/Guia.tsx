@@ -152,6 +152,35 @@ export function Guia({ t, passo, total, indice, aoAvancar, aoFechar, chave, exa 
   }, [medir])
 
   useEffect(() => {
+    const alvoFinal = destino.current
+    const veio = anterior.current
+    anterior.current = alvoFinal
+    if (!veio) {
+      setPosto(alvoFinal)
+      return
+    }
+    const calmo = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (calmo) {
+      setPosto(alvoFinal)
+      return
+    }
+    setPosto(veio)
+    setFase('saindo')
+    const meioDe = { x: veio.x + largura / 2, y: veio.y + altura / 2 }
+    const meioPara = { x: alvoFinal.x + largura / 2, y: alvoFinal.y + altura / 2 }
+    const comprimento = Math.hypot(meioPara.x - meioDe.x, meioPara.y - meioDe.y)
+    setRaio(comprimento > 24
+      ? { ...meioDe, ang: Math.atan2(meioPara.y - meioDe.y, meioPara.x - meioDe.x), comprimento }
+      : null)
+    const t1 = window.setTimeout(() => { setPosto(alvoFinal); setFase('chegando') }, 170)
+    const t2 = window.setTimeout(() => { setFase('parado'); setRaio(null) }, 470)
+    return () => { window.clearTimeout(t1); window.clearTimeout(t2) }
+    // Position is read from a ref on purpose: this runs for a change of step,
+    // never for a resize that happens to move the card.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [passo.id])
+
+  useEffect(() => {
     const aoTeclar = (event: KeyboardEvent) => {
       if (event.key === 'Escape') aoFechar()
     }
@@ -160,6 +189,16 @@ export function Guia({ t, passo, total, indice, aoAvancar, aoFechar, chave, exa 
   }, [aoFechar])
 
   const anterior = useRef<{ x: number; y: number } | null>(null)
+  // The teleport is three beats, in the order animation has used since Disney:
+  // anticipation, action, settle. The card winds up, is pulled into a sliver
+  // along the axis it is travelling, a streak crosses the gap, and it unfolds
+  // at the other end. Splitting position (outer) from shape (inner) is what
+  // makes it possible: a keyframe touching transform on the positioned element
+  // would throw away its place on screen.
+  const [fase, setFase] = useState<'parado' | 'saindo' | 'chegando'>('parado')
+  const [posto, setPosto] = useState<{ x: number; y: number } | null>(null)
+  const [raio, setRaio] = useState<{ x: number; y: number; ang: number; comprimento: number } | null>(null)
+  const destino = useRef({ x: 0, y: 0 })
   const { titulo, corpo } = conteudo(passo.id, chave, exa)
   const ultimo = indice === total - 1
 
@@ -177,29 +216,45 @@ export function Guia({ t, passo, total, indice, aoAvancar, aoFechar, chave, exa 
     seta = cabe ? 'cima' : 'baixo'
   }
 
-  // How far it just travelled, capped so a long jump does not smear the screen.
-  const veio = anterior.current
-  const limite = (n: number) => Math.max(-28, Math.min(28, n * -0.14))
-  const rastro = veio ? { x: limite(x - veio.x), y: limite(y - veio.y) } : { x: 0, y: 0 }
-  anterior.current = { x, y }
+  destino.current = { x, y }
+  const de = posto ?? { x, y }
+  const dx = x - de.x
+  const dy = y - de.y
+  // The funnel follows the dominant axis of travel, and its origin sits on the
+  // side the card is heading for, so it is drawn towards the destination
+  // rather than merely shrinking in place.
+  const eixo = Math.abs(dx) >= Math.abs(dy) ? 'x' : 'y'
+  const origemX = eixo === 'x' ? (dx >= 0 ? '100%' : '0%') : '50%'
+  const origemY = eixo === 'y' ? (dy >= 0 ? '100%' : '0%') : '50%'
+  const posicao = fase === 'saindo' ? de : { x, y }
 
   return (
     <div className="guia" role="dialog" aria-modal="true" aria-label={t('Guided tour')}>
       <div className="guia-veu" onClick={aoFechar} />
+      {raio && fase !== 'parado' && (
+        <div
+          className="guia-raio"
+          aria-hidden="true"
+          style={{
+            width: `${raio.comprimento}px`,
+            transform: `translate3d(${raio.x}px, ${raio.y}px, 0) rotate(${raio.ang}rad)`,
+          }}
+        />
+      )}
       <div
-        key={passo.id}
         ref={carta}
         className="guia-carta"
         data-seta={seta ?? undefined}
+        data-fase={fase === 'parado' ? undefined : fase}
         style={{
           width: `${largura}px`,
-          transform: `translate3d(${x}px, ${y}px, 0)`,
-          // The trail points back the way it came, so the colour reads as
-          // something the card dragged with it rather than a glow it wears.
-          ['--rastro-x' as string]: `${rastro.x}px`,
-          ['--rastro-y' as string]: `${rastro.y}px`,
+          transform: `translate3d(${posicao.x}px, ${posicao.y}px, 0)`,
         }}
       >
+        <div
+          className="guia-forma"
+          style={{ ['--origem-x' as string]: origemX, ['--origem-y' as string]: origemY }}
+        >
         <p className="guia-passo">
           {indice + 1} / {total}
         </p>
@@ -214,6 +269,7 @@ export function Guia({ t, passo, total, indice, aoAvancar, aoFechar, chave, exa 
           <button type="button" className="portao-primario" autoFocus onClick={ultimo ? aoFechar : aoAvancar}>
             {t(ultimo ? 'Got it' : 'Next')}
           </button>
+        </div>
         </div>
       </div>
     </div>
