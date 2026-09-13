@@ -130,8 +130,21 @@ export async function iniciarOpenRouter(): Promise<void> {
   window.location.assign(url.toString())
 }
 
+// The gate effect can run more than once around an Auth0 state change, and the
+// authorisation code is single use. Without this, run 2 read /api/eu while run 1
+// was still exchanging, saw no key, and painted "connect a key" over a
+// connection that had in fact just succeeded — only a reload showed the truth.
+// Both runs now await the same exchange. The promise is kept after it settles:
+// a deliberate re-authorisation navigates away and reloads this module anyway.
+let troca: Promise<{ estado: EstadoChave } | null> | null = null
+
 /** Call on load: if OpenRouter sent us back with a code, finish the exchange. */
-export async function concluirOpenRouter(token?: string): Promise<{ estado: EstadoChave } | null> {
+export function concluirOpenRouter(token?: string): Promise<{ estado: EstadoChave } | null> {
+  if (!troca) troca = _concluirOpenRouter(token)
+  return troca
+}
+
+async function _concluirOpenRouter(token?: string): Promise<{ estado: EstadoChave } | null> {
   const params = new URLSearchParams(window.location.search)
   const codigo = params.get('code')
   if (!codigo) return null

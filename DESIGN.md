@@ -45,6 +45,9 @@ touch targets 44 px. Spacing follows a 4 px rhythm; pills are reserved for statu
   drawer sits on the world surface, which flips with the theme. Each context binds every
   token; a rule that reaches past them will look correct in one theme and be unreadable in
   the other.
+- The connected state must appear on return, without a reload. The exchange is
+  single-flight, so a second render pass cannot read the account before it lands and
+  paint "connect a key" over a connection that already succeeded.
 - Provider failures are shown, never swallowed. Returning from an OAuth redirect that did
   not complete must say so in the panel; silence is indistinguishable from a no-op.
 

@@ -22,3 +22,24 @@ test('discloses both retention windows and Exa BYOK before use', () => {
   assert.match(source, /not zero-knowledge/)
   assert.match(source, /guardarExa\(/)
 })
+
+test('the single-use OpenRouter code is exchanged once, not raced', () => {
+  // Two effect runs used to exchange and read in parallel, so the panel could
+  // report "no key" over a connection that had just succeeded.
+  const source = readFileSync(new URL('./conta.ts', import.meta.url), 'utf8')
+  assert.match(source, /let troca: Promise<[\s\S]*?> \| null = null/)
+  assert.match(source, /if \(!troca\) troca = _concluirOpenRouter\(token\)/)
+})
+
+test('a failed OpenRouter return is stated, not swallowed', () => {
+  const source = readFileSync(new URL('./Portao.tsx', import.meta.url), 'utf8')
+  assert.doesNotMatch(source, /concluirOpenRouter\(token\)\.catch/)
+  assert.match(source, /The OpenRouter authorisation could not be completed/)
+})
+
+test('the conversation rail stays on screen, locked, while the gate is up', () => {
+  const source = readFileSync(new URL('./Simulation.tsx', import.meta.url), 'utf8')
+  assert.match(source, /const travada = Boolean\(authExigida && !liberado\)/)
+  assert.match(source, /data-locked=\{travada \? 'true' : undefined\}/)
+  assert.match(readFileSync(new URL('./styles.css', import.meta.url), 'utf8'), /\.session-list\.is-locked/)
+})
