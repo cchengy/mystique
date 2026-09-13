@@ -126,7 +126,7 @@ export async function listSessions(token?: string): Promise<ChatSession[]> {
 export async function createSession(mode: 'good' | 'evil', token?: string): Promise<ChatSession> {
   const response = await fetch(`${API_BASE}/api/sessoes`, {
     method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
-    body: JSON.stringify({ titulo: 'Nova conversa', modo: mode }),
+    body: JSON.stringify({ titulo: 'New conversation', modo: mode }),
   })
   if (!response.ok) throw new Error(`Session could not be created (${response.status})`)
   return response.json()
@@ -147,14 +147,15 @@ export async function getSession(id: string, token?: string): Promise<ChatSessio
   return response.json()
 }
 
-export async function startLiveMission(message: string, sessionId: string, token?: string): Promise<void> {
+export async function startLiveMission(message: string, sessionId: string, token?: string, idioma: 'en' | 'pt' = 'en'): Promise<void> {
   const response = await fetch(`${API_BASE}/api/missoes`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
-    body: JSON.stringify({ mensagem: message, sessao_id: sessionId }),
+    // She answers in the language the person is reading the app in.
+    body: JSON.stringify({ mensagem: message, sessao_id: sessionId, idioma }),
   })
   if (!response.ok) throw new Error(`Mission could not start (${response.status})`)
 }

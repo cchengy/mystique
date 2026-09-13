@@ -115,6 +115,8 @@ the same commit. Do not merge a feature whose dependency record is stale.
 | Main-model context | selected session messages | per-account session store | next completion |
 | Good/Evil profile | session `modo`, isolated world workspace | persona/tools, account event bus | live run, Compare |
 | Reasoning evidence | per-account workspace + session projection | judge outcome and recall | session, Compare |
+| Reasoning Bank recall | `mystique/banco.py` per account+profile workspace | failed verdict, agent id | the tool result Mystique reads — never the judge's input |
+| Interface language | user choice in `localStorage`, `web/src/pt.ts` | English source strings | every visible string, and the mission's answer language |
 | Exa retrieval | user BYOK in credential broker | mission-scoped broker token, Good real-world policy | sourced answers; Evil blocks it |
 | Model selection | user OpenRouter BYOK + saved model id | credential broker proxy | model drawer, missions |
 | Guided Replay | `web/src/scenario.ts` | recorded scenario only | replay, never live evidence |
@@ -136,6 +138,15 @@ Never add a server-wide provider-key fallback for authenticated users.
 Production must set `MYSTIQUE_REQUIRE_AUTH=true` and fail at startup if Auth0 is incomplete.
 Provider proxies stay on an explicit endpoint/method allowlist. Account deletion and expiry
 must cancel active missions and evict worlds, clients, bearers and event buses before disk data.
+
+The Reasoning Bank is the learning loop: recall goes to Mystique, in her own words, and
+never into the judge's evidence — the judge knows the answer key. See
+[`docs/auditorias/2026-09-13-learning-and-accounts.md`](docs/auditorias/2026-09-13-learning-and-accounts.md)
+for the audit of that chain, what was fixed and what is still open.
+
+Every visible string is English in the source and translated through `web/src/pt.ts`.
+Never inline Portuguese in a component: the other language would have nothing to fall
+back to. `npm test` fails on inline accented text.
 
 Before commit: update this map if dependencies changed; update `DESIGN.md` for UI changes;
 run offline/backend tests, `npm test`, `npm run build`; inspect light/dark and desktop/mobile.

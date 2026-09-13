@@ -12,7 +12,7 @@ test('shows and saves an OpenRouter model selection', () => {
   const source = readFileSync(new URL('./Portao.tsx', import.meta.url), 'utf8')
   assert.match(source, /list="openrouter-models"/)
   assert.match(source, /selecionarModelo\(/)
-  assert.match(source, /Digite para pesquisar/)
+  assert.match(source, /Type to search every model/)
 })
 
 test('discloses both retention windows and Exa BYOK before use', () => {
@@ -42,4 +42,25 @@ test('the conversation rail stays on screen, locked, while the gate is up', () =
   assert.match(source, /const travada = Boolean\(authExigida && !liberado\)/)
   assert.match(source, /data-locked=\{travada \? 'true' : undefined\}/)
   assert.match(readFileSync(new URL('./styles.css', import.meta.url), 'utf8'), /\.session-list\.is-locked/)
+})
+
+test('every string ships in English and the language choice persists', () => {
+  const ui = readFileSync(new URL('./Simulation.tsx', import.meta.url), 'utf8')
+  const gate = readFileSync(new URL('./Portao.tsx', import.meta.url), 'utf8')
+  // Portuguese belongs in pt.ts, keyed by the English source - never inline in a
+  // component, or the other language has nothing to fall back to.
+  const inline = [...ui.matchAll(/[>'"`][^<>'"`\n]*[áàâãéêíóôõúçÁÀÂÃÉÊÍÓÔÕÚÇ][^<>'"`\n]*['"`<]/g)]
+    .map((m) => m[0])
+    .filter((m) => !m.includes('Você'))   // legacy transcript migration, matched by value
+  assert.deepEqual(inline, [], `translate these into pt.ts: ${inline.join(' | ')}`)
+  assert.doesNotMatch(gate, /t\('[^']*[áàâãéêíóôõúç]/)
+  assert.match(ui, /localStorage\.setItem\('mystique\.lang', lang\)/)
+  assert.match(ui, /aria-checked=\{lang === code\}/)
+})
+
+test('the privacy notice can be reopened after it is accepted', () => {
+  const ui = readFileSync(new URL('./Simulation.tsx', import.meta.url), 'utf8')
+  assert.match(ui, /className="privacy-link"/)
+  assert.match(ui, /setPrivacidadeAberta\(true\)/)
+  assert.match(readFileSync(new URL('./Portao.tsx', import.meta.url), 'utf8'), /export function aceitouPrivacidade/)
 })

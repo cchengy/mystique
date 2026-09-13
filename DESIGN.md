@@ -51,6 +51,13 @@ touch targets 44 px. Spacing follows a 4 px rhythm; pills are reserved for statu
 - The live chat owns the full window height. The stage is pinned to the layout's
   flexible row rather than counting siblings, because rows hidden in live mode used to
   push it onto a content-sized track and leave a dead slab under the composer.
+- Two languages, one source. Every visible string is written in English in the component
+  and translated through `pt.ts`, keyed by that exact source string; an untranslated string
+  falls back to English instead of breaking. The choice is the user's, sits next to the
+  theme toggle, persists, and defaults to the browser's language. She answers in the
+  language the app is being read in.
+- The privacy notice is dismissible but never unreachable: accepting it is remembered, and
+  a Privacy link in the rail brings it back at any time, on desktop and on mobile.
 - Provider failures are shown, never swallowed. Returning from an OAuth redirect that did
   not complete must say so in the panel; silence is indistinguishable from a no-op.
 

@@ -39,11 +39,13 @@ class Sessoes:
         temporario.replace(destino)
         destino.chmod(0o600)
 
-    def criar(self, sub: str, *, titulo: str = "Nova conversa", modo: str = "good") -> dict:
+    def criar(self, sub: str, *, titulo: str = "New conversation", modo: str = "good") -> dict:
         agora = _agora()
         sessao = {
             "id": uuid.uuid4().hex,
-            "titulo": (titulo.strip() or "Nova conversa")[:80],
+            # Stored in the English source language; the UI translates it. A title the
+            # user typed is kept verbatim and simply falls through untranslated.
+            "titulo": (titulo.strip() or "New conversation")[:80],
             "modo": "evil" if modo == "evil" else "good",
             "mensagens": [],
             "evidencias": [],
@@ -54,7 +56,7 @@ class Sessoes:
         return sessao
 
     def importar(self, sub: str, mensagens: list[dict], modo: str = "good") -> dict:
-        sessao = self.criar(sub, titulo="Conversa anterior", modo=modo)
+        sessao = self.criar(sub, titulo="Previous conversation", modo=modo)
         for mensagem in mensagens[:80]:
             role = mensagem.get("role")
             content = str(mensagem.get("content") or "").strip()

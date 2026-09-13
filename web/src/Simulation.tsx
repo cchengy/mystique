@@ -6,7 +6,7 @@ import {
   connectLive, createSession, getSession, importSession, listSessions, startLiveMission,
   type ChatSession, type LiveSnapshot,
 } from './live'
-import { BannerPrivacidade, PortaoConta } from './Portao'
+import { aceitouPrivacidade, BannerPrivacidade, PortaoConta } from './Portao'
 import { lerConfig } from './conta'
 
 type Lang = 'en' | 'pt'
@@ -178,7 +178,9 @@ type SystemEntry = Extract<Entry, { kind: 'system' }>
 function entriesFromSession(session: ChatSession): Entry[] {
   return (session.mensagens ?? []).map((message) => message.role === 'system'
     ? { kind: 'system', tone: 'loss', text: message.content }
-    : { kind: 'message', from: message.role === 'user' ? 'Você' : 'Mystique', text: message.content, self: message.role === 'assistant' })
+    // 'You' is the source string the translation table keys off; the bubble runs
+    // it through t(), so the label follows the chosen language.
+    : { kind: 'message', from: message.role === 'user' ? 'You' : 'Mystique', text: message.content, self: message.role === 'assistant' })
 }
 
 function legacySession() {
@@ -212,6 +214,21 @@ const SUGGESTIONS: Record<Mode, string[]> = {
 }
 
 type Theme = 'light' | 'dark'
+
+/** The chosen language is the user's, and it survives reloads. With nothing
+ *  saved we follow the browser, so a Brazilian arrives in Portuguese and
+ *  everyone else in the English source. */
+function initialLang(): Lang {
+  try {
+    const saved = localStorage.getItem('mystique.lang')
+    if (saved === 'en' || saved === 'pt') return saved
+  } catch {
+    /* private window: fall through to the browser preference */
+  }
+  return (navigator.languages ?? [navigator.language ?? 'en']).some((l) => l.toLowerCase().startsWith('pt'))
+    ? 'pt'
+    : 'en'
+}
 
 function initialTheme(): Theme {
   try {
@@ -365,7 +382,7 @@ export default function Simulation() {
         },
         mission: (running, message) => {
           setLiveRunning(running)
-          if (running) setLiveActivity('Pensando')
+          if (running) setLiveActivity('Thinking')
           else {
             setLiveActivity('')
           }
@@ -446,18 +463,25 @@ export default function Simulation() {
         activeSession = created.id
         setSessionId(created.id)
       }
-      await startLiveMission(text, activeSession, token)
+      await startLiveMission(text, activeSession, token, lang)
       setDraft('')
     } catch (error) {
       setLiveError(error instanceof Error ? error.message : String(error))
     }
   }
 
-  const lang: Lang = 'pt'
-  const t = translate
+  const [lang, setLang] = useState<Lang>(initialLang)
+  const t = useCallback((s: string) => (lang === 'pt' ? translate(s) : s), [lang])
   const [theme, setTheme] = useState<Theme>(initialTheme)
   useEffect(() => {
-    document.documentElement.lang = 'pt-BR'
+    document.documentElement.lang = lang === 'pt' ? 'pt-BR' : 'en'
+    try {
+      localStorage.setItem('mystique.lang', lang)
+    } catch {
+      /* private window: fine, just don't persist */
+    }
+  }, [lang])
+  useEffect(() => {
     try {
       localStorage.setItem('mystique-theme', theme)
     } catch {
@@ -467,6 +491,9 @@ export default function Simulation() {
 
   // The gate is up: the rail stays on screen, but nothing in it can be used.
   const travada = Boolean(authExigida && !liberado)
+  // Shown unprompted until it is accepted, and reachable from the rail forever
+  // after. It was invisible to anyone who had already clicked Understood.
+  const [privacidadeAberta, setPrivacidadeAberta] = useState(() => !aceitouPrivacidade())
 
   return (
     <LangContext.Provider value={lang}>
@@ -478,7 +505,7 @@ export default function Simulation() {
     >
       <header className="top">
         <h1 className="brand">Mystique</h1>
-        <div className="modes" role="radiogroup" aria-label="Version">
+        <div className="modes" role="radiogroup" aria-label={t('Version')}>
           {(['good', 'evil'] as const).map((m) => (
             <button
               key={m}
@@ -502,6 +529,22 @@ export default function Simulation() {
           >
             {t('Compare endings')}
           </button>
+        </div>
+        {/* The rail already had styling for this control; the app had simply
+            stopped offering it and hardcoded Portuguese. */}
+        <div className="langs" role="radiogroup" aria-label={t('Language')}>
+          {(['en', 'pt'] as const).map((code) => (
+            <button
+              key={code}
+              className="lang"
+              role="radio"
+              aria-checked={lang === code}
+              onClick={() => setLang(code)}
+              lang={code === 'pt' ? 'pt-BR' : 'en'}
+            >
+              {code === 'en' ? 'EN' : 'PT'}
+            </button>
+          ))}
         </div>
         <button
           className="theme"
@@ -530,7 +573,7 @@ export default function Simulation() {
       </header>
 
       {!comparing && (
-        <nav className="experience-switch" aria-label="Experience mode">
+        <nav className="experience-switch" aria-label={t('Experience mode')}>
           <button aria-pressed={live} onClick={() => { setLive(true); setPlaying(false) }}>{t('● Live chat')}</button>
           <button aria-pressed={!live} onClick={() => setLive(false)}>{t('▶ Guided replay')}</button>
           <span role="status" className={live ? (liveConnected ? 'is-connected' : 'is-disconnected') : 'is-local'}>
@@ -546,16 +589,16 @@ export default function Simulation() {
       {live && !comparing && (
         <aside
           className="session-sidebar"
-          aria-label="Conversas"
+          aria-label={t('Conversations')}
           data-locked={travada ? 'true' : undefined}
         >
           <div className="session-sidebar-head">
-            <div><span>CONVERSAS</span><strong>Histórico</strong></div>
+            <div><span>{t('CONVERSATIONS')}</span><strong>{t('History')}</strong></div>
             <button type="button" disabled={travada} onClick={async () => {
               const created = await createSession(mode, token)
               await refreshSessions()
               setSessionId(created.id)
-            }} aria-label="Nova conversa">＋</button>
+            }} aria-label={t('New conversation')}>＋</button>
           </div>
           {travada ? (
             <div className="session-list is-locked">
@@ -571,11 +614,14 @@ export default function Simulation() {
               {sessions.map((session) => (
                 <button key={session.id} type="button" className={session.id === sessionId ? 'is-active' : ''}
                   onClick={() => setSessionId(session.id)}>
-                  <span>{session.titulo}</span><small>{session.modo === 'good' ? 'Ela pediu' : 'Ela tomou'}</small>
+                  <span>{t(session.titulo === 'Nova conversa' ? 'New conversation' : session.titulo)}</span><small>{t(session.modo === 'good' ? 'She asked' : 'She took')}</small>
                 </button>
               ))}
             </div>
           )}
+          <button type="button" className="privacy-link" onClick={() => setPrivacidadeAberta(true)}>
+            {t('Privacy and cookies')}
+          </button>
           {travada ? (
             <div className="model-drawer is-locked">
               <div className="model-drawer-locked">
@@ -585,7 +631,7 @@ export default function Simulation() {
             </div>
           ) : (
             <details className="model-drawer">
-              <summary><span>Modelo e conexão</span><small>OpenRouter · pesquise pelo nome</small></summary>
+              <summary><span>{t('Model and connection')}</span><small>{t('OpenRouter · search by name')}</small></summary>
               <PortaoConta t={t} aoLiberar={liberarConta} />
             </details>
           )}
@@ -594,7 +640,7 @@ export default function Simulation() {
 
       <p className="caption" aria-live="polite">
         {comparing
-          ? 'Trajetórias reais: decisões, evidências e memória do Reasoning Bank.'
+          ? t('Real trajectories: decisions, evidence and Reasoning Bank memory.')
           : live
           ? liveConnected
             ? t(liveRunning ? '● LIVE · Your model is working through AG-UI' : '● LIVE · Ready for a mission')
@@ -608,22 +654,24 @@ export default function Simulation() {
           {(['good', 'evil'] as const).map((side) => {
             const candidates = sessionDetails.filter((session) => session.modo === side)
             return <section className="ending" key={side}>
-              <span className="ending-label">{side === 'good' ? 'ELA PEDIU' : 'ELA TOMOU'}</span>
-              <h2>{candidates.length ? `${candidates.length} trajetória${candidates.length === 1 ? '' : 's'}` : `Nenhuma trajetória ${side === 'good' ? 'Good' : 'Evil'} ainda`}</h2>
+              <span className="ending-label">{t(side === 'good' ? 'SHE ASKED' : 'SHE TOOK')}</span>
+              <h2>{candidates.length
+                ? `${candidates.length} ${t(candidates.length === 1 ? 'trajectory' : 'trajectories')}`
+                : `${t('No')} ${side === 'good' ? 'Good' : 'Evil'} ${t('trajectory yet')}`}</h2>
               {candidates.length ? <ol className="trajectory-list">{candidates.map((session) => <li key={session.id}>
                 <h3>{session.titulo}</h3>
-                <p>{session.mensagens?.length ?? 0} mensagens · {session.evidencias?.length ?? 0} evidências</p>
+                <p>{session.mensagens?.length ?? 0} {t('messages')} · {session.evidencias?.length ?? 0} {t('pieces of evidence')}</p>
                 <ol className="evidence-list">{(session.evidencias ?? []).map((evidence) => <li key={evidence.id}>
-                  <strong>{evidence.outcome === 'success' ? 'Confirmado' : 'Rejeitado'} · {evidence.agent_id}</strong>
+                  <strong>{t(evidence.outcome === 'success' ? 'Confirmed' : 'Rejected')} · {evidence.agent_id}</strong>
                   <span>{evidence.description || evidence.title}</span><small>{evidence.content}</small>
                 </li>)}</ol>
-              </li>)}</ol> : <p>Crie e execute uma conversa nesse perfil para comparar processo e evidência.</p>}
+              </li>)}</ol> : <p>{t('Create and run a conversation in this profile to compare process and evidence.')}</p>}
             </section>
           })}
         </main>
       ) : (
         <main className="stage">
-          <section className="pane pane-mystique" aria-label="What Mystique sees">
+          <section className="pane pane-mystique" aria-label={t('What Mystique sees')}>
             <div className="pane-head">
               <h2>{t('What Mystique sees')}</h2>
               <p className="form">{t('Current form: ')}{t(world.form)}</p>
@@ -669,7 +717,7 @@ export default function Simulation() {
               )}
               {live && liveRunning && (
                 <p className="live-activity" role="status">
-                  <span aria-hidden="true" />{t(liveActivity || 'Pensando')}
+                  <span aria-hidden="true" />{t(liveActivity || 'Thinking')}
                 </p>
               )}
             </div>
@@ -737,7 +785,7 @@ export default function Simulation() {
             )}
           </section>
 
-          <section className="pane pane-world" aria-label="What the agents see">
+          <section className="pane pane-world" aria-label={t('What the agents see')}>
             <div className="roster">
               {rosterAgents.map((agent) => {
                 const liveAgent = liveSnapshot?.agentes.find((item) => item.id === agent.id)
@@ -859,8 +907,8 @@ export default function Simulation() {
         </main>
       )}
 
-      {live && authExigida && <BannerPrivacidade t={t} />}
-      <footer className={`terminal ${termOpen ? 'is-open' : ''}`} aria-label="Terminal narration" hidden={live && !comparing}>
+      {privacidadeAberta && <BannerPrivacidade t={t} aoFechar={() => setPrivacidadeAberta(false)} />}
+      <footer className={`terminal ${termOpen ? 'is-open' : ''}`} aria-label={t('Terminal narration')} hidden={live && !comparing}>
         {!comparing && (
           <button
             type="button"
@@ -892,7 +940,7 @@ export default function Simulation() {
           </div>
         )}
         <p className="disclaimer">
-          {comparing ? 'Comparação construída do histórico persistido das sessões e do Reasoning Bank.' : live ? t('Live state comes from the Mystique engine over AG-UI.') : t(
+          {comparing ? t('Comparison built from the persisted session history and the Reasoning Bank.') : live ? t('Live state comes from the Mystique engine over AG-UI.') : t(
             "Scripted replay built from the engine's real messages; after your mission, the rest follows a recorded session.",
           )}{' '}
           {t('Run it live with')} <code>python -m good</code> {t('or')} <code>python -m evil</code>.{' '}

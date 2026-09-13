@@ -12,11 +12,14 @@ import {
 
 const MODELOS = 'https://openrouter.ai/api/v1/models'
 
-export function BannerPrivacidade({ t }: { t: (s: string) => string }) {
-  const [aceito, setAceito] = useState(() => {
-    try { return localStorage.getItem('mystique.privacidade') === 'v1' } catch { return false }
-  })
-  if (aceito) return null
+export function aceitouPrivacidade(): boolean {
+  try { return localStorage.getItem('mystique.privacidade') === 'v1' } catch { return false }
+}
+
+/** The notice. Accepting it is remembered, but it must stay reachable
+ *  afterwards: a consent notice you cannot read again is not a notice. The
+ *  caller owns "is it open", so a Privacy link can bring it back. */
+export function BannerPrivacidade({ t, aoFechar }: { t: (s: string) => string; aoFechar: () => void }) {
   return (
     <div className="privacidade" role="region" aria-label={t('Privacy notice')}>
       <div>
@@ -32,7 +35,7 @@ export function BannerPrivacidade({ t }: { t: (s: string) => string }) {
         type="button"
         onClick={() => {
           try { localStorage.setItem('mystique.privacidade', 'v1') } catch { /* ignore */ }
-          setAceito(true)
+          aoFechar()
         }}
       >
         {t('Understood')}
@@ -150,8 +153,8 @@ export function PortaoConta({ t, aoLiberar }: { t: (s: string) => string; aoLibe
             )}
           </dl>
           <label className="model-search-label" htmlFor="openrouter-model-search">
-            {t('Modelo da conversa')}
-            <small>{t('Digite para pesquisar entre todos os modelos disponíveis no OpenRouter.')}</small>
+            {t('Conversation model')}
+            <small>{t('Type to search every model available on OpenRouter.')}</small>
           </label>
           <div className="portao-colar-row">
             <input

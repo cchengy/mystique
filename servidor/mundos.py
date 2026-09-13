@@ -62,6 +62,14 @@ class Mundos:
         self._por_conta[chave] = mundo
         return mundo
 
+    def existentes(self, sub: str) -> list:
+        """Worlds already live for this account, in no particular order.
+
+        Used to resolve something whose mode the request does not carry, without
+        building - and writing a workspace for - a mode the account never opened.
+        """
+        return [mundo for (dono, _modo), mundo in self._por_conta.items() if dono == sub]
+
     async def apagar(self, sub: str) -> None:
         """Evict live state and close provider clients before deleting an account."""
         for chave in [chave for chave in self._por_conta if chave[0] == sub]:

@@ -1979,6 +1979,9 @@ input:focus-visible {
 .model-search-label { display: grid; gap: .15rem; margin: .85rem 0 .35rem; font-size: .78rem; font-weight: 700; color: var(--p-fg); }
 .model-search-label small { color: var(--p-muted); font-size: .68rem; font-weight: 500; }
 
+.privacy-link { order: 2; margin-top: .5rem; padding: .35rem .5rem; border: 0; border-radius: .5rem; background: transparent; color: var(--w-faint); font-size: .68rem; text-align: left; text-decoration: underline; }
+.privacy-link:hover { color: var(--w-fg); }
+
 /* Locked rail: visible, explained, and inert until sign-in. */
 .session-sidebar[data-locked='true'] .session-sidebar-head button { opacity: .4; cursor: not-allowed; }
 .session-list.is-locked { display: grid; align-content: start; gap: .45rem; overflow: hidden; }
@@ -2017,6 +2020,9 @@ input:focus-visible {
   .session-list.is-locked { display: none; }
   .session-sidebar-head { position: absolute; right: .65rem; bottom: .55rem; padding: 0; }
   .model-drawer { border: 0; }
+  /* The bar has three things on it: the drawer, the privacy notice and new
+     conversation. The notice must stay reachable on a phone too. */
+  .privacy-link { position: absolute; right: 3.2rem; bottom: .55rem; margin: 0; }
   /* The locked rail collapses to the same bottom bar as the unlocked one. */
   .model-drawer-locked { position: absolute; left: .65rem; bottom: .55rem; min-width: 12rem; padding: .4rem .5rem; border: 1px solid var(--w-line); border-radius: .55rem; background: var(--w-bg); }
   .model-drawer-locked small { display: none; }

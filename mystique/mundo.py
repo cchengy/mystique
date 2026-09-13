@@ -350,12 +350,14 @@ class Mundo:
         candidatos = [PODERES[p] for p in sorted(agente.observados) if p not in absorcao.poderes]
         if not candidatos:
             return None, f"You haven't seen {agente.nome} use a new ability yet. Keep interacting."
-        # ReasoningBank: her own failed guesses, so she stops repeating them. Safe to
-        # feed back because `recordar` never returns the judge's words - see banco.py.
-        memoria = self.banco.recordar(agente.id)
-        if memoria:
-            evidencia = f"{evidencia}\n\n{memoria}"
         poder, motivo = await self._julgar(candidatos, descricao, evidencia)
+        # ReasoningBank: her own failed guesses go back to HER, and only when she
+        # actually failed - that is what makes the next attempt start from what
+        # already did not work. Read before registrar, so the attempt being judged
+        # right now is not echoed back at her, and after the verdict, so
+        # `usage_count` counts real reuse. It must never reach the judge: it is her
+        # material, and an impartial evaluator does not get told what to discount.
+        memoria = self.banco.recordar(agente.id) if poder is None else ""
         # Keep both outcomes. The failures are the valuable half.
         self.banco.registrar(
             agent_id=agente.id, source_kind="identificacao",
@@ -368,7 +370,8 @@ class Mundo:
         if poder is None:
             # Never forward the judge's reason: it knows the answer key and would hint at it.
             self.avisar(f"   ❌ attempt failed on {agente.nome} (judge: {motivo})")
-            return None, "The judge did not recognize the ability in that description. Look more closely and try again."
+            aviso = "The judge did not recognize the ability in that description. Look more closely and try again."
+            return None, f"{aviso}\n\n{memoria}" if memoria else aviso
         return poder, motivo
 
     # --- external agents ------------------------------------------------------

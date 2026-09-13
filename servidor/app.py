@@ -42,10 +42,21 @@ class MissaoBody(BaseModel):
     mensagem: str
     orcamento: float | None = None
     sessao_id: str
+    idioma: str = "en"   # the language the UI is being read in
+
+
+# She must answer in the language the person is reading, not in whatever the
+# persona happens to be written in. English is the source language, so it needs
+# no instruction at all.
+_IDIOMAS = {
+    "pt": ("\n\nAll visible communication must be in natural Brazilian Portuguese. "
+           "Talk to the agents and deliver the final answer in Brazilian Portuguese only."),
+    "en": "",
+}
 
 
 class SessaoBody(BaseModel):
-    titulo: str = "Nova conversa"
+    titulo: str = "New conversation"
     modo: str = "good"
 
 
@@ -282,13 +293,10 @@ def criar_app(mundos: Mundos, persona: str, extras: FerramentasExtras) -> FastAP
             publicar(mundo, "missao_iniciada", {"mensagem": corpo.mensagem})
             try:
                 persona_modo, extras_modo = mundos.contexto(modo)
-                persona_pt = persona_modo + (
-                    "\n\nToda comunicação visível deve ser em português brasileiro natural. "
-                    "Converse com os agentes e entregue a resposta final somente em português brasileiro."
-                )
+                persona_idioma = persona_modo + _IDIOMAS.get(corpo.idioma, "")
                 await executar(
                     corpo.mensagem, mundo, corpo.orcamento or _ORCAMENTO_PADRAO, False,
-                    persona_pt, extras_modo, openai_config=openai_config, historico=contexto,
+                    persona_idioma, extras_modo, openai_config=openai_config, historico=contexto,
                 )
             finally:
                 reset_exa()
@@ -319,10 +327,14 @@ def criar_app(mundos: Mundos, persona: str, extras: FerramentasExtras) -> FastAP
     async def decidir_recibo(recibo_id: str, corpo: DecisaoBody, request: Request) -> dict:
         if corpo.decisao not in ("aprovar", "rejeitar"):
             raise HTTPException(400, "decisao must be 'aprovar' or 'rejeitar'")
-        mundo = mundos.para(await _sub_do_pedido(request))
-        if not mundo.decidir(recibo_id, corpo.decisao == "aprovar"):
-            raise HTTPException(409, "receipt not found, already resolved, or not approved by the judge")
-        return {"ok": True}
+        # The receipt belongs to whichever world raised it, and an Evil session's
+        # receipt is not in the Good world. The request does not carry the mode,
+        # so ask every world this account actually has open.
+        sub = await _sub_do_pedido(request)
+        for mundo in mundos.existentes(sub) or [mundos.para(sub)]:
+            if mundo.decidir(recibo_id, corpo.decisao == "aprovar"):
+                return {"ok": True}
+        raise HTTPException(409, "receipt not found, already resolved, or not approved by the judge")
 
     @app.get("/agui/stream")
     async def stream(request: Request) -> StreamingResponse:
