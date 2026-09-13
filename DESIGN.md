@@ -48,6 +48,9 @@ touch targets 44 px. Spacing follows a 4 px rhythm; pills are reserved for statu
 - The connected state must appear on return, without a reload. The exchange is
   single-flight, so a second render pass cannot read the account before it lands and
   paint "connect a key" over a connection that already succeeded.
+- The live chat owns the full window height. The stage is pinned to the layout's
+  flexible row rather than counting siblings, because rows hidden in live mode used to
+  push it onto a content-sized track and leave a dead slab under the composer.
 - Provider failures are shown, never swallowed. Returning from an OAuth redirect that did
   not complete must say so in the panel; silence is indistinguishable from a no-op.
 

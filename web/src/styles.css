@@ -406,6 +406,15 @@ input:focus-visible {
   grid-template-rows: auto auto auto minmax(0, 1fr);
 }
 
+/* The caption is hidden in live, so only three rows are actually filled and the
+   stage settled on the third — an `auto` track sized to its content — while the
+   1fr track sat empty underneath it. The chat stopped mid-window with a dead
+   slab below the composer. Pin the stage to the last track instead of counting
+   siblings, so a live error appearing above it changes nothing. */
+.app[data-live='true'] .stage {
+  grid-row: -2 / -1;
+}
+
 .app[data-live='true'] .stage {
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto minmax(0, 1fr);
