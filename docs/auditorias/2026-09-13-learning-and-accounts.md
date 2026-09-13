@@ -69,6 +69,19 @@ used.
   whose reuse changed, so the Compare view shows that run's reasoning rather than the whole
   bank.
 
+## Closed in the follow-up pass (same day)
+
+Every recommendation below was implemented; the table is kept for the reasoning.
+
+| # | What was done |
+|---|---|
+| 4 | `GET /api/wiki` serves the account's own page; each Compare ledger shows it |
+| 5 | Bank writes are atomic (`tmp` + `replace`) and `chmod 600`; unreadable traces are counted and surfaced in `resumo()` and the wiki header |
+| 6 | `Banco.publicar()` is the single flush point; the mission flushes once at the end, and recall no longer rebuilds the page per trace |
+| 7 | `MAX_POR_AGENTE` bounds the bank per agent, dropping failures already answered by a later success first |
+| 8 | A second mission for the same account is refused with 409 |
+| 9 | The copy now says "without using Mystique", which is what the code measures; the deviation is recorded in `docs/decisoes/02-cofre-byok-24h.md` |
+
 ## Open, with recommendations
 
 | # | Finding | Why it matters | Recommendation |
@@ -80,5 +93,5 @@ used.
 | 8 | Two missions in one account and profile share one `Mundo` | `configurar_openai` is world-global and the first mission to finish runs `desconfigurar_openai` in its `finally`, pulling the model config out from under the second | One mission per account at a time (reject with 409), or per-mission provider config |
 | 9 | The 60-day clock moves on token refresh, not only on sign-in | The UI says "60 days without a successful sign-in"; silent refresh renews it without anyone signing in | Either use `auth_time` only, or say "without use" in the copy |
 
-None of the open items is a data-separation or secrecy problem. 4, 5 and 8 are the ones
-worth doing next; 8 is the only one that can produce a wrong answer for a user.
+None of these was a data-separation or secrecy problem. 8 was the only one that could
+produce a wrong answer for a user, and it is closed.

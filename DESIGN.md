@@ -58,6 +58,19 @@ touch targets 44 px. Spacing follows a 4 px rhythm; pills are reserved for statu
   language the app is being read in.
 - The privacy notice is dismissible but never unreachable: accepting it is remembered, and
   a Privacy link in the rail brings it back at any time, on desktop and on mobile.
+- Compare is the product's argument, so it is built as one: the question, then two ledgers
+  that answer it with the same three figures, the same run cards and the same bank. The
+  rows line up across the two sides (subgrid) — a comparison whose rows drift is not
+  comparing anything. A run card is a button back into that conversation. The only
+  differences between the sides are the accent and what each one left behind.
+- The account panel has one type ramp per context — `--p-title/-text/-small/-label`, bound
+  once for the gate and one step down for the rail. No display face inside a 15rem sidebar,
+  and no size that is not on the ramp.
+- Panel controls share one surface, one height with their inputs, and visible hover, active
+  and disabled states in both themes. Identity sits above its Sign out button, never beside
+  it: at rail width the email loses to the button every time.
+- What she has learned is readable by the person who owns it: the engine's own `WIKI.md`,
+  per profile, at the foot of each ledger.
 - Provider failures are shown, never swallowed. Returning from an OAuth redirect that did
   not complete must say so in the panel; silence is indistinguishable from a no-op.
 
