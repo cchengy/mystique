@@ -117,6 +117,13 @@ async def executar(
                     resultados.append(
                         {"type": "tool_result", "tool_use_id": bloco.id, "content": saida}
                     )
+                # Steering arrives here, merged into the same turn as the tool
+                # results: a person who types while she is working is redirecting
+                # this run, and she reads it before deciding her next move.
+                orientacoes = getattr(mundo, "drenar_orientacoes", lambda: [])()
+                for texto in orientacoes:
+                    mundo.avisar(f"[{mundo.nome_atual}] …")
+                    resultados.append({"type": "text", "text": f"New instruction from the person you are helping: {texto}"})
                 historico.append({"role": "user", "content": resultados})
             else:
                 mundo.avisar(f"⚠ stopped after {_MAX_PASSOS} steps without a final answer.")

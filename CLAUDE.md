@@ -111,7 +111,8 @@ the same commit. Do not merge a feature whose dependency record is stale.
 | Feature | Source of truth | Depends on | Downstream surfaces |
 |---|---|---|---|
 | 24-hour credential broker | `cofre/` + private volume | Auth0 JWT, AES-256-GCM master key, isolated networks, `vault-init` chown of the volume | all BYOK providers |
-| Live conversation | `servidor/sessoes.py` account records | Auth0 `sub`, active broker credential | rail, transcript, mission |
+| Live conversation | `servidor/sessoes.py` account records | Auth0 `sub`, active broker credential, one world + bus per session | rail, transcript, mission |
+| Steering and stop | `Mundo.orientar` drained at the turn boundary, task per `(sub, sessao)` | a run in progress | composer while she works |
 | Main-model context | selected session messages | per-account session store | next completion |
 | Good/Evil profile | session `modo`, isolated world workspace | persona/tools, account event bus | live run, Compare |
 | Reasoning evidence | per-account workspace + session projection | judge outcome and recall | session, Compare |

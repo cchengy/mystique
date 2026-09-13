@@ -111,6 +111,16 @@ touch targets 44 px. Spacing follows a 4 px rhythm; pills are reserved for statu
   a second device, it is not lost by clearing storage, and every account that has never
   seen it — including accounts created before it existed — gets it once. The button beside
   the theme toggle replays it at any time.
+- A conversation is a world of its own: its own run, its own event stream, its own
+  transcript. Two chats of one account may run at the same time without either appearing
+  in the other. Her memory — the Reasoning Bank, the wiki, the adapters — stays the
+  account's, shared across its conversations.
+- Everything the transcript shows is written down, including what she said to an agent and
+  what it said back. Rebuilding the transcript must never be able to erase an exchange the
+  person just watched.
+- A message sent while she is working steers the run in progress; it is not queued as a
+  second mission and never dropped. Stop is always available beside the composer, and what
+  was already said stays said.
 - Provider failures are shown, never swallowed. Returning from an OAuth redirect that did
   not complete must say so in the panel; silence is indistinguishable from a no-op.
 

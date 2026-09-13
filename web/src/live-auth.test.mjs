@@ -105,7 +105,8 @@ test('the tour covers every control, in order, and is translated', () => {
   const inicio = guia.indexOf('= [', guia.indexOf('export const PASSOS'))
   const lista = guia.slice(inicio, guia.indexOf(']', inicio))
   const ordem = [...lista.matchAll(/\{ id: '([^']+)'/g)].map((m) => m[1])
-  assert.deepEqual(ordem, ['intro-1', 'intro-2', 'good', 'evil', 'replay', 'live', 'compare', 'compose'])
+  assert.deepEqual(ordem,
+    ['intro-1', 'intro-2', 'good', 'evil', 'replay', 'live', 'compare', 'modelo', 'busca', 'compose'])
   // Compare comes before the composer: you are told what the endings are before
   // you are asked to produce one.
   assert.ok(ordem.indexOf('compare') < ordem.indexOf('compose'))
@@ -116,6 +117,9 @@ test('the tour covers every control, in order, and is translated', () => {
   for (const alvo of ['replay', 'live', 'compare', 'compose']) {
     assert.match(ui, new RegExp(`data-guia="${alvo}"`), `no control marked ${alvo}`)
   }
+  // and the two that live inside the rail drawer
+  assert.match(ui, /data-guia="modelo"/)
+  assert.match(readFileSync(new URL('./Portao.tsx', import.meta.url), 'utf8'), /data-guia="busca"/)
   // and every line it says must have a Portuguese counterpart
   for (const [, linha] of guia.matchAll(/^\s+'([A-Z][^']{20,})',?$/gm)) {
     assert.ok(pt.includes(`'${linha}'`), `untranslated tour line: ${linha}`)

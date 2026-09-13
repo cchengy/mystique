@@ -23,7 +23,7 @@ export type LiveReceipt = {
   veredito: { aprovado: boolean; motivo: string }
 }
 
-export type SessionMessage = { role: 'user' | 'assistant' | 'system'; content: string }
+export type SessionMessage = { role: 'user' | 'assistant' | 'system' | 'dialogo'; content: string; de?: string; para?: string }
 export type ReasoningEvidence = {
   id: string; agent_id?: string; outcome?: string; title?: string; description?: string;
   content?: string; source_kind?: string; usage_count?: number
@@ -43,6 +43,8 @@ type LiveHandlers = {
   token?: string
   // The server sends the English source string as the key plus the agent name,
   // so the browser translates and only then fills the name in.
+  sessionId?: string
+  steer: (value: string) => void
   improvement: (value: string, agent: string) => void
   decision: (value: string, approved: boolean, agent: string) => void
   final: (value: string, error: boolean) => void
@@ -70,6 +72,11 @@ export function connectLive(handlers: LiveHandlers): () => void {
       const value = event.value as { de: string; para: string; texto: string }
       handlers.dialogue(value.de, value.para, value.texto)
     }
+    // Steering: what the person typed while she was working, echoed back so it
+    // appears in the transcript the moment the run accepts it.
+    if (event.type === 'CUSTOM' && event.name === 'orientacao') {
+      handlers.steer((event.value as { texto: string }).texto)
+    }
     if (event.type === 'CUSTOM' && event.name === 'melhoria') {
       const value = event.value as { texto: string; agente?: string }
       handlers.improvement(value.texto, value.agente ?? '')
@@ -89,7 +96,12 @@ export function connectLive(handlers: LiveHandlers): () => void {
   }
   void (async () => {
     try {
-      const response = await fetch(`${API_BASE}/agui/stream`, {
+      // The stream belongs to one conversation: without this, a run started in
+      // another chat of the same account arrived here.
+      const alvo = handlers.sessionId
+        ? `${API_BASE}/agui/stream?sessao=${encodeURIComponent(handlers.sessionId)}`
+        : `${API_BASE}/agui/stream`
+      const response = await fetch(alvo, {
         headers: handlers.token ? { Authorization: `Bearer ${handlers.token}` } : {},
         signal: controller.signal,
       })
@@ -152,6 +164,13 @@ export async function startLiveMission(message: string, sessionId: string, token
     body: JSON.stringify({ mensagem: message, sessao_id: sessionId, idioma }),
   })
   if (!response.ok) throw new Error(`Mission could not start (${response.status})`)
+}
+
+export async function stopLiveMission(sessionId: string, token?: string): Promise<void> {
+  await fetch(`${API_BASE}/api/missoes/${sessionId}`, {
+    method: 'DELETE',
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+  })
 }
 
 export async function resolveLiveReceipt(id: string, decision: 'aprovar' | 'rejeitar'): Promise<void> {

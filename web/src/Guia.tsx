@@ -14,7 +14,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 /** Which control each step points at. `null` means the middle of the screen. */
 export type PassoGuia =
   | { id: 'intro-1' | 'intro-2'; alvo: null }
-  | { id: 'good' | 'evil' | 'replay' | 'live' | 'compare' | 'compose'; alvo: string }
+  | { id: 'good' | 'evil' | 'replay' | 'live' | 'compare' | 'modelo' | 'busca' | 'compose'; alvo: string }
 
 export const PASSOS: PassoGuia[] = [
   { id: 'intro-1', alvo: null },
@@ -24,6 +24,8 @@ export const PASSOS: PassoGuia[] = [
   { id: 'replay', alvo: 'replay' },
   { id: 'live', alvo: 'live' },
   { id: 'compare', alvo: 'compare' },
+  { id: 'modelo', alvo: 'modelo' },
+  { id: 'busca', alvo: 'busca' },
   { id: 'compose', alvo: 'compose' },
 ]
 
@@ -83,6 +85,22 @@ function conteudo(id: PassoGuia['id'], chave: boolean, exa: boolean): Conteudo {
           'Your real runs, side by side, with the reasoning she kept from each.',
         ],
       }
+    case 'modelo':
+      return {
+        titulo: 'Model and connection',
+        corpo: [
+          'Your key, the model she runs on, and Exa all live here in the rail.',
+          'It opens on its own so you can see what is inside.',
+        ],
+      }
+    case 'busca':
+      return {
+        titulo: 'Conversation model',
+        corpo: [
+          'Type to search every model available on OpenRouter — the field completes as you type.',
+          'Pick one and it is used for the next mission; the key stays yours either way.',
+        ],
+      }
     case 'compose':
       return {
         titulo: 'Give Mystique a mission',
@@ -126,6 +144,16 @@ export function Guia({ t, passo, total, indice, aoAvancar, aoFechar, chave, exa 
     const r = el.getBoundingClientRect()
     setAlvo({ top: r.top, left: r.left, width: r.width, height: r.height })
   }, [passo.alvo])
+
+  // Two steps live inside the rail drawer, so the tour opens it - and closes it
+  // again only if it was the one that opened it.
+  useLayoutEffect(() => {
+    if (passo.id !== 'modelo' && passo.id !== 'busca') return
+    const gaveta = document.querySelector<HTMLDetailsElement>('.model-drawer')
+    if (!gaveta || gaveta.open) return
+    gaveta.open = true
+    return () => { gaveta.open = false }
+  }, [passo.id])
 
   // The control itself is the highlight: it is raised through the veil and stays
   // usable, so the tour points at the real thing rather than at a picture of it.

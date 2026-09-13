@@ -86,7 +86,7 @@ def test_public_stream_keeps_dialogue_and_redacts_internal_traces() -> None:
 
 def test_mission_is_scheduled_on_the_application_event_loop() -> None:
     mundo = SimpleNamespace(modo="good")
-    mundos = SimpleNamespace(modo="good", para=lambda _sub, _modo=None: mundo, contexto=lambda _modo=None: ("persona", lambda _: []))
+    mundos = SimpleNamespace(modo="good", para=lambda _sub, _modo=None, _sessao='': mundo, contexto=lambda _modo=None: ("persona", lambda _: []))
     executar = AsyncMock()
     app = criar_app(mundos, "persona", lambda _: [])
 
@@ -106,7 +106,7 @@ def test_a_second_mission_is_refused_while_one_is_running() -> None:
     """Two missions share one Mundo, and the first to finish tears down the
     provider configuration in its `finally` - under the second one's feet."""
     mundo = SimpleNamespace(modo="good")
-    mundos = SimpleNamespace(modo="good", para=lambda _sub, _modo=None: mundo,
+    mundos = SimpleNamespace(modo="good", para=lambda _sub, _modo=None, _sessao='': mundo,
                              contexto=lambda _modo=None: ("persona", lambda _: []))
     parado = asyncio.Event()
 
@@ -124,10 +124,51 @@ def test_a_second_mission_is_refused_while_one_is_running() -> None:
     assert segunda.status_code == 409
 
 
+def test_each_conversation_gets_its_own_world_and_stream() -> None:
+    """A run started in one chat used to write into whichever chat was on screen:
+    worlds and event buses were keyed by account, not by conversation."""
+    import tempfile as _tempfile
+    from servidor.mundos import Mundos
+
+    with _tempfile.TemporaryDirectory() as pasta:
+        mundos = Mundos("good", Path(pasta))
+        um = mundos.para("auth0|alice", "good", "sessao-1")
+        outro = mundos.para("auth0|alice", "good", "sessao-2")
+        assert um is not outro
+        assert um._eventos is not outro._eventos
+        assert mundos.para("auth0|alice", "good", "sessao-1") is um
+        # her memory is still the account's, not the conversation's
+        assert um.banco.pasta == outro.banco.pasta
+
+
+def test_a_message_sent_mid_run_steers_it_instead_of_being_refused() -> None:
+    mundo = SimpleNamespace(modo="good")
+    orientadas: list[str] = []
+    mundo.orientar = lambda texto: (orientadas.append(texto), True)[1]
+    mundos = SimpleNamespace(modo="good", para=lambda _sub, _modo=None, _sessao='': mundo,
+                             contexto=lambda _modo=None: ("persona", lambda _: []))
+    parado = asyncio.Event()
+
+    async def executar_lento(*_a, **_k):
+        await parado.wait()
+
+    app = criar_app(mundos, "persona", lambda _: [])
+    with patch("servidor.app.executar", executar_lento), TestClient(app, raise_server_exceptions=False) as client:
+        sessao = client.post("/api/sessoes", json={"titulo": "Test", "modo": "good"}).json()
+        assert client.post("/api/missoes", json={"mensagem": "one", "sessao_id": sessao["id"]}).status_code == 202
+        segunda = client.post("/api/missoes", json={"mensagem": "actually, ask Byte", "sessao_id": sessao["id"]})
+        parada = client.delete(f"/api/missoes/{sessao['id']}")
+        parado.set()
+
+    assert segunda.status_code == 202 and segunda.json().get("orientacao") is True
+    assert orientadas == ["actually, ask Byte"]
+    assert parada.json() == {"parada": True}
+
+
 def test_the_tour_is_remembered_on_the_account() -> None:
     """Including accounts that existed before the tour did: they have not seen
     it, so they get it, and only once."""
-    mundos = SimpleNamespace(modo="good", para=lambda _sub, _modo=None: SimpleNamespace(modo="good"),
+    mundos = SimpleNamespace(modo="good", para=lambda _sub, _modo=None, _sessao='': SimpleNamespace(modo="good"),
                              contexto=lambda _modo=None: ("persona", lambda _: []))
     app = criar_app(mundos, "persona", lambda _: [])
     with tempfile.TemporaryDirectory() as pasta, patch.object(contas, "CONTAS_DIR", Path(pasta)), TestClient(app) as client:
@@ -142,7 +183,7 @@ def test_the_account_can_read_its_own_wiki() -> None:
         banco.registrar(agent_id="byte", source_kind="identificacao", outcome="failure",
                         title="t", description="she thought this", content="verdict")
         mundo = SimpleNamespace(modo="good", banco=banco)
-        mundos = SimpleNamespace(modo="good", para=lambda _sub, _modo=None: mundo,
+        mundos = SimpleNamespace(modo="good", para=lambda _sub, _modo=None, _sessao='': mundo,
                                  contexto=lambda _modo=None: ("persona", lambda _: []))
         app = criar_app(mundos, "persona", lambda _: [])
         with TestClient(app) as client:
@@ -153,7 +194,7 @@ def test_the_account_can_read_its_own_wiki() -> None:
 
 def test_authenticated_mission_uses_the_broker_without_loading_the_provider_key() -> None:
     mundo = SimpleNamespace(modo="good", configurar_openai=lambda **_config: None, desconfigurar_openai=AsyncMock())
-    mundos = SimpleNamespace(modo="good", para=lambda _sub, _modo=None: mundo, contexto=lambda _modo=None: ("persona", lambda _: []))
+    mundos = SimpleNamespace(modo="good", para=lambda _sub, _modo=None, _sessao='': mundo, contexto=lambda _modo=None: ("persona", lambda _: []))
     executar = AsyncMock()
     app = criar_app(mundos, "persona", lambda _: [])
 
@@ -277,6 +318,8 @@ if __name__ == "__main__":
     test_mission_is_scheduled_on_the_application_event_loop()
     test_a_second_mission_is_refused_while_one_is_running()
     test_the_account_can_read_its_own_wiki()
+    test_each_conversation_gets_its_own_world_and_stream()
+    test_a_message_sent_mid_run_steers_it_instead_of_being_refused()
     test_the_tour_is_remembered_on_the_account()
     test_authenticated_mission_uses_the_broker_without_loading_the_provider_key()
     test_local_frontend_origins_are_allowed_by_default()
@@ -284,7 +327,7 @@ if __name__ == "__main__":
     test_server_can_serve_the_built_main_ui()
     print("OK    server: public stream keeps dialogue and redacts internal traces")
     print("OK    server: mission is scheduled on the application event loop")
-    print("OK    server: a second concurrent mission is refused, and the wiki is readable")
+    print("OK    server: conversations are isolated, steering reaches the run, stop works")
     print("OK    server: both local frontend origins are allowed by default")
     print("OK    server: provider environment is loaded before the engine")
     print("OK    server: built main UI is served by the same process")

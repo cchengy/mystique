@@ -25,14 +25,26 @@ _MODOS = {"good": "good", "bem": "good", "evil": "evil", "mal": "evil"}
 ANONIMO = "anonimo"
 
 
+# One live world per open conversation, capped so a long day of chatting does not
+# hold every world an account ever opened.
+MAX_MUNDOS_POR_CONTA = 8
+
+
 class Mundos:
-    """Lazily builds and caches one world per account."""
+    """One world per conversation, not per account.
+
+    A world carries the run in progress and the event stream the browser is
+    watching. Keyed by account alone, two conversations shared both: starting a
+    run in one and switching to the other in the UI showed its output there.
+    The workspace is still per account and profile - the Reasoning Bank and the
+    adapters are her memory, and that memory is the account's, not one chat's.
+    """
 
     def __init__(self, modo: str, raiz: Path) -> None:
         self.modo = _MODOS.get(modo.lower(), "good")
         self.raiz = raiz
-        self._por_conta: dict[tuple[str, str], object] = {}
-        self._barramentos: dict[str, BarramentoEventos] = {}
+        self._por_conta: dict[tuple[str, str, str], object] = {}
+        self._barramentos: dict[tuple[str, str], BarramentoEventos] = {}
 
     def _workspace(self, sub: str, modo: str) -> Path:
         # The shared account keeps the original on-disk location, so an existing
@@ -42,11 +54,12 @@ class Mundos:
         base = workspace_da_conta(sub)
         return base if modo == self.modo else base.parent / f"workspace-{modo}"
 
-    def para(self, sub: str, modo: str | None = None):
+    def para(self, sub: str, modo: str | None = None, sessao: str = ""):
         modo = _MODOS.get((modo or self.modo).lower(), self.modo)
-        chave = (sub, modo)
+        chave = (sub, modo, sessao)
         mundo = self._por_conta.get(chave)
         if mundo is not None:
+            self._por_conta[chave] = self._por_conta.pop(chave)   # most recently used
             return mundo
 
         from .mundo_servidor import MundoBemServidor, MundoMalServidor
@@ -54,13 +67,23 @@ class Mundos:
         workspace = self._workspace(sub, modo)
         workspace.mkdir(parents=True, exist_ok=True)
         classe = MundoBemServidor if modo == "good" else MundoMalServidor
-        # Its own bus as well: events must not cross between accounts.
-        # Good and evil sessions remain separate worlds, but the account owns one
-        # transport. Switching profile must not silently disconnect the live UI.
-        barramento = self._barramentos.setdefault(sub, BarramentoEventos())
+        # One bus per conversation: an event belongs to the chat that produced it.
+        barramento = self._barramentos.setdefault((sub, sessao), BarramentoEventos())
         mundo = classe(workspace, eventos=barramento)
         self._por_conta[chave] = mundo
+        self._podar(sub)
         return mundo
+
+    def _podar(self, sub: str) -> None:
+        """Forget the least recently used worlds of an account, never a running one."""
+        chaves = [chave for chave in self._por_conta if chave[0] == sub]
+        for chave in chaves[:-MAX_MUNDOS_POR_CONTA]:
+            mundo = self._por_conta.get(chave)
+            if getattr(mundo, "ocupado", False):
+                continue
+            self._por_conta.pop(chave, None)
+            if not any(c[0] == chave[0] and c[2] == chave[2] for c in self._por_conta):
+                self._barramentos.pop((chave[0], chave[2]), None)
 
     def existentes(self, sub: str) -> list:
         """Worlds already live for this account, in no particular order.
@@ -68,7 +91,7 @@ class Mundos:
         Used to resolve something whose mode the request does not carry, without
         building - and writing a workspace for - a mode the account never opened.
         """
-        return [mundo for (dono, _modo), mundo in self._por_conta.items() if dono == sub]
+        return [mundo for chave, mundo in self._por_conta.items() if chave[0] == sub]
 
     async def apagar(self, sub: str) -> None:
         """Evict live state and close provider clients before deleting an account."""
@@ -78,7 +101,8 @@ class Mundos:
             fechar = getattr(getattr(cliente, "_http", None), "aclose", None)
             if fechar:
                 await fechar()
-        self._barramentos.pop(sub, None)
+        for chave in [chave for chave in self._barramentos if chave[0] == sub]:
+            self._barramentos.pop(chave, None)
 
     def contexto(self, modo: str | None = None) -> tuple[str, Callable]:
         """(persona, extras) for the configured mode."""

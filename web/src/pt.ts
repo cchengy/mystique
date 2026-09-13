@@ -7,6 +7,12 @@ import { AGENTS } from './scenario'
 export const PT: Record<string, string> = {
   'Before you continue': 'Antes de continuar',
   'Guided tour': 'Tour guiado',
+  'Your key, the model she runs on, and Exa all live here in the rail.': 'Sua chave, o modelo em que ela roda e a Exa ficam todos aqui na barra lateral.',
+  'It opens on its own so you can see what is inside.': 'Ela abre sozinha para você ver o que tem dentro.',
+  'Type to search every model available on OpenRouter — the field completes as you type.': 'Digite para pesquisar entre todos os modelos disponíveis no OpenRouter — o campo completa enquanto você escreve.',
+  'Pick one and it is used for the next mission; the key stays yours either way.': 'Escolha um e ele vale para a próxima missão; a chave continua sendo sua de qualquer jeito.',
+  'Steer': 'Orientar',
+  'Stop': 'Parar',
   'Give her a mission — she decides who to approach.': 'Dê a ela uma missão — quem procurar é decisão dela.',
   'Tour': 'Tour',
   'Skip': 'Pular',

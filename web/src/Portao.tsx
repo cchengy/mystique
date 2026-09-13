@@ -168,7 +168,7 @@ export function PortaoConta({ t, aoLiberar, aoAbrirPrivacidade, compacto }: {
               <><dt>{t('Credits')}</dt><dd>{estado.creditos.total_credits}</dd></>
             )}
           </dl>
-          <label className="model-search-label" htmlFor="openrouter-model-search">
+          <label className="model-search-label" data-guia="busca" htmlFor="openrouter-model-search">
             {t('Conversation model')}
             <small>{t('Type to search every model available on OpenRouter.')}</small>
           </label>

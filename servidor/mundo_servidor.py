@@ -116,6 +116,14 @@ class InterrompivelMixin:
         self._resposta_publica = ""
         self._erro_publico = ""
         self._status_publico = ""
+        # Steering: what the person typed while she was already working. It is
+        # handed to her at the next turn boundary, not dropped and not queued as
+        # a second mission.
+        self._orientacoes: list[str] = []
+        self.ocupado = False
+        # Set by the server for the duration of a mission, so what the browser
+        # sees is also what a reload will show.
+        self.ao_evento = None
         saida_original = self.avisar
 
         def narrar(texto: str) -> None:
@@ -128,6 +136,8 @@ class InterrompivelMixin:
             elif nome != "status" or valor["texto"] != self._status_publico:
                 self._status_publico = valor["texto"] if nome == "status" else self._status_publico
                 self._eventos.publicar_nowait(evento_custom(nome, valor))
+                if self.ao_evento is not None:
+                    self.ao_evento(nome, valor)
 
         self.avisar = narrar
         self._pendentes: dict[str, "asyncio.Future[bool]"] = {}
@@ -140,8 +150,23 @@ class InterrompivelMixin:
         self._resposta_publica = ""
         self._erro_publico = ""
         self._status_publico = ""
+        self._orientacoes.clear()
+        self.ocupado = True
+
+    def orientar(self, texto: str) -> bool:
+        """Take a message sent mid-run. False when there is no run to steer."""
+        texto = (texto or "").strip()
+        if not self.ocupado or not texto:
+            return False
+        self._orientacoes.append(texto)
+        return True
+
+    def drenar_orientacoes(self) -> list[str]:
+        pendentes, self._orientacoes = self._orientacoes, []
+        return pendentes
 
     def finalizar_missao_ui(self) -> tuple[str, bool]:
+        self.ocupado = False
         if self._resposta_publica:
             return self._resposta_publica, False
         if self._erro_publico:

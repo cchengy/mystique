@@ -1717,6 +1717,22 @@ input:focus-visible {
   cursor: not-allowed;
 }
 
+.composer-parar {
+  flex: 0 0 auto;
+  align-self: end;
+  min-height: 3rem;
+  padding: 0 0.9rem;
+  border: 1px solid var(--p-danger, #ef6461);
+  border-radius: 12px;
+  background: transparent;
+  color: #ff8f8c;
+  font-weight: 600;
+}
+
+.composer-parar:hover {
+  background: rgba(239, 100, 97, 0.12);
+}
+
 /* --- messages: readable, and it is obvious who is speaking -------- */
 
 .app[data-live='true'] .feed .entry {

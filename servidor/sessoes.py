@@ -84,6 +84,23 @@ class Sessoes:
         self._gravar(sub, sessao)
         return sessao
 
+    def adicionar_dialogo(self, sub: str, sessao_id: str, de: str, para: str, texto: str) -> None:
+        """What she said to an agent, and what it said back.
+
+        These were only ever in the browser, so the end of a mission - which
+        rebuilds the transcript from this file - erased every exchange the person
+        had just watched and left only her final answer. They are not model
+        context: `contexto` keeps returning user and assistant turns only.
+        """
+        sessao = self.obter(sub, sessao_id)
+        if sessao is None:
+            raise KeyError(sessao_id)
+        sessao["mensagens"].append({
+            "role": "dialogo", "de": de, "para": para, "content": texto[:20000],
+        })
+        sessao["updated_at"] = _agora()
+        self._gravar(sub, sessao)
+
     def adicionar_evidencia(self, sub: str, sessao_id: str, evidencia: dict) -> None:
         sessao = self.obter(sub, sessao_id)
         if sessao is None:

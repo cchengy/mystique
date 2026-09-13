@@ -36,6 +36,7 @@ class ChaveProvedorBody(BaseModel):
 
 class DecisaoBody(BaseModel):
     decisao: str  # "aprovar" | "rejeitar"
+    sessao_id: str = ""
 
 
 class MissaoBody(BaseModel):
@@ -88,7 +89,10 @@ def criar_app(mundos: Mundos, persona: str, extras: FerramentasExtras) -> FastAP
     # A fire-and-forget asyncio.Task with no live reference can be garbage-collected mid-run;
     # this set just keeps one until it finishes.
     tarefas_em_curso: set[asyncio.Task] = set()
+    # Keyed by conversation: two chats of the same account may run at once, and
+    # neither may cancel or configure the other.
     tarefas_por_conta: dict[str, set[asyncio.Task]] = {}
+    tarefas_por_sessao: dict[tuple[str, str], asyncio.Task] = {}
     sessoes = Sessoes(contas.CONTAS_DIR)
 
     async def _sub_do_pedido(request: Request) -> str:
@@ -282,13 +286,21 @@ def criar_app(mundos: Mundos, persona: str, extras: FerramentasExtras) -> FastAP
         sessao = sessoes.obter(sub, corpo.sessao_id)
         if sessao is None:
             raise HTTPException(404, "Session not found")
-        # One mission at a time per account. Two share a single Mundo, and the
-        # first to finish tears down the provider configuration in its `finally`,
-        # pulling the model out from under the second.
-        if any(not tarefa.done() for tarefa in tarefas_por_conta.get(sub, set())):
-            raise HTTPException(409, "A mission is already running for this account.")
+        # One mission at a time per conversation. Other conversations of the same
+        # account are free to run: each has its own world, its own event stream
+        # and its own provider configuration.
+        em_curso = tarefas_por_sessao.get((sub, corpo.sessao_id))
+        if em_curso is not None and not em_curso.done():
+            # A message sent while she is working is steering, not a new mission:
+            # it goes into the run that is already going.
+            mundo_atual = mundos.para(sub, sessao["modo"], corpo.sessao_id)
+            if getattr(mundo_atual, "orientar", None) and mundo_atual.orientar(corpo.mensagem):
+                sessoes.adicionar(sub, corpo.sessao_id, "user", corpo.mensagem)
+                publicar(mundo_atual, "orientacao", {"texto": corpo.mensagem})
+                return {"ok": True, "orientacao": True}
+            raise HTTPException(409, "A mission is already running in this conversation.")
         modo = sessao["modo"]
-        mundo = mundos.para(sub, modo)
+        mundo = mundos.para(sub, modo, corpo.sessao_id)
         contexto = sessoes.contexto(sub, corpo.sessao_id)
         sessoes.adicionar(sub, corpo.sessao_id, "user", corpo.mensagem)
         banco = getattr(mundo, "banco", None)
@@ -309,6 +321,19 @@ def criar_app(mundos: Mundos, persona: str, extras: FerramentasExtras) -> FastAP
             iniciar_ui = getattr(mundo, "iniciar_missao_ui", None)
             if iniciar_ui:
                 iniciar_ui()
+            # Everything the browser is shown is written down, so a reload - and
+            # the rebuild at the end of the mission - keeps the whole exchange
+            # instead of only her final answer.
+            def registrar(nome: str, valor: dict) -> None:
+                if nome != "dialogo":
+                    return
+                try:
+                    sessoes.adicionar_dialogo(
+                        sub, corpo.sessao_id, valor.get("de", ""), valor.get("para", ""), valor.get("texto", ""),
+                    )
+                except (KeyError, OSError):
+                    pass
+            mundo.ao_evento = registrar
             publicar(mundo, "missao_iniciada", {"mensagem": corpo.mensagem})
             try:
                 persona_modo, extras_modo = mundos.contexto(modo)
@@ -318,6 +343,7 @@ def criar_app(mundos: Mundos, persona: str, extras: FerramentasExtras) -> FastAP
                     persona_idioma, extras_modo, openai_config=openai_config, historico=contexto,
                 )
             finally:
+                mundo.ao_evento = None
                 reset_exa()
                 if openai_config:
                     await mundo.desconfigurar_openai()
@@ -337,11 +363,25 @@ def criar_app(mundos: Mundos, persona: str, extras: FerramentasExtras) -> FastAP
         tarefa = asyncio.create_task(executar_com_estado())
         tarefas_em_curso.add(tarefa)
         tarefas_por_conta.setdefault(sub, set()).add(tarefa)
+        tarefas_por_sessao[(sub, corpo.sessao_id)] = tarefa
         def concluir(t: asyncio.Task) -> None:
             tarefas_em_curso.discard(t)
             tarefas_por_conta.get(sub, set()).discard(t)
+            if tarefas_por_sessao.get((sub, corpo.sessao_id)) is t:
+                tarefas_por_sessao.pop((sub, corpo.sessao_id), None)
         tarefa.add_done_callback(concluir)
         return {"ok": True}
+
+    @app.delete("/api/missoes/{sessao_id}", status_code=202)
+    async def parar_missao(sessao_id: str, request: Request) -> dict:
+        """Stop what she is doing in this conversation. Anything already said
+        stays said: the transcript is not rolled back."""
+        sub = await _sub_do_pedido(request)
+        tarefa = tarefas_por_sessao.get((sub, sessao_id))
+        if tarefa is None or tarefa.done():
+            return {"parada": False}
+        tarefa.cancel()
+        return {"parada": True}
 
     @app.post("/api/recibos/{recibo_id}/decisao")
     async def decidir_recibo(recibo_id: str, corpo: DecisaoBody, request: Request) -> dict:
@@ -351,6 +391,10 @@ def criar_app(mundos: Mundos, persona: str, extras: FerramentasExtras) -> FastAP
         # receipt is not in the Good world. The request does not carry the mode,
         # so ask every world this account actually has open.
         sub = await _sub_do_pedido(request)
+        if corpo.sessao_id:
+            mundo = mundos.para(sub, None, corpo.sessao_id)
+            if mundo.decidir(recibo_id, corpo.decisao == "aprovar"):
+                return {"ok": True}
         for mundo in mundos.existentes(sub) or [mundos.para(sub)]:
             if mundo.decidir(recibo_id, corpo.decisao == "aprovar"):
                 return {"ok": True}
@@ -370,7 +414,9 @@ def criar_app(mundos: Mundos, persona: str, extras: FerramentasExtras) -> FastAP
             raise HTTPException(503, "Authentication is required but Auth0 is not configured.")
         else:
             sub = ANONIMO
-        mundo = mundos.para(sub)
+        # Without the conversation, every chat of the account shared one stream and
+        # a run started in one wrote into whichever was on screen.
+        mundo = mundos.para(sub, None, request.query_params.get("sessao", ""))
         fila = mundo.assinar_eventos()
 
         async def gerador():

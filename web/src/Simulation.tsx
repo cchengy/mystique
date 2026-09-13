@@ -3,7 +3,7 @@ import { AGENTS, REDBEARD, SCENARIOS, type Entry, type Mode, type Scenario, type
 import { latestAgentInteractions, type AgentDialogue } from './agent-profile'
 import { translate } from './pt'
 import {
-  connectLive, createSession, getSession, getWiki, listSessions, startLiveMission,
+  connectLive, createSession, getSession, getWiki, listSessions, startLiveMission, stopLiveMission,
   type ChatSession, type LiveSnapshot, type WikiPage,
 } from './live'
 import { Guia, PASSOS } from './Guia'
@@ -241,7 +241,11 @@ function useFocoPreso(ativo: boolean) {
 type SystemEntry = Extract<Entry, { kind: 'system' }>
 
 function entriesFromSession(session: ChatSession): Entry[] {
-  return (session.mensagens ?? []).map((message) => message.role === 'system'
+  return (session.mensagens ?? []).map((message) => message.role === 'dialogo'
+    // What she said to an agent and what it said back, kept on the server so the
+    // end of a mission no longer wipes the exchange the person just watched.
+    ? { kind: 'message', from: message.de || 'Mystique', text: message.content, self: message.de === 'Mystique' }
+    : message.role === 'system'
     ? { kind: 'system', tone: 'loss', text: message.content }
     // 'You' is the source string the translation table keys off; the bubble runs
     // it through t(), so the label follows the chosen language.
@@ -419,6 +423,7 @@ export default function Simulation() {
     () =>
       connectLive({
         token,
+        sessionId: sessionId ?? undefined,
         snapshot: setLiveSnapshot,
         receipt: () => undefined,
         resolved: () => undefined,
@@ -452,6 +457,10 @@ export default function Simulation() {
           if (sessionId) void getSession(sessionId, token).then((session) => setLiveMessages(entriesFromSession(session)))
           void refreshSessions()
         },
+        steer: (text) => setLiveMessages((current) => [
+          ...current,
+          { kind: 'message', from: 'You', text, self: false },
+        ]),
         mission: (running, message) => {
           setLiveRunning(running)
           if (running) setLiveActivity('Thinking')
@@ -765,7 +774,7 @@ export default function Simulation() {
             </div>
           ) : (
             <details className="model-drawer">
-              <summary><span>{t('Model and connection')}</span><small>{t('OpenRouter · search by name')}</small></summary>
+              <summary data-guia="modelo"><span>{t('Model and connection')}</span><small>{t('OpenRouter · search by name')}</small></summary>
               <PortaoConta t={t} aoLiberar={liberarConta} />
             </details>
           )}
@@ -974,9 +983,20 @@ export default function Simulation() {
                       }
                     }}
                   />
-                  <button type="submit" disabled={!draft.trim() || !liveConnected || liveRunning}>
-                    {liveRunning ? t('Working…') : t('Send')}
+                  {/* Sending while she works is steering, not a queued mission:
+                      the server hands it to the run in progress. */}
+                  <button type="submit" disabled={!draft.trim() || !liveConnected}>
+                    {liveRunning ? t('Steer') : t('Send')}
                   </button>
+                  {liveRunning && (
+                    <button
+                      type="button"
+                      className="composer-parar"
+                      onClick={() => { if (sessionId) void stopLiveMission(sessionId, token) }}
+                    >
+                      {t('Stop')}
+                    </button>
+                  )}
                 </div>
                 <p className="composer-hint">
                   {live ? t('Messages go to the real configured model. Mystique chooses and routes the best agent.') : t('You never pick the agent: she works out who does what. Or press Play and let her choose her own mission.')}
