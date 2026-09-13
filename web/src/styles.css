@@ -1961,6 +1961,12 @@ input:focus-visible {
 .model-drawer summary small { color: var(--w-faint); font-size: .67rem; }
 .model-drawer[open] > :not(summary) { max-height: 52vh; overflow: auto; }
 .model-drawer .portao { width: 100%; margin: .5rem 0 0; padding: .9rem .5rem; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+/* The rail is ~17.5rem wide, so the input+button row never fits side by side
+   there and the button was clipped at the rail's edge. The 520px media query
+   below keys off the viewport, which says nothing about this column. */
+.model-drawer .portao-colar-row { flex-direction: column; align-items: stretch; }
+.model-drawer .portao-colar-row button { width: 100%; }
+
 .model-search-label { display: grid; gap: .15rem; margin: .85rem 0 .35rem; font-size: .78rem; font-weight: 700; color: var(--p-fg); }
 .model-search-label small { color: var(--p-muted); font-size: .68rem; font-weight: 500; }
 
