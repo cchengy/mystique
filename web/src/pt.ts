@@ -6,6 +6,9 @@ import { AGENTS } from './scenario'
 
 export const PT: Record<string, string> = {
   'Before you continue': 'Antes de continuar',
+  'Your own OpenRouter key runs the model, and the guided replay needs no account at all.': 'O modelo roda na sua própria chave do OpenRouter, e o replay guiado não precisa de conta nenhuma.',
+  'How your data is handled': 'Como seus dados são tratados',
+  'Mystique is an ordinary hosted service, not a zero-knowledge one: treat what you send it accordingly.': 'A Mystique é um serviço hospedado comum, não zero-knowledge: trate o que você envia a ela com isso em mente.',
   'Compare endings': 'Comparar finais',
   'Reasoning Bank': 'Banco de Raciocínio',
   'Same world, two ethics.': 'O mesmo mundo, duas éticas.',

@@ -30,6 +30,9 @@ export function BannerPrivacidade({ t, aoFechar }: { t: (s: string) => string; a
         <p>
           {t('Under the LGPD you may delete Mystique data at any time. Signing out does not delete data; disconnecting a provider erases its key. The guided replay needs none of it.')}
         </p>
+        <p>
+          {t('Mystique is an ordinary hosted service, not a zero-knowledge one: treat what you send it accordingly.')}
+        </p>
       </div>
       <button
         type="button"
@@ -44,7 +47,15 @@ export function BannerPrivacidade({ t, aoFechar }: { t: (s: string) => string; a
   )
 }
 
-export function PortaoConta({ t, aoLiberar }: { t: (s: string) => string; aoLiberar: (ok: boolean, token?: string) => void }) {
+export function PortaoConta({ t, aoLiberar, aoAbrirPrivacidade, compacto }: {
+  t: (s: string) => string
+  aoLiberar: (ok: boolean, token?: string) => void
+  aoAbrirPrivacidade?: () => void
+  /** The gate's job is to let you in. Optional provider setup and the data
+   *  lifecycle live in the rail, where there is room for them; in the gate the
+   *  lifecycle folds to one line so deletion stays one click away. */
+  compacto?: boolean
+}) {
   const { isLoading, isAuthenticated, loginWithRedirect, logout, user, getAccessTokenSilently, error: erroAuth0 } = useAuth0()
   const [eu, setEu] = useState<Eu | null>(null)
   const [estado, setEstado] = useState<EstadoChave | null>(null)
@@ -117,16 +128,21 @@ export function PortaoConta({ t, aoLiberar }: { t: (s: string) => string; aoLibe
           <ul>
             <li>{t('Provider keys are encrypted in a separate credential container and erased after 24 hours.')}</li>
             <li>{t('Conversations and Mystique memory are erased after 60 days without using Mystique.')}</li>
-            <li>{t('This is defense in depth on a standard VPS, not zero-knowledge: the server operator could technically access running systems.')}</li>
+            <li>{t('Your own OpenRouter key runs the model, and the guided replay needs no account at all.')}</li>
           </ul>
         </div>
         <div className="portao-acoes">
-          <button className="portao-primario" onClick={() => loginWithRedirect()}>{t('Sign in with a passkey')}</button>
+          {/* The gate is modal: the way in takes the focus. */}
+          <button className="portao-primario" autoFocus onClick={() => loginWithRedirect()}>{t('Sign in with a passkey')}</button>
           <button onClick={() => loginWithRedirect({ authorizationParams: { screen_hint: 'signup' } })}>
             {t('Create an account')}
           </button>
         </div>
-        <p className="portao-nota">{t('The guided replay needs none of this — it is open to everyone.')}</p>
+        <p className="portao-nota">
+          {aoAbrirPrivacidade
+            ? <button type="button" className="portao-link" onClick={aoAbrirPrivacidade}>{t('How your data is handled')}</button>
+            : t('How your data is handled')}
+        </p>
       </div>
     )
   }
@@ -208,7 +224,7 @@ export function PortaoConta({ t, aoLiberar }: { t: (s: string) => string; aoLibe
         </>
       )}
 
-      <section className="provider-card" aria-labelledby="exa-provider-title">
+      {!compacto && <section className="provider-card" aria-labelledby="exa-provider-title">
         <div>
           <p className="eyebrow">BYOK · EXA</p>
           <h3 id="exa-provider-title">{t('Web retrieval')}</h3>
@@ -230,16 +246,20 @@ export function PortaoConta({ t, aoLiberar }: { t: (s: string) => string; aoLibe
             </div>
           </div>
         )}
-      </section>
+      </section>}
 
       {(erro || erroAuth0) && <p className="portao-erro" role="alert">{erro ?? erroAuth0?.message}</p>}
 
       <section className="account-lifecycle" aria-labelledby="account-lifecycle-title">
-        <h3 id="account-lifecycle-title">{t('Your data lifecycle')}</h3>
-        <p>{t('Mystique permanently deletes conversations, Reasoning Bank history, learned profiles and settings after 60 days without using Mystique. Provider keys follow the shorter 24-hour rule above.')}</p>
-        {eu?.ciclo?.apagar_em && <p className="deletion-date">
-          {t('Current deletion deadline')}: <strong>{new Intl.DateTimeFormat(undefined, { dateStyle: 'long' }).format(new Date(eu.ciclo.apagar_em))}</strong>
-        </p>}
+        {/* In the gate the retention rules are already in the brief above, so only
+            the way out stays: deletion must never be more than one click away. */}
+        {!compacto && <>
+          <h3 id="account-lifecycle-title">{t('Your data lifecycle')}</h3>
+          <p>{t('Mystique permanently deletes conversations, Reasoning Bank history, learned profiles and settings after 60 days without using Mystique. Provider keys follow the shorter 24-hour rule above.')}</p>
+          {eu?.ciclo?.apagar_em && <p className="deletion-date">
+            {t('Current deletion deadline')}: <strong>{new Intl.DateTimeFormat(undefined, { dateStyle: 'long' }).format(new Date(eu.ciclo.apagar_em))}</strong>
+          </p>}
+        </>}
         <details className="danger-zone">
           <summary>{t('Delete my Mystique data now')}</summary>
           <p>{t('This permanently removes your provider credentials, conversations, memory and settings. It does not delete your Auth0 identity. This cannot be undone.')}</p>

@@ -19,7 +19,10 @@ test('discloses both retention windows and Exa BYOK before use', () => {
   const source = readFileSync(new URL('./Portao.tsx', import.meta.url), 'utf8')
   assert.match(source, /erased after 24 hours/)
   assert.match(source, /60 days without using Mystique/)
-  assert.match(source, /not zero-knowledge/)
+  // The claim must never be made, and the honest statement must exist somewhere a
+  // person reads - the privacy notice - rather than as VPS trivia on the gate.
+  assert.match(source, /not a zero-knowledge one/)
+  assert.doesNotMatch(source, /server operator could technically access/)
   assert.match(source, /guardarExa\(/)
 })
 
@@ -63,4 +66,16 @@ test('the privacy notice can be reopened after it is accepted', () => {
   assert.match(ui, /className="privacy-link"/)
   assert.match(ui, /setPrivacidadeAberta\(true\)/)
   assert.match(readFileSync(new URL('./Portao.tsx', import.meta.url), 'utf8'), /export function aceitouPrivacidade/)
+})
+
+test('the gate is a modal scene that plays out before it lets go', () => {
+  const ui = readFileSync(new URL('./Simulation.tsx', import.meta.url), 'utf8')
+  const css = readFileSync(new URL('./styles.css', import.meta.url), 'utf8')
+  assert.match(ui, /className="portao-cena"/)
+  assert.match(ui, /aria-modal="true"/)
+  // It must not simply disappear the instant the account unlocks.
+  assert.match(ui, /setPortaoSaindo\(true\)/)
+  assert.match(css, /@keyframes carta-morfa/)
+  // Every spatial animation needs its reduced-motion path.
+  assert.match(css, /prefers-reduced-motion: reduce\)\s*\{\s*\.portao-fundo/)
 })

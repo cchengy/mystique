@@ -2301,17 +2301,132 @@ input:focus-visible {
 .model-drawer-locked span { font-size: .82rem; font-weight: 700; }
 .model-drawer-locked small { font-size: .72rem; }
 
-/* The gate is a flex item in a full-height column. Without a scroll box of its
-   own, the tall card (key, Exa, data lifecycle, deletion) ran straight off the
-   bottom of the pane instead of scrolling inside it. */
-.app[data-live='true'] .pane-mystique > .portao {
-  flex: 1 1 auto;
-  min-height: 0;
-  max-height: 100%;
-  overflow-y: auto;
-  overscroll-behavior: contain;
+/* --- the gate, as a scene ---------------------------------------------------
+   The account is the only way into the live chat, so it stops being a panel
+   pinned to the bottom of a column and becomes the screen's subject: the app
+   dims behind it, the card sits in the middle, and it always fits without
+   scrolling. When she lets you through, a comic panel wipes the card away and
+   the app comes back up to full strength. */
+
+.portao-cena {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: clamp(1rem, 4vh, 3rem) 1rem;
 }
-.app[data-live='true'] .pane-mystique:has(> .portao) .feed { flex: 0 1 auto; }
+
+.portao-fundo {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 1px 1px, rgba(226, 232, 255, 0.16) 1px, transparent 1.6px) 0 0 / 7px 7px,
+    rgba(4, 8, 26, 0.72);
+  animation: cena-entra 260ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.portao-palco {
+  position: relative;
+  width: min(30rem, 100%);
+  max-height: 100%;
+  animation: carta-entra 280ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* The card is a fixed proportion of the screen and never scrolls: the copy is
+   short enough to fit, and the panel is what holds it together. */
+.portao-cena .portao {
+  width: 100%;
+  max-height: min(78vh, 40rem);
+  margin: 0;
+  overflow: hidden;
+  border-color: rgba(226, 232, 255, 0.4);
+  box-shadow:
+    0 0 0 1px rgba(4, 8, 26, 0.6),
+    0.5rem 0.5rem 0 rgba(4, 8, 26, 0.45),
+    0 2rem 4rem rgba(0, 0, 0, 0.5);
+}
+
+/* The one link that is not an action reads as a link, not as a button. */
+.portao-link {
+  min-height: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: none !important;
+  color: var(--p-link) !important;
+  font-size: inherit !important;
+  text-decoration: underline;
+}
+
+/* Comic panels do not fade: they cut. The card is wiped edge to edge while it
+   shifts form - she is a shapeshifter, so it leaves by changing shape - and the
+   dimmed app comes back at the same time. */
+.portao-cena[data-saindo='true'] .portao-palco {
+  animation: carta-morfa 420ms cubic-bezier(0.65, 0, 0.35, 1) both;
+  pointer-events: none;
+}
+
+.portao-cena[data-saindo='true'] .portao-fundo {
+  animation: cena-sai 480ms cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+@keyframes cena-entra {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes cena-sai {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes carta-entra {
+  from { opacity: 0; transform: translateY(0.75rem) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes carta-morfa {
+  0% {
+    opacity: 1;
+    transform: none;
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+    filter: none;
+  }
+  30% {
+    opacity: 1;
+    transform: skewX(-2.5deg) scale(1.015);
+    filter: saturate(1.8) hue-rotate(16deg);
+  }
+  60% {
+    opacity: 0.92;
+    filter: saturate(2.2) hue-rotate(26deg);
+  }
+  100% {
+    opacity: 0;
+    transform: skewX(-8deg) scale(1.03);
+    /* a slanted panel gutter sweeps across and leaves nothing behind it */
+    clip-path: polygon(115% 0, 115% 0, 100% 100%, 100% 100%);
+    filter: saturate(2.4) hue-rotate(32deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .portao-fundo,
+  .portao-palco,
+  .portao-cena[data-saindo='true'] .portao-palco,
+  .portao-cena[data-saindo='true'] .portao-fundo {
+    animation-duration: 1ms;
+  }
+}
+
+/* Short viewports: the card keeps its proportion and scrolls inside itself
+   rather than growing past the screen. */
+@media (max-height: 44rem) {
+  .portao-cena .portao {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
 .evidence-list { display: grid; gap: .7rem; margin: 1rem 0 0; padding: 0; list-style: none; }
 .evidence-list li { display: grid; gap: .25rem; padding: .8rem; border: 1px solid var(--w-line); border-radius: .65rem; background: var(--w-bg); }
 .evidence-list strong { font-size: .76rem; text-transform: uppercase; letter-spacing: .04em; }

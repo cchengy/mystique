@@ -30,9 +30,17 @@ touch targets 44 px. Spacing follows a 4 px rhythm; pills are reserved for statu
   evidence. Frozen scenario data cannot masquerade as live history.
 - Replay: visibly scripted, with restrained controls, a readable counter and no live claim.
 - Security onboarding: disclose before login that provider credentials live for exactly
-  24 hours in an encrypted, isolated broker; sessions and memory follow the 60-day rule;
-  and a standard VPS cannot offer zero-knowledge against its operator. Never soften this
-  into generic “secure” copy.
+  24 hours in an encrypted, isolated broker, and that sessions and memory follow the
+  60-day rule. Never soften this into generic “secure” copy. The product never *claims*
+  zero-knowledge: that statement is made in plain language in the privacy notice, which is
+  one click from the gate and always reachable, rather than as hosting detail on the way
+  in — an onboarding card is not the place to describe the server's threat model.
+- The gate is the screen's subject, not a panel in a column: the app dims behind it, the
+  card is centred, holds one proportion and never scrolls at ordinary heights. It carries
+  only what getting in requires — provider extras and the data lifecycle live in the rail,
+  with deletion still one click away. When the account unlocks, a slanted comic panel
+  gutter wipes the card while it shifts colour toward her red, and the dimmed app comes
+  back to full strength; `prefers-reduced-motion` cuts straight to the app.
 - Account lifecycle: show the exact deletion date, distinguish logout, Mystique-data
   deletion and Auth0-identity deletion, and require the literal confirmation phrase for
   immediate irreversible deletion. Destructive color is reserved for this boundary.

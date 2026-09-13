@@ -510,6 +510,20 @@ export default function Simulation() {
 
   // The gate is up: the rail stays on screen, but nothing in it can be used.
   const travada = Boolean(authExigida && !liberado)
+  // The gate does not vanish the instant the account unlocks: it plays out, and
+  // only then hands the screen over. See the panel-wipe in styles.css.
+  const [portaoSaindo, setPortaoSaindo] = useState(false)
+  const travadaAntes = useRef(travada)
+  useEffect(() => {
+    if (travadaAntes.current && !travada) {
+      setPortaoSaindo(true)
+      const calmo = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      const fim = window.setTimeout(() => setPortaoSaindo(false), calmo ? 0 : 620)
+      travadaAntes.current = travada
+      return () => window.clearTimeout(fim)
+    }
+    travadaAntes.current = travada
+  }, [travada])
   // Shown unprompted until it is accepted, and reachable from the rail forever
   // after. It was invisible to anyone who had already clicked Understood.
   const [privacidadeAberta, setPrivacidadeAberta] = useState(() => !aceitouPrivacidade())
@@ -811,7 +825,6 @@ export default function Simulation() {
                 </p>
               )}
             </div>
-            {live && authExigida && !liberado && <PortaoConta t={t} aoLiberar={liberarConta} />}
 
             {learned && (
               <div className="learn-card" role="dialog" aria-label={t('What changed in her memory')}>
@@ -995,6 +1008,17 @@ export default function Simulation() {
             </div>
           </section>
         </main>
+      )}
+
+      {/* The account is the way in, so it is the only thing on screen: everything
+          else is dimmed behind it and comes back when she lets you through. */}
+      {live && (travada || portaoSaindo) && (
+        <div className="portao-cena" data-saindo={portaoSaindo ? 'true' : undefined} aria-hidden={portaoSaindo}>
+          <div className="portao-fundo" />
+          <div className="portao-palco" role="dialog" aria-modal="true" aria-label={t('The live chat needs an account')}>
+            <PortaoConta t={t} aoLiberar={liberarConta} aoAbrirPrivacidade={() => setPrivacidadeAberta(true)} compacto />
+          </div>
+        </div>
       )}
 
       {privacidadeAberta && <BannerPrivacidade t={t} aoFechar={() => setPrivacidadeAberta(false)} />}
