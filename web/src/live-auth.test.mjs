@@ -133,3 +133,15 @@ test('the tour is remembered on the account, and can be replayed', () => {
   assert.match(ui, /if \(!dados\.onboarding_visto\) setGuia\(0\)/)
   assert.match(ui, /className="theme guia-botao" onClick=\{abrirGuia\}/)
 })
+
+test('opening a conversation never inherits another one being busy', () => {
+  const ui = readFileSync(new URL('./Simulation.tsx', import.meta.url), 'utf8')
+  const api = readFileSync(new URL('./live.ts', import.meta.url), 'utf8')
+  // Switching chats used to leave Steer and Stop showing on every other one:
+  // the running state belonged to the component, not to the conversation.
+  const aoAbrir = ui.slice(ui.indexOf('if (!sessionId) return'), ui.indexOf('}, [sessionId, token])'))
+  assert.match(aoAbrir, /setLiveRunning\(false\)/)
+  assert.match(aoAbrir, /setLiveActivity\(''\)/)
+  // ...and the truth comes back from that conversation's own stream.
+  assert.match(api, /mensagem\?: string/)
+})

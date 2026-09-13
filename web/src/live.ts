@@ -90,7 +90,9 @@ export function connectLive(handlers: LiveHandlers): () => void {
       handlers.final(value.texto, Boolean(value.erro))
     }
     if (event.type === 'CUSTOM' && event.name === 'missao_iniciada') {
-      handlers.mission(true, (event.value as { mensagem: string }).mensagem)
+      // On reconnect the server sends this without a message: it is telling us
+      // this conversation is already working, not that a new mission started.
+      handlers.mission(true, (event.value as { mensagem?: string }).mensagem)
     }
     if (event.type === 'CUSTOM' && event.name === 'missao_finalizada') handlers.mission(false)
   }

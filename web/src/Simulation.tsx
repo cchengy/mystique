@@ -394,6 +394,12 @@ export default function Simulation() {
   }, [authExigida, liberado, token])
   useEffect(() => {
     if (!sessionId) return
+    // Everything below belongs to the conversation being opened, not to the one
+    // being left. Whether this one is working is answered by its own stream, on
+    // connect; until then it is not.
+    setLiveRunning(false)
+    setLiveActivity('')
+    setLiveError(null)
     void getSession(sessionId, token).then((session) => {
       setMode(session.modo)
       setLiveMessages(entriesFromSession(session))

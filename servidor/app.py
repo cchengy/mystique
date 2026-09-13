@@ -419,9 +419,18 @@ def criar_app(mundos: Mundos, persona: str, extras: FerramentasExtras) -> FastAP
         mundo = mundos.para(sub, None, request.query_params.get("sessao", ""))
         fila = mundo.assinar_eventos()
 
+        sessao_do_fluxo = request.query_params.get("sessao", "")
+
         async def gerador():
             try:
                 yield encoder.encode(evento_snapshot(mundo.snapshot()))
+                # Whether this conversation has a run in progress, said once on
+                # connect. Without it the browser could only guess from events it
+                # had already missed, so a conversation that was merely open
+                # looked busy - and one that really was busy looked idle.
+                tarefa_viva = tarefas_por_sessao.get((sub, sessao_do_fluxo))
+                if tarefa_viva is not None and not tarefa_viva.done():
+                    yield encoder.encode(evento_custom("missao_iniciada", {}))
                 while True:
                     if await request.is_disconnected():
                         break
