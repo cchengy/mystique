@@ -28,8 +28,21 @@ export type Eu = {
   sub: string
   email?: string
   nome?: string
-  chave: { tem: boolean; origem?: string; em?: string }
+  chave: Credencial
+  exa: Credencial
   modelo: string
+  ciclo?: { ultimo_acesso?: string; apagar_em?: string; dias_inatividade: number }
+}
+
+export type Credencial = { tem: boolean; expirada?: boolean; origem?: string; criada_em?: string; expira_em?: string }
+
+export async function apagarConta(confirmacao: string, token?: string): Promise<void> {
+  const r = await fetch(`${API_BASE}/api/conta`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json', ...(comToken(token) ?? {}) },
+    body: JSON.stringify({ confirmacao }),
+  })
+  if (!r.ok) throw new Error((await r.text()).slice(0, 200))
 }
 
 export async function lerConfig(): Promise<Config> {
@@ -68,6 +81,20 @@ export async function guardarChave(
 
 export async function esquecerChave(token?: string): Promise<void> {
   await fetch(`${API_BASE}/api/openrouter/chave`, { method: 'DELETE', headers: comToken(token) })
+}
+
+export async function guardarExa(chave: string, token?: string): Promise<Credencial> {
+  const r = await fetch(`${API_BASE}/api/exa/chave`, {
+    method: 'PUT', headers: { 'Content-Type': 'application/json', ...(comToken(token) ?? {}) },
+    body: JSON.stringify({ chave }),
+  })
+  if (!r.ok) throw new Error((await r.text()).slice(0, 200))
+  return r.json()
+}
+
+export async function esquecerExa(token?: string): Promise<void> {
+  const r = await fetch(`${API_BASE}/api/exa/chave`, { method: 'DELETE', headers: comToken(token) })
+  if (!r.ok) throw new Error((await r.text()).slice(0, 200))
 }
 
 export async function selecionarModelo(modelo: string, token?: string): Promise<void> {

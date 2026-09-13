@@ -6,6 +6,7 @@ as a tool definition, and the judge uses it to validate Mystique's guess.
 
 import ast
 import os
+from contextvars import ContextVar
 import re
 import signal
 import subprocess
@@ -195,20 +196,28 @@ def _conselho_do_dia(args: dict) -> str:
 # failing, so the world still loads and the ability is still observable.
 
 _EXA = "https://api.exa.ai"
+_EXA_BROKER: ContextVar[tuple[str, str] | None] = ContextVar("mystique_exa_broker", default=None)
+
+
+def configurar_broker_exa(base_url: str, token: str):
+    """Scope Exa BYOK to one mission; return a reset closure."""
+    marker = _EXA_BROKER.set((base_url.rstrip("/"), token))
+    return lambda: _EXA_BROKER.reset(marker)
 
 
 def _exa(caminho: str, corpo: dict) -> dict | None:
-    chave = os.getenv("EXA_API_KEY", "")
-    if not chave:
+    broker = _EXA_BROKER.get()
+    chave = os.getenv("EXA_API_KEY", "") if broker is None else ""
+    if not chave and broker is None:
         return None
     import json as _json
     import urllib.error
     import urllib.request
 
     pedido = urllib.request.Request(
-        f"{_EXA}{caminho}",
+        f"{broker[0]}/exa{caminho}" if broker else f"{_EXA}{caminho}",
         data=_json.dumps(corpo).encode(),
-        headers={"x-api-key": chave, "Content-Type": "application/json"},
+        headers={"Authorization": f"Bearer {broker[1]}", "Content-Type": "application/json"} if broker else {"x-api-key": chave, "Content-Type": "application/json"},
     )
     try:
         with urllib.request.urlopen(pedido, timeout=30) as r:

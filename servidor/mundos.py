@@ -14,6 +14,7 @@ is exactly the single-world behaviour local development had before.
 """
 
 import os
+import asyncio
 from pathlib import Path
 from typing import Callable
 
@@ -60,6 +61,16 @@ class Mundos:
         mundo = classe(workspace, eventos=barramento)
         self._por_conta[chave] = mundo
         return mundo
+
+    async def apagar(self, sub: str) -> None:
+        """Evict live state and close provider clients before deleting an account."""
+        for chave in [chave for chave in self._por_conta if chave[0] == sub]:
+            mundo = self._por_conta.pop(chave)
+            cliente = getattr(mundo, "_cliente", None)
+            fechar = getattr(getattr(cliente, "_http", None), "aclose", None)
+            if fechar:
+                await fechar()
+        self._barramentos.pop(sub, None)
 
     def contexto(self, modo: str | None = None) -> tuple[str, Callable]:
         """(persona, extras) for the configured mode."""

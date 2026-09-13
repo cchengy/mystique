@@ -29,6 +29,13 @@ touch targets 44 px. Spacing follows a 4 px rhythm; pills are reserved for statu
 - Compare: “Ela Pediu” and “Ela Tomou” show actual Good/Evil sessions and Reasoning Bank
   evidence. Frozen scenario data cannot masquerade as live history.
 - Replay: visibly scripted, with restrained controls, a readable counter and no live claim.
+- Security onboarding: disclose before login that provider credentials live for exactly
+  24 hours in an encrypted, isolated broker; sessions and memory follow the 60-day rule;
+  and a standard VPS cannot offer zero-knowledge against its operator. Never soften this
+  into generic “secure” copy.
+- Account lifecycle: show the exact deletion date, distinguish logout, Mystique-data
+  deletion and Auth0-identity deletion, and require the literal confirmation phrase for
+  immediate irreversible deletion. Destructive color is reserved for this boundary.
 
 ## Dense implementation prompt
 
@@ -42,9 +49,16 @@ Replace Compare's scripted ending with real Good/Evil trajectory evidence. Keep 
 explicitly scripted and tune its hierarchy. Verify desktop/mobile, light/dark, keyboard focus
 and reduced motion.
 
+For security onboarding, use a compact three-rule disclosure before login: Auth0 identity,
+24-hour provider credentials, and 60-day account data. After login, show the exact expiry
+timestamps beside OpenRouter and Exa, and never imply that using the product extends them.
+Name the standard-VPS limitation plainly without turning the primary task into legal prose.
+
 ## Acceptance
 
 At 1440×900 and 390×844 there is no horizontal overflow, clipped action or overlapping
 composer. Switching sessions replaces the transcript and the next model call receives that
 session's prior turns. Good/Evil state is isolated. Missing comparison evidence is labeled
 honestly. Feature commits update `CLAUDE.md`; UI-contract changes update this file.
+Credential onboarding is not accepted until missing, connected, expired, scheduled-deletion
+and immediate-deletion states pass keyboard and visual inspection.

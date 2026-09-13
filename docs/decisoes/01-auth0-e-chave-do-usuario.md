@@ -1,5 +1,9 @@
 # Auth0 para identidade, OAuth do OpenRouter para a chave
 
+> Supercedida para armazenamento e retenção por
+> [`02-cofre-byok-24h.md`](02-cofre-byok-24h.md). A análise de Auth0/OpenRouter permanece
+> histórica; `MYSTIQUE_SECRET` e armazenamento no processo principal não são mais usados.
+
 **Data:** 2026-09-12 · **Status:** aceita · **Branch:** `post-hackathon`
 
 ## Contexto

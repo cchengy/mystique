@@ -5,6 +5,30 @@
 import { AGENTS } from './scenario'
 
 export const PT: Record<string, string> = {
+  'Before you continue': 'Antes de continuar',
+  'Provider keys are encrypted in a separate credential container and erased after 24 hours.': 'As chaves dos provedores são cifradas em um container de credenciais separado e apagadas após 24 horas.',
+  'Conversations and Mystique memory are erased after 60 days without a successful sign-in.': 'As conversas e a memória da Mystique são apagadas após 60 dias sem um login bem-sucedido.',
+  'This is defense in depth on a standard VPS, not zero-knowledge: the server operator could technically access running systems.': 'Isso é defesa em profundidade em um VPS padrão, não zero-knowledge: o operador do servidor poderia tecnicamente acessar os sistemas em execução.',
+  'Temporary credential': 'Credencial temporária',
+  'Automatically erased': 'Apagada automaticamente',
+  'within 24 hours': 'em até 24 horas',
+  'For your protection, the credential expires exactly 24 hours after you connect it. Using Mystique does not extend that deadline; you will need to reconnect.': 'Para sua proteção, a credencial expira exatamente 24 horas depois de ser conectada. Usar a Mystique não estende esse prazo; será necessário reconectar.',
+  'Works with any OpenRouter key. It is encrypted inside the isolated credential container and erased within 24 hours or immediately when you disconnect it.': 'Funciona com qualquer chave do OpenRouter. Ela é cifrada dentro do container de credenciais isolado e apagada em até 24 horas ou imediatamente quando você a desconecta.',
+  'Web retrieval': 'Pesquisa na web',
+  'Optional. Exa gives the Good profile current web retrieval with sources. The Evil profile remains blocked from real-world tools.': 'Opcional. A Exa dá ao perfil Bem pesquisa atual na web com fontes. O perfil Mal continua bloqueado para ferramentas do mundo real.',
+  'Connected until': 'Conectada até',
+  'Disconnect Exa': 'Desconectar Exa',
+  'Exa API key': 'Chave de API da Exa',
+  'Connect for 24 hours': 'Conectar por 24 horas',
+  'Mystique permanently deletes conversations, Reasoning Bank history, learned profiles and settings after 60 days without a successful sign-in. Provider keys follow the shorter 24-hour rule above.': 'A Mystique apaga permanentemente conversas, histórico do Banco de Raciocínio, perfis aprendidos e configurações após 60 dias sem login bem-sucedido. As chaves dos provedores seguem a regra mais curta de 24 horas acima.',
+  'This permanently removes your provider credentials, conversations, memory and settings. It does not delete your Auth0 identity. This cannot be undone.': 'Isso remove permanentemente suas credenciais de provedores, conversas, memória e configurações. Sua identidade no Auth0 não é apagada. Não é possível desfazer.',
+  'Your data lifecycle': 'Ciclo dos seus dados',
+  'Mystique permanently deletes application data after 60 days without a successful sign-in. There is no administrator recovery.': 'A Mystique apaga permanentemente os dados da aplicação após 60 dias sem um login bem-sucedido. Não existe recuperação pelo administrador.',
+  'Current deletion deadline': 'Prazo atual de exclusão',
+  'Delete my Mystique data now': 'Apagar meus dados da Mystique agora',
+  'This permanently removes your encrypted vault, conversations, memory and settings. It does not delete your Auth0 identity. This cannot be undone.': 'Isso remove permanentemente seu cofre cifrado, conversas, memória e configurações. Sua identidade no Auth0 não é apagada. Não é possível desfazer.',
+  'Type APAGAR MINHA CONTA to confirm': 'Digite APAGAR MINHA CONTA para confirmar',
+  'Delete permanently': 'Apagar permanentemente',
   // --- conta, chave e privacidade ---
   'The live chat needs an account': 'O chat ao vivo precisa de conta',
   'So that what she learns is yours, kept apart from everyone else, and so the model runs on your key rather than ours.':
@@ -39,6 +63,8 @@ export const PT: Record<string, string> = {
   'Disconnect and erase my key': 'Desconectar e apagar minha chave',
   'Privacy notice': 'Aviso de privacidade',
   'Cookies and personal data': 'Cookies e dados pessoais',
+  'Auth0 keeps your login session. Provider keys are encrypted in a separate credential container and erased after 24 hours. Conversations and memory are retained for up to 60 inactive days. No analytics or advertising trackers.': 'O Auth0 mantém sua sessão de login. As chaves dos provedores são cifradas em um container de credenciais separado e apagadas após 24 horas. Conversas e memória ficam retidas por até 60 dias de inatividade. Sem analytics ou rastreadores de publicidade.',
+  'Under the LGPD you may delete Mystique data at any time. Signing out does not delete data; disconnecting a provider erases its key. The guided replay needs none of it.': 'Pela LGPD, você pode apagar os dados da Mystique a qualquer momento. Sair não apaga os dados; desconectar um provedor apaga sua chave. O replay guiado não precisa de nada disso.',
   'We store only what signing in requires: your Auth0 session in this browser, and, if you connect one, your model key — encrypted on our server and never shared. No analytics, no tracking, no third-party cookies.':
     'Guardamos só o necessário para entrar: sua sessão do Auth0 neste navegador e, se você conectar uma, sua chave de modelo — cifrada no nosso servidor e nunca compartilhada. Sem analytics, sem rastreamento, sem cookies de terceiros.',
   'Under the LGPD you may see, correct or delete this at any time: disconnecting your key erases it, and signing out ends the session. The guided replay needs none of it.':
@@ -123,6 +149,7 @@ export const PT: Record<string, string> = {
   '▶ Guided replay': '▶ Replay guiado',
   'Backend connected': 'Motor conectado',
   'Backend disconnected': 'Motor desconectado',
+  'Local replay · no connection required': 'Replay local · sem conexão necessária',
   '● LIVE · DeepSeek is working through AG-UI': '● AO VIVO · DeepSeek trabalhando via AG-UI',
   '● LIVE · Ready for a DeepSeek mission': '● AO VIVO · pronto para uma missão no DeepSeek',
   '● LIVE · Your model is working through AG-UI': '● AO VIVO · seu modelo está trabalhando via AG-UI',

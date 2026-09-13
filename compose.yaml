@@ -29,6 +29,8 @@ services:
     depends_on:
       workspace-init:
         condition: service_completed_successfully
+      credential-broker:
+        condition: service_healthy
     expose:
       - "8000"
     environment:
@@ -36,20 +38,14 @@ services:
       MYSTIQUE_PROVIDER: ${MYSTIQUE_PROVIDER:-openai}
       MYSTIQUE_BASE_URL: ${MYSTIQUE_BASE_URL}
       MYSTIQUE_MODEL_ID: ${MYSTIQUE_MODEL_ID}
-      MYSTIQUE_WORLD_PROVIDER: ${MYSTIQUE_WORLD_PROVIDER:-openai}
-      MYSTIQUE_WORLD_BASE_URL: ${MYSTIQUE_WORLD_BASE_URL}
-      MYSTIQUE_WORLD_MODEL: ${MYSTIQUE_WORLD_MODEL}
-      MYSTIQUE_WORLD_API_KEY: ${MYSTIQUE_WORLD_API_KEY}
       MYSTIQUE_BUDGET_USD: ${MYSTIQUE_BUDGET_USD:-5}
       # Identity. With these unset the deployment stays open, which is what the
       # guided replay and local development both want.
       AUTH0_DOMAIN: ${AUTH0_DOMAIN}
       AUTH0_CLIENT_ID: ${AUTH0_CLIENT_ID}
       AUTH0_AUDIENCE: ${AUTH0_AUDIENCE}
-      # Encrypts stored model keys at rest. Without it the server refuses to store
-      # one rather than writing it in the clear. Changing it makes existing keys
-      # unreadable, so users would have to reconnect.
-      MYSTIQUE_SECRET: ${MYSTIQUE_SECRET}
+      MYSTIQUE_REQUIRE_AUTH: "true"
+      MYSTIQUE_CREDENTIAL_BROKER_URL: http://credential-broker:8001
       # The root filesystem is read-only: accounts must live inside a mounted
       # volume or every write fails at runtime.
       MYSTIQUE_CONTAS_DIR: ${MYSTIQUE_CONTAS_DIR:-/app/good/workspace/contas}
@@ -66,7 +62,50 @@ services:
     volumes:
       - mystique-workspace:/app/good/workspace
       - mystique-evil-workspace:/app/evil/workspace
+    networks:
+      - app-egress
+      - vault-link
+
+  credential-broker:
+    build: .
+    restart: unless-stopped
+    command: ["python", "-m", "cofre"]
+    environment:
+      AUTH0_DOMAIN: ${AUTH0_DOMAIN}
+      AUTH0_AUDIENCE: ${AUTH0_AUDIENCE}
+      MYSTIQUE_VAULT_KEY: ${MYSTIQUE_VAULT_KEY}
+      # Migration only: derives a domain-separated 32-byte vault key from the
+      # existing deployment secret. Never passed to the main application.
+      MYSTIQUE_LEGACY_SECRET: ${MYSTIQUE_SECRET}
+      MYSTIQUE_VAULT_DIR: /vault
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=16m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 64
+    mem_limit: 256m
+    cpus: 0.25
+    volumes:
+      - mystique-credentials:/vault
+    networks:
+      - vault-egress
+      - vault-link
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/health', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
 volumes:
   mystique-workspace:
   mystique-evil-workspace:
+  mystique-credentials:
+
+networks:
+  app-egress:
+  vault-egress:
+  vault-link:
+    internal: true

@@ -246,7 +246,10 @@ export default function Simulation() {
   const [termOpen, setTermOpen] = useState(false)
   // Live needs an account AND a key. The guided replay needs neither, so the gate
   // only ever renders on the live side.
-  const [authExigida, setAuthExigida] = useState(false)
+  // `null` means the public config is still loading. Treating that transient state
+  // as "auth disabled" made the browser call /api/sessoes without a token and
+  // flashed a raw 401 during onboarding.
+  const [authExigida, setAuthExigida] = useState<boolean | null>(null)
   const [liberado, setLiberado] = useState(false)
   const [token, setToken] = useState<string | undefined>(undefined)
   const [liveRunning, setLiveRunning] = useState(false)
@@ -283,7 +286,7 @@ export default function Simulation() {
     return items
   }, [token])
   useEffect(() => {
-    if (authExigida && !liberado) return
+    if (authExigida === null || (authExigida && !liberado)) return
     void refreshSessions().then(async (items) => {
       let selected = sessionId && items.some((item) => item.id === sessionId) ? sessionId : items[0]?.id
       if (!selected) {
@@ -527,8 +530,8 @@ export default function Simulation() {
         <nav className="experience-switch" aria-label="Experience mode">
           <button aria-pressed={live} onClick={() => { setLive(true); setPlaying(false) }}>{t('● Live chat')}</button>
           <button aria-pressed={!live} onClick={() => setLive(false)}>{t('▶ Guided replay')}</button>
-          <span role="status" className={liveConnected ? 'is-connected' : 'is-disconnected'}>
-            {t(liveConnected ? 'Backend connected' : 'Backend disconnected')}
+          <span role="status" className={live ? (liveConnected ? 'is-connected' : 'is-disconnected') : 'is-local'}>
+            {live ? t(liveConnected ? 'Backend connected' : 'Backend disconnected') : t('Local replay · no connection required')}
           </span>
         </nav>
       )}

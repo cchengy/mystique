@@ -2,6 +2,7 @@
 
 import asyncio
 import os
+from datetime import datetime, timezone
 from pathlib import Path
 
 from ag_ui.encoder import EventEncoder
@@ -13,7 +14,7 @@ from pydantic import BaseModel
 
 from mystique.agente import FerramentasExtras, executar
 
-from . import contas
+from . import contas, cofre_client
 from .eventos import evento_custom, evento_snapshot
 from .mundo_servidor import InterrompivelMixin
 from .mundos import ANONIMO, Mundos
@@ -27,6 +28,10 @@ class ChaveBody(BaseModel):
     codigo: str | None = None         # OAuth PKCE do OpenRouter
     verificador: str | None = None
     metodo: str = "S256"
+
+
+class ChaveProvedorBody(BaseModel):
+    chave: str
 
 
 class DecisaoBody(BaseModel):
@@ -58,7 +63,13 @@ class ModeloBody(BaseModel):
     modelo: str
 
 
+class ApagarContaBody(BaseModel):
+    confirmacao: str
+
+
 def criar_app(mundos: Mundos, persona: str, extras: FerramentasExtras) -> FastAPI:
+    if os.getenv("MYSTIQUE_REQUIRE_AUTH", "").lower() in {"1", "true", "yes"} and not contas.auth_configurada():
+        raise RuntimeError("MYSTIQUE_REQUIRE_AUTH is enabled but Auth0 is not configured")
     app = FastAPI(title="Mystique — trust broker")
     origens = [
         origem.strip()
@@ -72,6 +83,7 @@ def criar_app(mundos: Mundos, persona: str, extras: FerramentasExtras) -> FastAP
     # A fire-and-forget asyncio.Task with no live reference can be garbage-collected mid-run;
     # this set just keeps one until it finishes.
     tarefas_em_curso: set[asyncio.Task] = set()
+    tarefas_por_conta: dict[str, set[asyncio.Task]] = {}
     sessoes = Sessoes(contas.CONTAS_DIR)
 
     async def _sub_do_pedido(request: Request) -> str:
@@ -86,12 +98,37 @@ def criar_app(mundos: Mundos, persona: str, extras: FerramentasExtras) -> FastAP
     async def _exigir_conta(request: Request) -> dict:
         """The live chat needs an account. The guided replay never calls this."""
         if not contas.auth_configurada():
+            if os.getenv("MYSTIQUE_REQUIRE_AUTH", "").lower() in {"1", "true", "yes"}:
+                raise HTTPException(503, "Authentication is required but Auth0 is not configured.")
             # No tenant configured: the deployment is open on purpose (local dev).
             return {"sub": "anonimo", "aberto": True}
         usuario = await contas.usuario_do_token(request.headers.get("authorization"))
         if usuario is None:
             raise HTTPException(401, "Sign in to use the live chat.")
+        emitido = usuario.get("auth_time") or usuario.get("iat")
+        instante = datetime.fromtimestamp(emitido, timezone.utc) if isinstance(emitido, (int, float)) else None
+        contas.registrar_acesso(usuario.get("sub", ANONIMO), instante)
         return usuario
+
+    async def _encerrar_conta(sub: str) -> None:
+        tarefas = list(tarefas_por_conta.pop(sub, set()))
+        for tarefa in tarefas:
+            tarefa.cancel()
+        if tarefas:
+            await asyncio.gather(*tarefas, return_exceptions=True)
+        await mundos.apagar(sub)
+
+    @app.on_event("startup")
+    async def iniciar_expiracao() -> None:
+        async def varrer() -> None:
+            while True:
+                for sub in contas.contas_vencidas():
+                    await _encerrar_conta(sub)
+                    contas.apagar_conta(sub)
+                await asyncio.sleep(3600)
+        tarefa = asyncio.create_task(varrer())
+        tarefas_em_curso.add(tarefa)
+        tarefa.add_done_callback(tarefas_em_curso.discard)
 
     @app.get("/api/config")
     def config() -> dict:
@@ -104,7 +141,7 @@ def criar_app(mundos: Mundos, persona: str, extras: FerramentasExtras) -> FastAP
                 "audiencia": contas.AUTH0_AUDIENCE or None,
                 "cliente": os.getenv("AUTH0_CLIENT_ID") or None,
             },
-            "cofre": bool(contas.SEGREDO),
+            "cofre": True,
         }
 
     @app.get("/api/eu")
@@ -112,13 +149,30 @@ def criar_app(mundos: Mundos, persona: str, extras: FerramentasExtras) -> FastAP
         usuario = await _exigir_conta(request)
         sub = usuario.get("sub", "anonimo")
         conta = contas.ler_conta(sub)
+        credenciais = await cofre_client.pedir("GET", "/credentials", request.headers.get("authorization"))
         return {
             "sub": sub,
             "email": usuario.get("email"),
             "nome": usuario.get("name") or usuario.get("nickname"),
-            "chave": {"tem": bool(conta.get("chave")), "origem": conta.get("origem"), "em": conta.get("em")},
+            "chave": credenciais.get("openrouter", {"tem": False}),
+            "exa": credenciais.get("exa", {"tem": False}),
             "modelo": contas.modelo_da_conta(sub),
+            "ciclo": {
+                "ultimo_acesso": conta.get("last_access_at"),
+                "apagar_em": conta.get("delete_after"),
+                "dias_inatividade": 60,
+            },
         }
+
+    @app.delete("/api/conta", status_code=204)
+    async def apagar_conta(corpo: ApagarContaBody, request: Request) -> None:
+        usuario = await _exigir_conta(request)
+        if corpo.confirmacao != "APAGAR MINHA CONTA":
+            raise HTTPException(400, "Type APAGAR MINHA CONTA to confirm permanent deletion.")
+        sub = usuario.get("sub", ANONIMO)
+        await _encerrar_conta(sub)
+        await cofre_client.pedir("DELETE", "/account", request.headers.get("authorization"))
+        contas.apagar_conta(sub)
 
     @app.get("/api/openrouter/inicio")
     async def openrouter_inicio(request: Request) -> dict:
@@ -133,32 +187,33 @@ def criar_app(mundos: Mundos, persona: str, extras: FerramentasExtras) -> FastAP
 
     @app.post("/api/openrouter/chave")
     async def openrouter_chave(corpo: ChaveBody, request: Request) -> dict:
-        usuario = await _exigir_conta(request)
-        sub = usuario.get("sub", "anonimo")
-        if corpo.codigo and corpo.verificador:
-            chave = await contas.trocar_codigo(corpo.codigo, corpo.verificador, corpo.metodo)
-            origem = "openrouter-oauth"
-        elif corpo.chave:
-            chave, origem = corpo.chave.strip(), "colada"
-        else:
-            raise HTTPException(400, "Send either an OAuth code with its verifier, or a key.")
-        # Prove it works before storing it: a key that does not answer is worse than none.
-        estado = await contas.estado_da_chave(chave)
-        guardada = contas.guardar_chave(sub, chave, origem)
-        return {"guardada": guardada, "estado": estado}
+        await _exigir_conta(request)
+        guardada = await cofre_client.pedir("PUT", "/credentials/openrouter", request.headers.get("authorization"), {
+            "key": corpo.chave, "code": corpo.codigo, "verifier": corpo.verificador, "method": corpo.metodo,
+        })
+        estado = await cofre_client.pedir("GET", "/openrouter/api/v1/key", request.headers.get("authorization"))
+        return {"guardada": guardada, "estado": {"chave": estado.get("data", {})}}
 
     @app.get("/api/openrouter/estado")
     async def openrouter_estado(request: Request) -> dict:
-        usuario = await _exigir_conta(request)
-        chave = contas.chave_da_conta(usuario.get("sub", "anonimo"))
-        if not chave:
-            raise HTTPException(404, "No key stored for this account.")
-        return await contas.estado_da_chave(chave)
+        await _exigir_conta(request)
+        estado = await cofre_client.pedir("GET", "/openrouter/api/v1/key", request.headers.get("authorization"))
+        return {"chave": estado.get("data", {})}
 
     @app.delete("/api/openrouter/chave", status_code=204)
     async def openrouter_esquecer(request: Request) -> None:
-        usuario = await _exigir_conta(request)
-        contas.esquecer_chave(usuario.get("sub", "anonimo"))
+        await _exigir_conta(request)
+        await cofre_client.pedir("DELETE", "/credentials/openrouter", request.headers.get("authorization"))
+
+    @app.put("/api/exa/chave")
+    async def exa_chave(corpo: ChaveProvedorBody, request: Request) -> dict:
+        await _exigir_conta(request)
+        return await cofre_client.pedir("PUT", "/credentials/exa", request.headers.get("authorization"), {"key": corpo.chave})
+
+    @app.delete("/api/exa/chave", status_code=204)
+    async def exa_esquecer(request: Request) -> None:
+        await _exigir_conta(request)
+        await cofre_client.pedir("DELETE", "/credentials/exa", request.headers.get("authorization"))
 
     @app.put("/api/openrouter/modelo")
     async def openrouter_modelo(corpo: ModeloBody, request: Request) -> dict:
@@ -197,6 +252,7 @@ def criar_app(mundos: Mundos, persona: str, extras: FerramentasExtras) -> FastAP
 
     @app.post("/api/missoes", status_code=202)
     async def iniciar_missao(corpo: MissaoBody, request: Request) -> dict:
+        authorization = request.headers.get("authorization")
         sub = await _sub_do_pedido(request)
         sessao = sessoes.obter(sub, corpo.sessao_id)
         if sessao is None:
@@ -207,16 +263,19 @@ def criar_app(mundos: Mundos, persona: str, extras: FerramentasExtras) -> FastAP
         sessoes.adicionar(sub, corpo.sessao_id, "user", corpo.mensagem)
         banco = getattr(mundo, "banco", None)
         evidencias_antes = {item.get("id"): item for item in banco.todos()} if banco is not None else {}
-        chave = contas.chave_da_conta(sub)
         openai_config = None
-        if chave:
+        if authorization:
             openai_config = {
-                "base_url": contas.OPENROUTER,
+                "base_url": f"{cofre_client.COFRE_URL}/openrouter/api/v1",
                 "modelo": contas.modelo_da_conta(sub),
-                "chave": chave,
+                "chave": authorization.removeprefix("Bearer "),
             }
             mundo.configurar_openai(**openai_config)
         async def executar_com_estado() -> None:
+            from mystique.poderes import configurar_broker_exa
+            reset_exa = configurar_broker_exa(
+                cofre_client.COFRE_URL, openai_config["chave"]
+            ) if openai_config else (lambda: None)
             iniciar_ui = getattr(mundo, "iniciar_missao_ui", None)
             if iniciar_ui:
                 iniciar_ui()
@@ -232,6 +291,9 @@ def criar_app(mundos: Mundos, persona: str, extras: FerramentasExtras) -> FastAP
                     persona_pt, extras_modo, openai_config=openai_config, historico=contexto,
                 )
             finally:
+                reset_exa()
+                if openai_config:
+                    await mundo.desconfigurar_openai()
                 finalizar_ui = getattr(mundo, "finalizar_missao_ui", None)
                 if finalizar_ui:
                     texto, erro = finalizar_ui()
@@ -246,7 +308,11 @@ def criar_app(mundos: Mundos, persona: str, extras: FerramentasExtras) -> FastAP
 
         tarefa = asyncio.create_task(executar_com_estado())
         tarefas_em_curso.add(tarefa)
-        tarefa.add_done_callback(tarefas_em_curso.discard)
+        tarefas_por_conta.setdefault(sub, set()).add(tarefa)
+        def concluir(t: asyncio.Task) -> None:
+            tarefas_em_curso.discard(t)
+            tarefas_por_conta.get(sub, set()).discard(t)
+        tarefa.add_done_callback(concluir)
         return {"ok": True}
 
     @app.post("/api/recibos/{recibo_id}/decisao")
@@ -268,6 +334,8 @@ def criar_app(mundos: Mundos, persona: str, extras: FerramentasExtras) -> FastAP
             if usuario is None:
                 raise HTTPException(401, "Sign in to watch the live stream.")
             sub = usuario.get("sub", ANONIMO)
+        elif os.getenv("MYSTIQUE_REQUIRE_AUTH", "").lower() in {"1", "true", "yes"}:
+            raise HTTPException(503, "Authentication is required but Auth0 is not configured.")
         else:
             sub = ANONIMO
         mundo = mundos.para(sub)

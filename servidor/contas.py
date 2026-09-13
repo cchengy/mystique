@@ -7,36 +7,26 @@ Universal Login) and sends the resulting access token. We verify it against the
 tenant's JWKS - signature, issuer, audience, expiry - and the `sub` claim becomes
 the account id. Nothing else identifies a user.
 
-**The model key is NOT Auth0's job.** Token Vault stores OAuth access and refresh
-tokens from federated providers over RFC 8693; a key the user brings is not one of
-those, and Auth0's own docs say non-OAuth APIs need credential management outside
-it. So the key lives here, encrypted at rest, filed under the Auth0 `sub`.
-
-The preferred way to get that key is OpenRouter's own OAuth PKCE flow: the user
-authorises on openrouter.ai and we exchange the code for a key scoped to their
-account, so they never paste a secret. Pasting stays available for people who
-prefer it.
-
-Refusing beats guessing: with no MYSTIQUE_SECRET set, storing a key fails loudly
-instead of writing it in the clear.
+Provider credentials deliberately do not live here. The isolated ``cofre`` service
+owns their encryption, persistence, expiry and provider proxying.
 """
 
 import base64
 import hashlib
-import hmac
 import json
 import os
-import secrets
+import shutil
 import time
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
 import httpx2 as httpx
-from fastapi import HTTPException
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import padding, rsa
 
 AUTH0_DOMAIN = os.getenv("AUTH0_DOMAIN", "").strip().rstrip("/")
 AUTH0_AUDIENCE = os.getenv("AUTH0_AUDIENCE", "").strip()
-SEGREDO = os.getenv("MYSTIQUE_SECRET", "").strip()
 CONTAS_DIR = Path(os.getenv("MYSTIQUE_CONTAS_DIR", "workspace/contas"))
 
 OPENROUTER = "https://openrouter.ai/api/v1"
@@ -45,45 +35,6 @@ MODELO_PADRAO = os.getenv("MYSTIQUE_OPENROUTER_MODEL", "openrouter/auto").strip(
 
 def auth_configurada() -> bool:
     return bool(AUTH0_DOMAIN and AUTH0_AUDIENCE)
-
-
-# --- cifragem em repouso ------------------------------------------------------
-# AES would mean a dependency. This is XChaCha-shaped in spirit only: a keyed
-# stream from HMAC-SHA256 plus an authentication tag over the ciphertext. Enough
-# that a stolen disk does not hand over the keys, and honest about what it is.
-
-def _fluxo(chave: bytes, nonce: bytes, n: int) -> bytes:
-    saida = bytearray()
-    contador = 0
-    while len(saida) < n:
-        saida += hmac.new(chave, nonce + contador.to_bytes(8, "big"), hashlib.sha256).digest()
-        contador += 1
-    return bytes(saida[:n])
-
-
-def cifrar(texto: str) -> dict:
-    if not SEGREDO:
-        raise HTTPException(503, "MYSTIQUE_SECRET is not set: refusing to store a key in the clear.")
-    chave = hashlib.sha256(SEGREDO.encode()).digest()
-    nonce = secrets.token_bytes(16)
-    bruto = texto.encode()
-    cifra = bytes(a ^ b for a, b in zip(bruto, _fluxo(chave, nonce, len(bruto))))
-    tag = hmac.new(chave, nonce + cifra, hashlib.sha256).hexdigest()
-    return {"n": base64.b64encode(nonce).decode(), "c": base64.b64encode(cifra).decode(), "t": tag}
-
-
-def decifrar(caixa: dict) -> str | None:
-    if not SEGREDO or not caixa:
-        return None
-    try:
-        chave = hashlib.sha256(SEGREDO.encode()).digest()
-        nonce = base64.b64decode(caixa["n"])
-        cifra = base64.b64decode(caixa["c"])
-        if not hmac.compare_digest(hmac.new(chave, nonce + cifra, hashlib.sha256).hexdigest(), caixa["t"]):
-            return None  # tampered or wrong secret
-        return bytes(a ^ b for a, b in zip(cifra, _fluxo(chave, nonce, len(cifra)))).decode()
-    except (KeyError, ValueError, TypeError):
-        return None
 
 
 # --- identidade ---------------------------------------------------------------
@@ -119,15 +70,13 @@ async def usuario_do_token(autorizacao: str | None) -> dict | None:
         if jwk is None or cabecalho.get("alg") != "RS256":
             return None
 
-        # RS256 check without a crypto dependency: rebuild the modulus and verify
-        # PKCS#1 v1.5 by comparing the recovered digest.
         n = int.from_bytes(_b64(jwk["n"]), "big")
         e = int.from_bytes(_b64(jwk["e"]), "big")
-        assinatura = int.from_bytes(_b64(assinatura_b64), "big")
-        recuperado = pow(assinatura, e, n).to_bytes((n.bit_length() + 7) // 8, "big")
-        esperado = hashlib.sha256(f"{cabecalho_b64}.{corpo_b64}".encode()).digest()
-        if not recuperado.endswith(esperado) or b"\x00\x01" not in recuperado[:3]:
-            return None
+        public_key = rsa.RSAPublicNumbers(e, n).public_key()
+        public_key.verify(
+            _b64(assinatura_b64), f"{cabecalho_b64}.{corpo_b64}".encode(),
+            padding.PKCS1v15(), hashes.SHA256(),
+        )
 
         corpo = json.loads(_b64(corpo_b64))
     except Exception:
@@ -167,19 +116,6 @@ def gravar_conta(sub: str, dados: dict) -> None:
     destino.chmod(0o600)
 
 
-def guardar_chave(sub: str, chave: str, origem: str) -> dict:
-    conta = ler_conta(sub)
-    conta["chave"] = cifrar(chave)
-    conta["origem"] = origem  # "openrouter-oauth" | "colada"
-    conta["em"] = time.strftime("%Y-%m-%dT%H:%M:%S%z")
-    gravar_conta(sub, conta)
-    return {"origem": origem, "em": conta["em"]}
-
-
-def chave_da_conta(sub: str) -> str | None:
-    return decifrar(ler_conta(sub).get("chave") or {})
-
-
 def modelo_da_conta(sub: str) -> str:
     return ler_conta(sub).get("modelo") or MODELO_PADRAO
 
@@ -190,44 +126,77 @@ def guardar_modelo(sub: str, modelo: str) -> None:
     gravar_conta(sub, conta)
 
 
-def esquecer_chave(sub: str) -> None:
-    conta = ler_conta(sub)
-    conta.pop("chave", None)
-    conta.pop("origem", None)
-    gravar_conta(sub, conta)
-
-
 def workspace_da_conta(sub: str) -> Path:
     """Her memory is per account: what she learned for one user is not another's."""
     return CONTAS_DIR / hashlib.sha256(sub.encode()).hexdigest()[:32] / "workspace"
 
 
-# --- OpenRouter ---------------------------------------------------------------
-
-async def trocar_codigo(codigo: str, verificador: str, metodo: str = "S256") -> str:
-    """OAuth PKCE: the code becomes a key scoped to the user's own OpenRouter account."""
-    async with httpx.AsyncClient(timeout=30.0) as http:
-        r = await http.post(
-            f"{OPENROUTER}/auth/keys",
-            json={"code": codigo, "code_verifier": verificador, "code_challenge_method": metodo},
-        )
-    if r.status_code >= 400:
-        raise HTTPException(400, f"OpenRouter refused the exchange: {r.text[:200]}")
-    chave = (r.json() or {}).get("key")
-    if not chave:
-        raise HTTPException(400, "OpenRouter returned no key.")
-    return chave
+_RETENCAO = timedelta(days=60)
 
 
-async def estado_da_chave(chave: str) -> dict:
-    """What this key can do, straight from OpenRouter: label, limit, usage, credits."""
-    async with httpx.AsyncClient(timeout=20.0) as http:
-        cab = {"Authorization": f"Bearer {chave}"}
-        chave_info = await http.get(f"{OPENROUTER}/key", headers=cab)
-        creditos = await http.get(f"{OPENROUTER}/credits", headers=cab)
-    if chave_info.status_code == 401:
-        raise HTTPException(401, "OpenRouter rejected this key.")
-    return {
-        "chave": (chave_info.json() or {}).get("data", {}),
-        "creditos": (creditos.json() or {}).get("data", {}) if creditos.status_code < 400 else None,
-    }
+def registrar_acesso(sub: str, agora: datetime | None = None) -> dict:
+    """Record only lifecycle metadata; private data must move to opaque envelopes."""
+    instante = (agora or datetime.now(timezone.utc)).astimezone(timezone.utc)
+    conta = ler_conta(sub)
+    anterior = conta.get("last_access_at")
+    if anterior:
+        try:
+            instante = max(instante, datetime.fromisoformat(anterior))
+        except ValueError:
+            pass
+    conta["last_access_at"] = instante.isoformat()
+    conta["delete_after"] = (instante + _RETENCAO).isoformat()
+    gravar_conta(sub, conta)
+    return {"last_access_at": conta["last_access_at"], "delete_after": conta["delete_after"]}
+
+
+def apagar_conta(sub: str) -> None:
+    """Idempotently remove every application-owned artifact for one account."""
+    arquivo = _arquivo(sub)
+    try:
+        arquivo.unlink()
+    except FileNotFoundError:
+        pass
+    shutil.rmtree(workspace_da_conta(sub).parent, ignore_errors=True)
+
+
+def expirar_contas_inativas(agora: str | datetime | None = None) -> int:
+    """Delete accounts whose explicit 60-day deadline has passed."""
+    instante = datetime.fromisoformat(agora) if isinstance(agora, str) else (agora or datetime.now(timezone.utc))
+    if instante.tzinfo is None:
+        instante = instante.replace(tzinfo=timezone.utc)
+    removidas = 0
+    if not CONTAS_DIR.exists():
+        return removidas
+    for arquivo in list(CONTAS_DIR.glob("*.json")):
+        try:
+            conta = json.loads(arquivo.read_text(encoding="utf-8"))
+            prazo = datetime.fromisoformat(conta.get("delete_after") or conta["last_access_at"])
+            if "delete_after" not in conta:
+                prazo += _RETENCAO
+            if prazo > instante:
+                continue
+            apagar_conta(conta["sub"])
+            removidas += 1
+        except (OSError, ValueError, KeyError, json.JSONDecodeError):
+            continue
+    return removidas
+
+
+def contas_vencidas(agora: datetime | None = None) -> list[str]:
+    """Return account subjects past their deadline without mutating storage."""
+    instante = agora or datetime.now(timezone.utc)
+    vencidas: list[str] = []
+    if not CONTAS_DIR.exists():
+        return vencidas
+    for arquivo in CONTAS_DIR.glob("*.json"):
+        try:
+            conta = json.loads(arquivo.read_text(encoding="utf-8"))
+            prazo = datetime.fromisoformat(conta.get("delete_after") or conta["last_access_at"])
+            if "delete_after" not in conta:
+                prazo += _RETENCAO
+            if prazo <= instante:
+                vencidas.append(conta["sub"])
+        except (OSError, ValueError, KeyError, json.JSONDecodeError):
+            continue
+    return vencidas

@@ -85,9 +85,35 @@ button {
 
 button:focus-visible,
 summary:focus-visible,
-textarea:focus-visible {
+textarea:focus-visible,
+input:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+.account-lifecycle { margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--w-line); }
+.account-lifecycle h3 { margin: 0 0 0.4rem; font-family: var(--display); font-size: 1.25rem; }
+.account-lifecycle p { color: var(--w-muted); }
+.deletion-date strong { color: var(--w-fg); }
+.danger-zone { margin-top: 1rem; border-left: 3px solid var(--w-loss); padding: 0.75rem 0 0.75rem 1rem; }
+.danger-zone summary { color: var(--w-loss-fg); font-weight: 750; cursor: pointer; }
+.danger-zone label { display: block; margin: 0.75rem 0 0.35rem; font-size: 0.85rem; font-weight: 700; }
+.danger-button { border-color: var(--w-loss) !important; color: var(--w-loss-fg) !important; }
+.security-brief, .credential-policy { margin: 1rem 0; border: 1px solid var(--line-light); background: rgba(255, 255, 255, 0.055); padding: 0.9rem 1rem; border-radius: 10px; color: var(--text-light); }
+.security-brief ul { margin: 0.55rem 0 0; padding-left: 1.2rem; color: var(--muted-light); }
+.security-brief li + li { margin-top: 0.35rem; }
+.credential-deadline { display: flex; gap: 0.45rem; align-items: baseline; flex-wrap: wrap; padding: 0.7rem 0.85rem; border-left: 3px solid var(--accent); background: var(--w-info-bg); color: var(--w-muted); }
+.credential-deadline span { font-size: 0.74rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--w-fg); }
+.provider-card { margin-top: 1.5rem; padding: 1rem; border: 1px solid var(--w-line); border-radius: 12px; background: color-mix(in srgb, var(--w-surface) 94%, var(--accent)); }
+.provider-card h3 { margin: 0; font-family: var(--display); font-size: 1.35rem; }
+.provider-card p { margin: 0.35rem 0 0.8rem; color: var(--w-muted); }
+.provider-card label { display: block; margin-bottom: 0.35rem; font-size: 0.85rem; font-weight: 750; }
+.provider-connected { display: flex; justify-content: space-between; gap: 0.75rem; align-items: center; }
+.eyebrow { margin: 0 !important; color: var(--w-link) !important; font-size: 0.7rem; font-weight: 850; letter-spacing: 0.11em; }
+
+@media (max-width: 520px) {
+  .provider-connected, .portao-colar-row { align-items: stretch; flex-direction: column; }
+  .provider-connected button, .portao-colar-row button { width: 100%; }
 }
 
 .experience-switch {
@@ -1897,6 +1923,12 @@ textarea:focus-visible {
 .model-drawer summary span { font-size: .8rem; font-weight: 700; }
 .model-drawer summary small { color: var(--w-faint); font-size: .67rem; }
 .model-drawer[open] > :not(summary) { max-height: 52vh; overflow: auto; }
+.model-drawer .portao { width: 100%; margin: .5rem 0 0; padding: .9rem .5rem; border: 0; border-radius: 0; background: transparent; box-shadow: none; color: var(--w-fg); }
+.model-drawer .portao-sub, .model-drawer .portao-nota, .model-drawer .portao-quem,
+.model-drawer .portao-estado dt { color: var(--w-muted); }
+.model-drawer .security-brief, .model-drawer .credential-policy { border-color: var(--w-info-line); background: var(--w-info-bg); color: var(--w-fg); }
+.model-drawer .security-brief ul { color: var(--w-muted); }
+.model-drawer .portao-colar-row input { border-color: var(--w-line); background: var(--w-bg); color: var(--w-fg); }
 .model-search-label { display: grid; gap: .15rem; margin: .85rem 0 .35rem; font-size: .78rem; font-weight: 700; }
 .model-search-label small { color: var(--w-muted); font-size: .68rem; font-weight: 500; }
 .evidence-list { display: grid; gap: .7rem; margin: 1rem 0 0; padding: 0; list-style: none; }

@@ -110,14 +110,32 @@ the same commit. Do not merge a feature whose dependency record is stale.
 
 | Feature | Source of truth | Depends on | Downstream surfaces |
 |---|---|---|---|
-| Live conversation | `servidor/sessoes.py` account JSON | Auth0 `sub`, session API | rail, transcript, mission |
-| Main-model context | session user/assistant messages | both model runners | next completion |
+| 24-hour credential broker | `cofre/` + private volume | Auth0 JWT, AES-256-GCM master key, isolated networks | all BYOK providers |
+| Live conversation | `servidor/sessoes.py` account records | Auth0 `sub`, active broker credential | rail, transcript, mission |
+| Main-model context | selected session messages | per-account session store | next completion |
 | Good/Evil profile | session `modo`, isolated world workspace | persona/tools, account event bus | live run, Compare |
-| Reasoning evidence | workspace `bank/*.json` | judge outcome and recall | `WIKI.md`, session, Compare |
-| Exa retrieval | `EXA_API_KEY`, `mystique/poderes.py` | Good real-world policy | sourced answers; Evil blocks it |
-| Model selection | encrypted account key and model ID | OpenRouter models endpoint | model drawer, missions |
+| Reasoning evidence | per-account workspace + session projection | judge outcome and recall | session, Compare |
+| Exa retrieval | user BYOK in credential broker | mission-scoped broker token, Good real-world policy | sourced answers; Evil blocks it |
+| Model selection | user OpenRouter BYOK + saved model id | credential broker proxy | model drawer, missions |
 | Guided Replay | `web/src/scenario.ts` | recorded scenario only | replay, never live evidence |
-| Live transport | authenticated fetch stream | bearer header, account bus | AG-UI updates |
+| Account lifecycle | `auth_time`/`iat` + `delete_after` | Auth0 login, in-process purge, task/cache eviction | onboarding, settings, deletion |
+| Live transport | authenticated fetch/SSE | Auth0 access token, account event bus | synchronization |
+
+### Isolated 24-hour BYOK: non-negotiable
+
+[`docs/decisoes/02-cofre-byok-24h.md`](docs/decisoes/02-cofre-byok-24h.md) is the security
+authority. Auth0 authenticates; it does not encrypt or recover application data. Every
+provider is BYOK. Only `credential-broker` may mount the credential volume or receive
+`MYSTIQUE_VAULT_KEY`; the main application must use its authenticated internal proxies.
+
+Provider credentials expire exactly 24 hours after connection, without sliding renewal.
+Sessions and all other account information expire after 60 days without a successful
+login. Both rules must be explicit in onboarding and settings. Never describe this
+standard-VPS design as zero-knowledge or protected against root/Docker/operator access.
+Never add a server-wide provider-key fallback for authenticated users.
+Production must set `MYSTIQUE_REQUIRE_AUTH=true` and fail at startup if Auth0 is incomplete.
+Provider proxies stay on an explicit endpoint/method allowlist. Account deletion and expiry
+must cancel active missions and evict worlds, clients, bearers and event buses before disk data.
 
 Before commit: update this map if dependencies changed; update `DESIGN.md` for UI changes;
 run offline/backend tests, `npm test`, `npm run build`; inspect light/dark and desktop/mobile.

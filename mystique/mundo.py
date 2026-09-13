@@ -277,6 +277,14 @@ class Mundo:
         self._cliente = inferencia.ClienteOpenAI(base_url, modelo, chave)
         self._openai_da_conta = True
 
+    async def desconfigurar_openai(self) -> None:
+        """Drop the mission-scoped bearer and close its HTTP connection pool."""
+        cliente, self._cliente = self._cliente, None
+        self._openai_da_conta = False
+        fechar = getattr(getattr(cliente, "_http", None), "aclose", None)
+        if fechar:
+            await fechar()
+
     async def _json(self, system: str, pedido: str, schema: dict) -> dict | None:
         """Structured call (judge, consent). None on refusal or any network/parse failure."""
         try:

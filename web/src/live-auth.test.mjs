@@ -14,3 +14,11 @@ test('shows and saves an OpenRouter model selection', () => {
   assert.match(source, /selecionarModelo\(/)
   assert.match(source, /Digite para pesquisar/)
 })
+
+test('discloses both retention windows and Exa BYOK before use', () => {
+  const source = readFileSync(new URL('./Portao.tsx', import.meta.url), 'utf8')
+  assert.match(source, /erased after 24 hours/)
+  assert.match(source, /60 days without a successful sign-in/)
+  assert.match(source, /not zero-knowledge/)
+  assert.match(source, /guardarExa\(/)
+})

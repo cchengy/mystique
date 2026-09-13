@@ -14,8 +14,57 @@ from fastapi.testclient import TestClient
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from servidor.app import criar_app  # noqa: E402
+from servidor import contas  # noqa: E402
 from servidor.mundo_servidor import _evento_publico  # noqa: E402
 from mystique.mundo import Mundo  # noqa: E402
+
+
+def test_production_mode_fails_closed_without_auth0() -> None:
+    with patch.dict(os.environ, {"MYSTIQUE_REQUIRE_AUTH": "true"}), patch(
+        "servidor.app.contas.auth_configurada", return_value=False
+    ):
+        try:
+            criar_app(SimpleNamespace(modo="good"), "persona", lambda _: [])
+        except RuntimeError:
+            pass
+        else:
+            raise AssertionError("production must not start without Auth0")
+
+
+def test_expired_account_deletion_removes_file_and_workspace() -> None:
+    with tempfile.TemporaryDirectory() as pasta, patch.object(contas, "CONTAS_DIR", Path(pasta)):
+        sub = "auth0|inactive"
+        contas.gravar_conta(sub, {"last_access_at": "2026-01-01T00:00:00+00:00"})
+        workspace = contas.workspace_da_conta(sub)
+        workspace.mkdir(parents=True)
+        (workspace / "private.json").write_text("secret", encoding="utf-8")
+
+        removidas = contas.expirar_contas_inativas(agora="2026-03-03T00:00:01+00:00")
+
+        assert removidas == 1
+        assert not contas._arquivo(sub).exists()
+        assert not workspace.parent.exists()
+
+
+def test_user_can_delete_all_application_account_data() -> None:
+    mundos = SimpleNamespace(modo="good", apagar=AsyncMock())
+    app = criar_app(mundos, "persona", lambda _: [])
+    with tempfile.TemporaryDirectory() as pasta:
+        with (
+            patch.object(contas, "CONTAS_DIR", Path(pasta)),
+            patch("servidor.app.contas.auth_configurada", return_value=True),
+            patch("servidor.app.contas.usuario_do_token", AsyncMock(return_value={"sub": "auth0|alice"})),
+            patch("servidor.app.cofre_client.pedir", AsyncMock(return_value={})),
+            TestClient(app) as client,
+        ):
+            contas.gravar_conta("auth0|alice", {"last_access_at": "2026-09-12T00:00:00+00:00"})
+            response = client.request(
+                "DELETE", "/api/conta", headers={"Authorization": "Bearer access-token"},
+                json={"confirmacao": "APAGAR MINHA CONTA"},
+            )
+
+            assert response.status_code == 204
+            assert not contas._arquivo("auth0|alice").exists()
 
 
 def test_public_stream_keeps_dialogue_and_redacts_internal_traces() -> None:
@@ -52,8 +101,8 @@ def test_mission_is_scheduled_on_the_application_event_loop() -> None:
     executar.assert_awaited_once()
 
 
-def test_authenticated_mission_uses_the_accounts_openrouter_key_and_model() -> None:
-    mundo = SimpleNamespace(modo="good", configurar_openai=lambda **_config: None)
+def test_authenticated_mission_uses_the_broker_without_loading_the_provider_key() -> None:
+    mundo = SimpleNamespace(modo="good", configurar_openai=lambda **_config: None, desconfigurar_openai=AsyncMock())
     mundos = SimpleNamespace(modo="good", para=lambda _sub, _modo=None: mundo, contexto=lambda _modo=None: ("persona", lambda _: []))
     executar = AsyncMock()
     app = criar_app(mundos, "persona", lambda _: [])
@@ -61,7 +110,6 @@ def test_authenticated_mission_uses_the_accounts_openrouter_key_and_model() -> N
     with (
         patch("servidor.app.contas.auth_configurada", return_value=True),
         patch("servidor.app.contas.usuario_do_token", AsyncMock(return_value={"sub": "auth0|alice"})),
-        patch("servidor.app.contas.chave_da_conta", return_value="private-key"),
         patch("servidor.app.contas.modelo_da_conta", return_value="openai/gpt-5-mini"),
         patch("servidor.app.executar", executar),
         TestClient(app, raise_server_exceptions=False) as client,
@@ -83,9 +131,9 @@ def test_authenticated_mission_uses_the_accounts_openrouter_key_and_model() -> N
 
     assert response.status_code == 202
     assert executar.await_args.kwargs["openai_config"] == {
-        "base_url": "https://openrouter.ai/api/v1",
+        "base_url": "http://credential-broker:8001/openrouter/api/v1",
         "modelo": "openai/gpt-5-mini",
-        "chave": "private-key",
+        "chave": "access-token",
     }
     assert executar.await_args.kwargs["historico"] == []
 
@@ -172,8 +220,12 @@ def test_server_can_serve_the_built_main_ui() -> None:
 
 
 if __name__ == "__main__":
+    test_production_mode_fails_closed_without_auth0()
+    test_expired_account_deletion_removes_file_and_workspace()
+    test_user_can_delete_all_application_account_data()
     test_public_stream_keeps_dialogue_and_redacts_internal_traces()
     test_mission_is_scheduled_on_the_application_event_loop()
+    test_authenticated_mission_uses_the_broker_without_loading_the_provider_key()
     test_local_frontend_origins_are_allowed_by_default()
     test_server_loads_provider_environment_before_importing_the_engine()
     test_server_can_serve_the_built_main_ui()
@@ -182,3 +234,4 @@ if __name__ == "__main__":
     print("OK    server: both local frontend origins are allowed by default")
     print("OK    server: provider environment is loaded before the engine")
     print("OK    server: built main UI is served by the same process")
+    print("OK    server: expired and user-requested account deletion remove owned data")
