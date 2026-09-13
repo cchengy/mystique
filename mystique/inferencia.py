@@ -90,6 +90,15 @@ def _mensagens(system: str | None, mensagens: list[dict]) -> list[dict]:
                 turno["tool_calls"] = chamadas
             saida.append(turno)
         saida.extend(resultados)
+        # Text a *user* turn carries alongside tool results was being dropped on
+        # the floor: only the results were translated. That is where steering
+        # lives - a person redirecting the run while it is working - so it
+        # reached the screen and never the model. It goes after the tool
+        # messages, which is where OpenAI's format wants a new user turn.
+        if msg["role"] == "user":
+            texto_usuario = "".join(textos).strip()
+            if texto_usuario:
+                saida.append({"role": "user", "content": texto_usuario})
     return saida
 
 

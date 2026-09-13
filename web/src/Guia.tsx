@@ -256,9 +256,14 @@ export function Guia({ t, passo, total, indice, aoAvancar, aoFechar, chave, exa 
   const origemY = eixo === 'y' ? (dy >= 0 ? '100%' : '0%') : '50%'
   const posicao = fase === 'saindo' ? de : { x, y }
 
+  // The two steps that talk about the rail need the rail readable: the veil
+  // lifts off that column for as long as they are showing, and closes over it
+  // again on the way out.
+  const abrirTrilha = passo.id === 'modelo' || passo.id === 'busca'
+
   return (
     <div className="guia" role="dialog" aria-modal="true" aria-label={t('Guided tour')}>
-      <div className="guia-veu" onClick={aoFechar} />
+      <div className="guia-veu" data-trilha={abrirTrilha ? 'aberta' : undefined} onClick={aoFechar} />
       {raio && fase !== 'parado' && (
         <div
           className="guia-raio"

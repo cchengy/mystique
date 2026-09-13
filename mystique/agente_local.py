@@ -122,8 +122,12 @@ async def executar(
                 # this run, and she reads it before deciding her next move.
                 orientacoes = getattr(mundo, "drenar_orientacoes", lambda: [])()
                 for texto in orientacoes:
-                    mundo.avisar(f"[{mundo.nome_atual}] …")
-                    resultados.append({"type": "text", "text": f"New instruction from the person you are helping: {texto}"})
+                    resultados.append({"type": "text", "text": (
+                        "The person you are helping just sent this while you were working. "
+                        "It is a correction to the mission, not a new one: take it into account "
+                        "from here on, including in what you ask the agents and in your final "
+                        f"answer.\n\n{texto}"
+                    )})
                 historico.append({"role": "user", "content": resultados})
             else:
                 mundo.avisar(f"⚠ stopped after {_MAX_PASSOS} steps without a final answer.")

@@ -416,7 +416,29 @@ async def main() -> None:
     await teste_auditoria(Path(tempfile.mkdtemp()))
     await teste_resiliencia(Path(tempfile.mkdtemp()))
     await teste_externo(Path(tempfile.mkdtemp()))
+    test_steering_text_survives_translation_to_the_provider()
+    print("OK    steering: the redirect reaches the model, not only the screen")
     print("\nAll tests passed.")
+
+
+def test_steering_text_survives_translation_to_the_provider() -> None:
+    """A person typing while she works is redirecting the run. That text rides
+    with the tool results, and the translator was dropping it: only the results
+    were sent, so the steering reached the screen and never the model."""
+    from mystique.inferencia import _mensagens
+
+    historico = [
+        {"role": "user", "content": "find a recipe"},
+        {"role": "assistant", "content": [NS(type="tool_use", id="t1", name="conversar", input={})]},
+        {"role": "user", "content": [
+            {"type": "tool_result", "tool_use_id": "t1", "content": "the agent answered"},
+            {"type": "text", "text": "actually, ask Byte instead"},
+        ]},
+    ]
+    saida = _mensagens("sys", historico)
+    papeis = [(m["role"], str(m.get("content") or "")) for m in saida]
+    assert ("user", "actually, ask Byte instead") in papeis, papeis
+    assert papeis.index(("user", "actually, ask Byte instead")) > papeis.index(("tool", "the agent answered"))
 
 
 if __name__ == "__main__":

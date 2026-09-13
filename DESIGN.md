@@ -118,8 +118,11 @@ touch targets 44 px. Spacing follows a 4 px rhythm; pills are reserved for statu
 - Everything the transcript shows is written down, including what she said to an agent and
   what it said back. Rebuilding the transcript must never be able to erase an exchange the
   person just watched.
+- The veil retreats off the rail for the two steps that are about the rail, and closes back
+  over it on the way out: a highlight you cannot read through is not a highlight.
 - A message sent while she is working steers the run in progress; it is not queued as a
-  second mission and never dropped. Stop is always available beside the composer, and what
+  second mission and never dropped. It must reach the model, not only the screen — the
+  provider has no mid-flight injection of its own, so this is ours to get right. Stop is always available beside the composer, and what
   was already said stays said.
 - Provider failures are shown, never swallowed. Returning from an OAuth redirect that did
   not complete must say so in the panel; silence is indistinguishable from a no-op.

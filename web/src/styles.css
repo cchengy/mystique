@@ -2341,6 +2341,30 @@ input:focus-visible {
     radial-gradient(circle at 1px 1px, rgba(226, 232, 255, 0.14) 1px, transparent 1.6px) 0 0 / 7px 7px,
     rgba(4, 8, 26, 0.74);
   animation: cena-entra 240ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  /* The halftone is lovely and it is also opaque: over the rail it made the
+     drawer the tour was pointing at unreadable. For the two steps that are
+     about the rail, the veil retreats off that column - a short pop as it
+     clears, and it closes back over on the way out. */
+  clip-path: inset(0 0 0 0);
+  transition: clip-path 280ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 180ms ease-out;
+}
+
+.guia-veu[data-trilha='aberta'] {
+  clip-path: inset(0 0 0 15rem);
+  animation: veu-abre 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes veu-abre {
+  0% { opacity: 1; }
+  35% { opacity: 0.72; }
+  100% { opacity: 1; }
+}
+
+@media (max-width: 900px) {
+  /* The rail is the bar along the bottom at this width. */
+  .guia-veu[data-trilha='aberta'] {
+    clip-path: inset(0 0 4.4rem 0);
+  }
 }
 
 /* The tour marks the control it is talking about; that one rises through the
@@ -2549,6 +2573,9 @@ input:focus-visible {
   .guia-forma,
   .guia-raio {
     animation-duration: 1ms;
+  }
+  .guia-veu {
+    transition-duration: 1ms;
   }
 }
 
