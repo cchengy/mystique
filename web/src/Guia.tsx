@@ -114,6 +114,10 @@ export function Guia({ t, passo, total, indice, aoAvancar, aoFechar, chave, exa 
   exa: boolean
 }) {
   const [alvo, setAlvo] = useState<Rect | null>(null)
+  // The card is placed against its own measured height: a guessed one leaves it
+  // overlapping the very control it is pointing at when the copy runs long.
+  const carta = useRef<HTMLDivElement>(null)
+  const [altura, setAltura] = useState(200)
 
   const medir = useCallback(() => {
     if (!passo.alvo) return setAlvo(null)
@@ -130,6 +134,11 @@ export function Guia({ t, passo, total, indice, aoAvancar, aoFechar, chave, exa 
     el?.setAttribute('data-aceso', 'true')
     return () => el?.removeAttribute('data-aceso')
   }, [passo.alvo])
+
+  useLayoutEffect(() => {
+    const h = carta.current?.offsetHeight
+    if (h && Math.abs(h - altura) > 1) setAltura(h)
+  })
 
   // Measured after paint, and again whenever the page moves under it.
   useLayoutEffect(() => {
@@ -158,13 +167,13 @@ export function Guia({ t, passo, total, indice, aoAvancar, aoFechar, chave, exa 
   // screen to the control, and from one control to the next.
   const largura = Math.min(24 * 16, window.innerWidth - 32)
   let x = (window.innerWidth - largura) / 2
-  let y = window.innerHeight / 2 - 120
+  let y = Math.max((window.innerHeight - altura) / 2, 16)
   let seta: 'cima' | 'baixo' | null = null
   if (alvo) {
     x = Math.min(Math.max(alvo.left + alvo.width / 2 - largura / 2, 16), window.innerWidth - largura - 16)
     const abaixo = alvo.top + alvo.height + 14
-    const cabe = abaixo + 190 < window.innerHeight
-    y = cabe ? abaixo : Math.max(alvo.top - 190 - 14, 16)
+    const cabe = abaixo + altura + 16 < window.innerHeight
+    y = cabe ? abaixo : Math.max(alvo.top - altura - 14, 16)
     seta = cabe ? 'cima' : 'baixo'
   }
 
@@ -179,6 +188,7 @@ export function Guia({ t, passo, total, indice, aoAvancar, aoFechar, chave, exa 
       <div className="guia-veu" onClick={aoFechar} />
       <div
         key={passo.id}
+        ref={carta}
         className="guia-carta"
         data-seta={seta ?? undefined}
         style={{
