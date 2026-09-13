@@ -6,6 +6,10 @@ import { AGENTS } from './scenario'
 
 export const PT: Record<string, string> = {
   'Before you continue': 'Antes de continuar',
+  'The OpenRouter authorisation could not be completed': 'Não foi possível concluir a autorização no OpenRouter',
+  'Sign in to keep a history of conversations. The guided replay needs no account.': 'Entre para guardar um histórico de conversas. O replay guiado não precisa de conta.',
+  'Model and connection': 'Modelo e conexão',
+  'Available after you sign in': 'Disponível depois do login',
   'Provider keys are encrypted in a separate credential container and erased after 24 hours.': 'As chaves dos provedores são cifradas em um container de credenciais separado e apagadas após 24 horas.',
   'Conversations and Mystique memory are erased after 60 days without a successful sign-in.': 'As conversas e a memória da Mystique são apagadas após 60 dias sem um login bem-sucedido.',
   'This is defense in depth on a standard VPS, not zero-knowledge: the server operator could technically access running systems.': 'Isso é defesa em profundidade em um VPS padrão, não zero-knowledge: o operador do servidor poderia tecnicamente acessar os sistemas em execução.',

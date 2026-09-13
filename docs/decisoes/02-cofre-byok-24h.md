@@ -63,6 +63,15 @@ remova o fallback legado; credenciais antigas podem expirar naturalmente em no m
 O Compose de produção define `MYSTIQUE_REQUIRE_AUTH=true`: se Auth0 estiver incompleto, a
 aplicação não inicia. Nenhuma chave global de modelo é injetada no processo principal.
 
+## Propriedade do volume de credenciais
+
+O broker roda sem privilégios (uid 999) e com filesystem raiz read-only. Um volume Docker
+novo nasce de root e 0755, então **toda** escrita de credencial falhava com `EACCES`: o
+usuário voltava do OAuth do OpenRouter e nada acontecia, porque o erro virava um 500 que o
+frontend engolia. O serviço `vault-init` do Compose faz `chown 999:999` e `chmod 700` no
+volume antes do broker subir, e `cofre._write` agora responde 503 com texto legível em vez
+de estourar uma traceback. `vault-init` não recebe `MYSTIQUE_VAULT_KEY` e roda sem rede.
+
 ## Gates de release
 
 Antes de deploy: provar expiração e purge em 24 horas, adulteração fail-closed, separação

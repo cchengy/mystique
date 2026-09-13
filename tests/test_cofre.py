@@ -11,6 +11,7 @@ from unittest.mock import AsyncMock, patch
 os.environ.setdefault("MYSTIQUE_VAULT_KEY", base64.urlsafe_b64encode(b"k" * 32).decode())
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from fastapi import HTTPException  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 from cofre import app as cofre  # noqa: E402
 
@@ -63,15 +64,52 @@ def test_broker_rejects_provider_operations_outside_the_allowlist() -> None:
         assert response.status_code == 404
 
 
+def _compose() -> str:
+    return (Path(__file__).resolve().parent.parent / "compose.yaml").read_text(encoding="utf-8")
+
+
 def test_compose_keeps_the_master_key_and_volume_out_of_main_app() -> None:
-    compose = (Path(__file__).resolve().parent.parent / "compose.yaml").read_text(encoding="utf-8")
-    main = compose.split("  mystique:\n", 1)[1].split("  credential-broker:\n", 1)[0]
+    compose = _compose()
+    main = compose.split("  mystique:\n", 1)[1].split("\n  vault-init:\n", 1)[0]
     broker = compose.rsplit("\n  credential-broker:\n", 1)[1]
+    vault_init = compose.split("\n  vault-init:\n", 1)[1].split("\n  credential-broker:\n", 1)[0]
     assert "MYSTIQUE_VAULT_KEY" not in main
     assert "mystique-credentials" not in main
     assert "MYSTIQUE_VAULT_KEY" in broker
     assert "mystique-credentials:/vault" in broker
     assert "ports:" not in broker and "expose:" not in broker
+    # The chown helper touches the volume, so it must stay keyless and offline.
+    assert "MYSTIQUE_VAULT_KEY" not in vault_init
+    assert "network_mode: none" in vault_init
+
+
+def test_compose_makes_the_credential_volume_writable_before_the_broker_starts() -> None:
+    """A root-owned volume under an unprivileged broker rejected every write,
+    so connecting a provider failed after the OAuth round trip."""
+    compose = _compose()
+    vault_init = compose.split("\n  vault-init:\n", 1)[1].split("\n  credential-broker:\n", 1)[0]
+    broker = compose.rsplit("\n  credential-broker:\n", 1)[1]
+    assert "chown 999:999 /vault" in vault_init
+    assert "mystique-credentials:/vault" in vault_init
+    assert "vault-init:" in broker and "service_completed_successfully" in broker
+
+
+def test_unwritable_store_answers_with_a_legible_error() -> None:
+    with tempfile.TemporaryDirectory() as folder:
+        store = Path(folder) / "vault"
+        store.mkdir()
+        store.chmod(0o500)
+        try:
+            with patch.object(cofre, "STORE", store):
+                try:
+                    cofre._write("auth0|alice", {"providers": {}})
+                except HTTPException as error:
+                    assert error.status_code == 503
+                    assert "not writable" in error.detail
+                else:
+                    raise AssertionError("an unwritable store must raise, not pass silently")
+        finally:
+            store.chmod(0o700)
 
 
 if __name__ == "__main__":
@@ -81,4 +119,6 @@ if __name__ == "__main__":
     test_broker_requires_auth0_and_deletes_credential()
     test_broker_rejects_provider_operations_outside_the_allowlist()
     test_compose_keeps_the_master_key_and_volume_out_of_main_app()
+    test_compose_makes_the_credential_volume_writable_before_the_broker_starts()
+    test_unwritable_store_answers_with_a_legible_error()
     print("OK    vault: AES-GCM scope, 24-hour expiry, purge and Auth0 boundary")

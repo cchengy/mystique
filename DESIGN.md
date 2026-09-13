@@ -36,6 +36,17 @@ touch targets 44 px. Spacing follows a 4 px rhythm; pills are reserved for statu
 - Account lifecycle: show the exact deletion date, distinguish logout, Mystique-data
   deletion and Auth0-identity deletion, and require the literal confirmation phrase for
   immediate irreversible deletion. Destructive color is reserved for this boundary.
+- Conversation rail: it is part of the live layout, not a reward for signing in. While the
+  gate is up the rail stays on screen in a locked state — inert controls, placeholder rows
+  and one line saying what sign-in unlocks. Removing it left the reserved column empty and
+  the page read as broken.
+- Account panel palette: the panel reads `--p-*` tokens, never the world tokens directly.
+  The gate is the dark ink slab in both themes, while the same component inside the rail
+  drawer sits on the world surface, which flips with the theme. Each context binds every
+  token; a rule that reaches past them will look correct in one theme and be unreadable in
+  the other.
+- Provider failures are shown, never swallowed. Returning from an OAuth redirect that did
+  not complete must say so in the panel; silence is indistinguishable from a no-op.
 
 ## Dense implementation prompt
 

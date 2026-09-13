@@ -59,7 +59,13 @@ export function PortaoConta({ t, aoLiberar }: { t: (s: string) => string; aoLibe
     ;(async () => {
       try {
         const token = await getAccessTokenSilently()
-        await concluirOpenRouter(token).catch(() => null)   // volta do OpenRouter
+        // Coming back from OpenRouter. Swallowing this failure is what made a
+        // broken exchange look like the page simply doing nothing: say it.
+        try {
+          await concluirOpenRouter(token)
+        } catch (e) {
+          if (vivo) setErro(`${t('The OpenRouter authorisation could not be completed')}: ${String(e).slice(0, 200)}`)
+        }
         const dados = await lerEu(token)
         if (!vivo) return
         setEu(dados)

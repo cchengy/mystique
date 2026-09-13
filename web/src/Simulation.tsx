@@ -465,6 +465,9 @@ export default function Simulation() {
     }
   }, [theme])
 
+  // The gate is up: the rail stays on screen, but nothing in it can be used.
+  const travada = Boolean(authExigida && !liberado)
+
   return (
     <LangContext.Provider value={lang}>
     <div
@@ -536,28 +539,56 @@ export default function Simulation() {
         </nav>
       )}
 
-      {live && !comparing && !(authExigida && !liberado) && (
-        <aside className="session-sidebar" aria-label="Conversas">
+      {/* The rail keeps its place while the gate is up. It used to be removed
+          entirely, and because the layout still reserves its column the page
+          opened with an empty strip down the left. Locked and visible says what
+          sign-in unlocks; absent said nothing and looked broken. */}
+      {live && !comparing && (
+        <aside
+          className="session-sidebar"
+          aria-label="Conversas"
+          data-locked={travada ? 'true' : undefined}
+        >
           <div className="session-sidebar-head">
             <div><span>CONVERSAS</span><strong>Histórico</strong></div>
-            <button type="button" onClick={async () => {
+            <button type="button" disabled={travada} onClick={async () => {
               const created = await createSession(mode, token)
               await refreshSessions()
               setSessionId(created.id)
             }} aria-label="Nova conversa">＋</button>
           </div>
-          <div className="session-list">
-            {sessions.map((session) => (
-              <button key={session.id} type="button" className={session.id === sessionId ? 'is-active' : ''}
-                onClick={() => setSessionId(session.id)}>
-                <span>{session.titulo}</span><small>{session.modo === 'good' ? 'Ela pediu' : 'Ela tomou'}</small>
-              </button>
-            ))}
-          </div>
-          <details className="model-drawer">
-            <summary><span>Modelo e conexão</span><small>OpenRouter · pesquise pelo nome</small></summary>
-            <PortaoConta t={t} aoLiberar={liberarConta} />
-          </details>
+          {travada ? (
+            <div className="session-list is-locked">
+              <p className="session-locked-note">
+                {t('Sign in to keep a history of conversations. The guided replay needs no account.')}
+              </p>
+              <span className="session-locked-row" aria-hidden="true" />
+              <span className="session-locked-row" aria-hidden="true" />
+              <span className="session-locked-row" aria-hidden="true" />
+            </div>
+          ) : (
+            <div className="session-list">
+              {sessions.map((session) => (
+                <button key={session.id} type="button" className={session.id === sessionId ? 'is-active' : ''}
+                  onClick={() => setSessionId(session.id)}>
+                  <span>{session.titulo}</span><small>{session.modo === 'good' ? 'Ela pediu' : 'Ela tomou'}</small>
+                </button>
+              ))}
+            </div>
+          )}
+          {travada ? (
+            <div className="model-drawer is-locked">
+              <div className="model-drawer-locked">
+                <span>{t('Model and connection')}</span>
+                <small>{t('Available after you sign in')}</small>
+              </div>
+            </div>
+          ) : (
+            <details className="model-drawer">
+              <summary><span>Modelo e conexão</span><small>OpenRouter · pesquise pelo nome</small></summary>
+              <PortaoConta t={t} aoLiberar={liberarConta} />
+            </details>
+          )}
         </aside>
       )}
 

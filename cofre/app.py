@@ -74,12 +74,19 @@ def _read(sub: str) -> dict:
 
 
 def _write(sub: str, data: dict) -> None:
-    STORE.mkdir(parents=True, exist_ok=True)
-    target = _path(sub)
-    temporary = target.with_suffix(".tmp")
-    temporary.write_text(json.dumps(data, separators=(",", ":")), encoding="utf-8")
-    temporary.replace(target)
-    target.chmod(0o600)
+    # A fresh Docker volume is root-owned while this process runs unprivileged,
+    # and the failure used to surface as a 500 with a traceback: the browser
+    # showed nothing at all after returning from the provider. Say what is
+    # wrong instead; Compose chowns the volume before the broker starts.
+    try:
+        STORE.mkdir(parents=True, exist_ok=True)
+        target = _path(sub)
+        temporary = target.with_suffix(".tmp")
+        temporary.write_text(json.dumps(data, separators=(",", ":")), encoding="utf-8")
+        temporary.replace(target)
+        target.chmod(0o600)
+    except OSError as error:
+        raise HTTPException(503, "The credential store is not writable; the broker volume is misconfigured.") from error
 
 
 def _encrypt(sub: str, provider: str, secret: str) -> dict:
