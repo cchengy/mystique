@@ -420,8 +420,11 @@ export default function Simulation() {
   useEffect(() => setPinned(null), [count, mode])
 
   useEffect(
-    () =>
-      connectLive({
+    () => {
+      // Nothing to listen to before we know which conversation this is: the two
+      // connections that used to open first were answered 401 and dropped.
+      if (authExigida === null || (authExigida && (!liberado || !sessionId))) return
+      return connectLive({
         token,
         sessionId: sessionId ?? undefined,
         snapshot: setLiveSnapshot,
@@ -472,8 +475,9 @@ export default function Simulation() {
             { kind: 'message', from: 'You', text: message, self: false },
           ])
         },
-      }),
-    [token, sessionId, refreshSessions, t],
+      })
+    },
+    [authExigida, liberado, token, sessionId, refreshSessions, t],
   )
 
   useEffect(() => {
