@@ -998,7 +998,7 @@ export default function Simulation() {
       )}
 
       {privacidadeAberta && <BannerPrivacidade t={t} aoFechar={() => setPrivacidadeAberta(false)} />}
-      <footer className={`terminal ${termOpen ? 'is-open' : ''}`} aria-label={t('Terminal narration')} hidden={live && !comparing}>
+      <footer className={`terminal ${termOpen ? 'is-open' : ''}`} aria-label={t('Terminal narration')} hidden={live || comparing}>
         {!comparing && (
           <button
             type="button"

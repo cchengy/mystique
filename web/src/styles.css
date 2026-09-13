@@ -1140,6 +1140,12 @@ input:focus-visible {
   --accent: var(--text-light);
 }
 
+/* The comparison states its own subject; the live caption repeated it in
+   smaller type directly above. */
+.app[data-mode='compare'] .caption {
+  display: none;
+}
+
 /* Same fix as the live stage: the flexible row is the last one, and hidden
    siblings must not push the main content onto a content-sized track. */
 .app[data-mode='compare'] .compare {
@@ -1184,19 +1190,31 @@ input:focus-visible {
   font-size: 0.95rem;
 }
 
+/* A comparison only works if the rows line up: the claim, the figures and the
+   runs must sit at the same height on both sides even when one side's text
+   wraps and the other's does not. Subgrid does that; without it the columns
+   still stack correctly, they just align independently. */
 .compare-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: auto auto 1fr auto;
   align-items: start;
   flex: 1 1 auto;
 }
 
 .ledger {
-  display: flex;
+  display: grid;
+  grid-row: span 4;
+  grid-template-rows: subgrid;
+  align-content: start;
   min-width: 0;
-  flex-direction: column;
   gap: 1.25rem;
   padding: 1.5rem clamp(1rem, 3vw, 2rem) 2.5rem;
+}
+
+@supports not (grid-template-rows: subgrid) {
+  .compare-grid { grid-template-rows: auto; }
+  .ledger { display: flex; flex-direction: column; grid-row: auto; }
 }
 
 .ledger[data-side='good'] {
@@ -1261,6 +1279,7 @@ input:focus-visible {
 
 .ledger-runs {
   display: grid;
+  align-content: start;
   gap: 1rem;
   margin: 0;
   padding: 0;
@@ -1374,7 +1393,7 @@ input:focus-visible {
 }
 
 .ledger-bank {
-  margin-top: auto;
+  align-self: end;
   padding-top: 1rem;
   border-top: 1px solid var(--w-line);
 }
