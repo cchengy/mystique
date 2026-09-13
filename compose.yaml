@@ -86,6 +86,9 @@ services:
       - ALL
     cap_add:
       - CHOWN
+      # FOWNER as well: on a volume already handed to uid 999 by an earlier
+      # run, root cannot chmod it back without this, and the helper exits 1.
+      - FOWNER
     security_opt:
       - no-new-privileges:true
     volumes:
