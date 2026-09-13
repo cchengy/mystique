@@ -89,7 +89,9 @@ def test_compose_makes_the_credential_volume_writable_before_the_broker_starts()
     compose = _compose()
     vault_init = compose.split("\n  vault-init:\n", 1)[1].split("\n  credential-broker:\n", 1)[0]
     broker = compose.rsplit("\n  credential-broker:\n", 1)[1]
-    assert "chown 999:999 /vault" in vault_init
+    # chmod must come first: after the chown, root without CAP_FOWNER cannot
+    # change the mode any more and the helper exits 1, failing the deployment.
+    assert "chmod 700 /vault && chown 999:999 /vault" in vault_init
     assert "mystique-credentials:/vault" in vault_init
     assert "vault-init:" in broker and "service_completed_successfully" in broker
 

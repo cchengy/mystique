@@ -76,7 +76,9 @@ services:
     command:
       - sh
       - -c
-      - chown 999:999 /vault && chmod 700 /vault
+      # chmod first: once the directory belongs to uid 999, root without
+      # CAP_FOWNER can no longer change its mode, and the helper exits 1.
+      - chmod 700 /vault && chown 999:999 /vault
     restart: "no"
     network_mode: none
     read_only: true
