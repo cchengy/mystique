@@ -29,6 +29,9 @@
   --w-shadow: rgba(8, 13, 35, 0.28);
 
   --accent: var(--iris);
+  /* Her second colour: the violet the gate shifts through as it changes form.
+     It belongs to motion, never to a resting surface. */
+  --secundaria: #7b4fd0;
   --display: 'Big Shoulders Display', 'Arial Narrow', sans-serif;
   --body: 'Public Sans', system-ui, sans-serif;
   --code: 'JetBrains Mono', ui-monospace, Menlo, monospace;
@@ -2324,24 +2327,15 @@ input:focus-visible {
   animation: cena-entra 240ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
-/* The ring lands on the control itself, which is raised above the veil, so the
-   highlight is the real thing and stays usable. */
-.guia-foco {
-  position: absolute;
-  top: 0;
-  left: 0;
-  border-radius: 999px;
-  outline: 2px solid var(--accent);
-  box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 28%, transparent);
-  transition: transform 360ms cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
 /* The tour marks the control it is talking about; that one rises through the
    veil and stays clickable. Set from the component, because the card and the
    control are in different corners of the tree. */
 [data-aceso='true'] {
   position: relative;
   z-index: 71;
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 7px color-mix(in srgb, var(--accent) 26%, transparent);
 }
 
 .guia-carta {
@@ -2358,14 +2352,33 @@ input:focus-visible {
     0.4rem 0.4rem 0 rgba(4, 8, 26, 0.45),
     0 1.5rem 3rem rgba(0, 0, 0, 0.45);
   transition: transform 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
-  /* Opacity only: the card's transform is its position on screen, and an
-     animation touching transform would override it and park the card at 0,0. */
-  animation: guia-entra 240ms ease-out both;
+  /* Never transform here: the card's transform is its position on screen, and
+     an animation touching it would override that and park the card at 0,0.
+     The travel is carried by colour instead - the same violet the gate shifts
+     through on its way out, dragged behind the card in the direction it came
+     from, then let go. */
+  animation: guia-troca 460ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
-@keyframes guia-entra {
-  from { opacity: 0; }
-  to { opacity: 1; }
+@keyframes guia-troca {
+  0% {
+    opacity: 0.35;
+    filter: saturate(2) hue-rotate(26deg);
+    box-shadow:
+      var(--rastro-x, 0) var(--rastro-y, 0) 0 color-mix(in srgb, var(--secundaria) 70%, transparent),
+      0 1.5rem 3rem rgba(0, 0, 0, 0.45);
+  }
+  45% {
+    opacity: 1;
+    filter: saturate(1.5) hue-rotate(16deg);
+  }
+  100% {
+    opacity: 1;
+    filter: none;
+    box-shadow:
+      0.4rem 0.4rem 0 rgba(4, 8, 26, 0.45),
+      0 1.5rem 3rem rgba(0, 0, 0, 0.45);
+  }
 }
 
 /* The comic gutter again, this time as the card's pointer at the control. */
@@ -2453,8 +2466,7 @@ input:focus-visible {
   .guia-carta {
     animation-duration: 1ms;
   }
-  .guia-carta,
-  .guia-foco {
+  .guia-carta {
     transition-duration: 1ms;
   }
 }

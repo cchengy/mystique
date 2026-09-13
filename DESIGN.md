@@ -88,7 +88,11 @@ touch targets 44 px. Spacing follows a 4 px rhythm; pills are reserved for statu
   her in the middle of the screen, then the card leaves the middle and settles under each
   control it is describing — Good, Evil, Guided replay, Live chat, Compare endings, and the
   composer, in that order — with the control itself raised through the veil and still
-  usable. The card moves by transform only. Its copy is the product's own words; the tour
+  usable — the highlight is the control's own outline, never a second box drawn near it,
+  so it cannot drift out of register with what it is pointing at. The card moves by
+  transform only, and carries her second colour with it: each change plays the violet the
+  gate shifts through on its way out, trailing behind the card in the direction it came
+  from, then letting go. Its copy is the product's own words; the tour
   explains what is there and never invents a second story about it. The last card reads the
   account: connect a key, or connect Exa for sourced search, or just send a mission.
 - Seeing the tour is remembered on the account, not in the browser: it does not reappear on

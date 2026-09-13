@@ -9,7 +9,7 @@
  * ledgers, the account gate, the Exa card. The tour explains what is there; it
  * does not invent a second story about it.
  */
-import { useCallback, useEffect, useLayoutEffect, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 /** Which control each step points at. `null` means the middle of the screen. */
 export type PassoGuia =
@@ -150,6 +150,7 @@ export function Guia({ t, passo, total, indice, aoAvancar, aoFechar, chave, exa 
     return () => document.removeEventListener('keydown', aoTeclar)
   }, [aoFechar])
 
+  const anterior = useRef<{ x: number; y: number } | null>(null)
   const { titulo, corpo } = conteudo(passo.id, chave, exa)
   const ultimo = indice === total - 1
 
@@ -167,24 +168,27 @@ export function Guia({ t, passo, total, indice, aoAvancar, aoFechar, chave, exa 
     seta = cabe ? 'cima' : 'baixo'
   }
 
+  // How far it just travelled, capped so a long jump does not smear the screen.
+  const veio = anterior.current
+  const limite = (n: number) => Math.max(-28, Math.min(28, n * -0.14))
+  const rastro = veio ? { x: limite(x - veio.x), y: limite(y - veio.y) } : { x: 0, y: 0 }
+  anterior.current = { x, y }
+
   return (
     <div className="guia" role="dialog" aria-modal="true" aria-label={t('Guided tour')}>
       <div className="guia-veu" onClick={aoFechar} />
-      {alvo && (
-        <div
-          className="guia-foco"
-          aria-hidden="true"
-          style={{
-            width: `${alvo.width}px`,
-            height: `${alvo.height}px`,
-            transform: `translate3d(${alvo.left}px, ${alvo.top}px, 0)`,
-          }}
-        />
-      )}
       <div
+        key={passo.id}
         className="guia-carta"
         data-seta={seta ?? undefined}
-        style={{ width: `${largura}px`, transform: `translate3d(${x}px, ${y}px, 0)` }}
+        style={{
+          width: `${largura}px`,
+          transform: `translate3d(${x}px, ${y}px, 0)`,
+          // The trail points back the way it came, so the colour reads as
+          // something the card dragged with it rather than a glow it wears.
+          ['--rastro-x' as string]: `${rastro.x}px`,
+          ['--rastro-y' as string]: `${rastro.y}px`,
+        }}
       >
         <p className="guia-passo">
           {indice + 1} / {total}
