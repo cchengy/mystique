@@ -124,6 +124,18 @@ def test_a_second_mission_is_refused_while_one_is_running() -> None:
     assert segunda.status_code == 409
 
 
+def test_the_tour_is_remembered_on_the_account() -> None:
+    """Including accounts that existed before the tour did: they have not seen
+    it, so they get it, and only once."""
+    mundos = SimpleNamespace(modo="good", para=lambda _sub, _modo=None: SimpleNamespace(modo="good"),
+                             contexto=lambda _modo=None: ("persona", lambda _: []))
+    app = criar_app(mundos, "persona", lambda _: [])
+    with tempfile.TemporaryDirectory() as pasta, patch.object(contas, "CONTAS_DIR", Path(pasta)), TestClient(app) as client:
+        assert contas.onboarding_visto("anonimo") is False
+        assert client.put("/api/conta/onboarding", json={"visto": True}).json() == {"onboarding_visto": True}
+        assert contas.onboarding_visto("anonimo") is True
+
+
 def test_the_account_can_read_its_own_wiki() -> None:
     with tempfile.TemporaryDirectory() as pasta:
         banco = Banco(Path(pasta))
@@ -265,6 +277,7 @@ if __name__ == "__main__":
     test_mission_is_scheduled_on_the_application_event_loop()
     test_a_second_mission_is_refused_while_one_is_running()
     test_the_account_can_read_its_own_wiki()
+    test_the_tour_is_remembered_on_the_account()
     test_authenticated_mission_uses_the_broker_without_loading_the_provider_key()
     test_local_frontend_origins_are_allowed_by_default()
     test_server_loads_provider_environment_before_importing_the_engine()

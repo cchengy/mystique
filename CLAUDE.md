@@ -118,6 +118,7 @@ the same commit. Do not merge a feature whose dependency record is stale.
 | Reasoning Bank recall | `mystique/banco.py` per account+profile workspace | failed verdict, agent id | the tool result Mystique reads — never the judge's input |
 | Reasoning Bank wiki | `<workspace>/WIKI.md`, flushed by `Banco.publicar()` | bank contents, mission end | `GET /api/wiki`, the foot of each Compare ledger |
 | Interface language | user choice in `localStorage`, `web/src/pt.ts` | English source strings | every visible string, and the mission's answer language |
+| Guided tour | `web/src/Guia.tsx` steps + `onboarding` on the account record | `data-guia` markers on the controls it points at | first run of every account, and the Tour button |
 | Exa retrieval | user BYOK in credential broker | mission-scoped broker token, Good real-world policy | sourced answers; Evil blocks it |
 | Model selection | user OpenRouter BYOK + saved model id | credential broker proxy | model drawer, missions |
 | Guided Replay | `web/src/scenario.ts` | recorded scenario only | replay, never live evidence |

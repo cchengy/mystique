@@ -2301,6 +2301,164 @@ input:focus-visible {
 .model-drawer-locked span { font-size: .82rem; font-weight: 700; }
 .model-drawer-locked small { font-size: .72rem; }
 
+/* --- the guided tour -------------------------------------------------------
+   The same scene grammar as the gate: the app dims, one card holds the screen.
+   Here the card also travels - it leaves the middle and settles under whatever
+   control it is talking about, which stays lit through the veil. Only transform
+   moves, so the travel is cheap and honest. */
+
+.guia {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  pointer-events: none;
+}
+
+.guia-veu {
+  position: absolute;
+  inset: 0;
+  pointer-events: auto;
+  background:
+    radial-gradient(circle at 1px 1px, rgba(226, 232, 255, 0.14) 1px, transparent 1.6px) 0 0 / 7px 7px,
+    rgba(4, 8, 26, 0.74);
+  animation: cena-entra 240ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* The ring lands on the control itself, which is raised above the veil, so the
+   highlight is the real thing and stays usable. */
+.guia-foco {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: 999px;
+  outline: 2px solid var(--accent);
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 28%, transparent);
+  transition: transform 360ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* The tour marks the control it is talking about; that one rises through the
+   veil and stays clickable. Set from the component, because the card and the
+   control are in different corners of the tree. */
+[data-aceso='true'] {
+  position: relative;
+  z-index: 71;
+}
+
+.guia-carta {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: auto;
+  padding: 1.1rem 1.15rem 1rem;
+  border: 1px solid rgba(226, 232, 255, 0.4);
+  border-radius: 14px;
+  background: var(--composer-bg, rgba(8, 16, 46, 0.97));
+  color: var(--text-light);
+  box-shadow:
+    0.4rem 0.4rem 0 rgba(4, 8, 26, 0.45),
+    0 1.5rem 3rem rgba(0, 0, 0, 0.45);
+  transition: transform 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* Opacity only: the card's transform is its position on screen, and an
+     animation touching transform would override it and park the card at 0,0. */
+  animation: guia-entra 240ms ease-out both;
+}
+
+@keyframes guia-entra {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* The comic gutter again, this time as the card's pointer at the control. */
+.guia-carta[data-seta='cima']::before,
+.guia-carta[data-seta='baixo']::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  width: 0.85rem;
+  height: 0.85rem;
+  border: 1px solid rgba(226, 232, 255, 0.4);
+  background: var(--composer-bg, rgba(8, 16, 46, 0.97));
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.guia-carta[data-seta='cima']::before {
+  top: -0.48rem;
+  border-width: 1px 0 0 1px;
+}
+
+.guia-carta[data-seta='baixo']::before {
+  bottom: -0.48rem;
+  border-width: 0 1px 1px 0;
+}
+
+.guia-passo {
+  margin: 0 0 0.3rem;
+  color: var(--muted-light);
+  font: 800 0.66rem/1 var(--code);
+  letter-spacing: 0.12em;
+}
+
+.guia-carta h2 {
+  margin: 0 0 0.45rem;
+  font-family: var(--display);
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1.05;
+}
+
+.guia-carta p:not(.guia-passo) {
+  margin: 0 0 0.5rem;
+  max-width: 46ch;
+  color: var(--muted-light);
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+.guia-acoes {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin-top: 0.85rem;
+}
+
+.guia-acoes button {
+  min-height: 36px;
+  padding: 0.4rem 0.9rem;
+  border: 1px solid var(--line-light);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-light);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.guia-acoes button:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.guia-pular {
+  color: var(--muted-light) !important;
+  background: transparent !important;
+  border-color: transparent !important;
+}
+
+.guia-botao {
+  font-weight: 700;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .guia-veu,
+  .guia-carta {
+    animation-duration: 1ms;
+  }
+  .guia-carta,
+  .guia-foco {
+    transition-duration: 1ms;
+  }
+}
+
 /* --- the gate, as a scene ---------------------------------------------------
    The account is the only way into the live chat, so it stops being a panel
    pinned to the bottom of a column and becomes the screen's subject: the app

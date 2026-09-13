@@ -68,6 +68,10 @@ class ApagarContaBody(BaseModel):
     confirmacao: str
 
 
+class OnboardingBody(BaseModel):
+    visto: bool = True
+
+
 def criar_app(mundos: Mundos, persona: str, extras: FerramentasExtras) -> FastAPI:
     if os.getenv("MYSTIQUE_REQUIRE_AUTH", "").lower() in {"1", "true", "yes"} and not contas.auth_configurada():
         raise RuntimeError("MYSTIQUE_REQUIRE_AUTH is enabled but Auth0 is not configured")
@@ -163,7 +167,14 @@ def criar_app(mundos: Mundos, persona: str, extras: FerramentasExtras) -> FastAP
                 "apagar_em": conta.get("delete_after"),
                 "dias_inatividade": 60,
             },
+            # Accounts that predate the tour have never seen it, so they get it too.
+            "onboarding_visto": contas.onboarding_visto(sub),
         }
+
+    @app.put("/api/conta/onboarding")
+    async def concluir_onboarding(corpo: OnboardingBody, request: Request) -> dict:
+        sub = await _sub_do_pedido(request)
+        return {"onboarding_visto": contas.marcar_onboarding(sub, corpo.visto)}
 
     @app.delete("/api/conta", status_code=204)
     async def apagar_conta(corpo: ApagarContaBody, request: Request) -> None:

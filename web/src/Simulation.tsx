@@ -6,8 +6,9 @@ import {
   connectLive, createSession, getSession, getWiki, listSessions, startLiveMission,
   type ChatSession, type LiveSnapshot, type WikiPage,
 } from './live'
+import { Guia, PASSOS } from './Guia'
 import { aceitouPrivacidade, BannerPrivacidade, PortaoConta } from './Portao'
-import { lerConfig } from './conta'
+import { lerConfig, lerEu, marcarOnboarding } from './conta'
 
 type Lang = 'en' | 'pt'
 const LangContext = createContext<Lang>('en')
@@ -566,6 +567,43 @@ export default function Simulation() {
   // Trapped while the gate is up; released the moment it starts leaving, so the
   // app behind takes the keyboard back as it comes into focus.
   const focoPortao = useFocoPreso(Boolean(live && travada))
+
+  // The tour. Accounts that have never seen it get it as soon as the app is
+  // usable; afterwards the button in the top bar plays it again.
+  const [guia, setGuia] = useState<number | null>(null)
+  const [temChave, setTemChave] = useState(false)
+  const [temExa, setTemExa] = useState(false)
+  const jaConvidado = useRef(false)
+  useEffect(() => {
+    if (jaConvidado.current || authExigida === null || travada) return
+    jaConvidado.current = true
+    if (!authExigida) {
+      // No tenant: the tour is still worth seeing once, remembered locally.
+      try {
+        if (localStorage.getItem('mystique.onboarding') !== 'v1') setGuia(0)
+      } catch { /* private window: skip it rather than repeat it every load */ }
+      return
+    }
+    void lerEu(token).then((dados) => {
+      setTemChave(Boolean(dados.chave?.tem))
+      setTemExa(Boolean(dados.exa?.tem))
+      if (!dados.onboarding_visto) setGuia(0)
+    }).catch(() => undefined)
+  }, [authExigida, travada, token])
+
+  const fecharGuia = useCallback(() => {
+    setGuia(null)
+    if (authExigida) void marcarOnboarding(true, token).catch(() => undefined)
+    else try { localStorage.setItem('mystique.onboarding', 'v1') } catch { /* ignore */ }
+  }, [authExigida, token])
+
+  const abrirGuia = useCallback(() => {
+    if (authExigida) void lerEu(token).then((dados) => {
+      setTemChave(Boolean(dados.chave?.tem))
+      setTemExa(Boolean(dados.exa?.tem))
+    }).catch(() => undefined)
+    setGuia(0)
+  }, [authExigida, token])
   const travadaAntes = useRef(travada)
   useEffect(() => {
     if (travadaAntes.current && !travada) {
@@ -598,6 +636,7 @@ export default function Simulation() {
               role="radio"
               aria-checked={!comparing && mode === m}
               className="mode"
+              data-guia={m}
               onClick={() => switchMode(m)}
             >
               {m === 'good' ? t('🦸 Good: she asks') : t('🦹 Evil: she takes')}
@@ -607,6 +646,7 @@ export default function Simulation() {
             role="radio"
             aria-checked={comparing}
             className="mode"
+            data-guia="compare"
             onClick={() => {
               setPlaying(false)
               setComparing(true)
@@ -637,6 +677,9 @@ export default function Simulation() {
             </button>
           ))}
         </div>
+        <button className="theme guia-botao" onClick={abrirGuia} aria-label={t('Guided tour')}>
+          ? {t('Tour')}
+        </button>
         <button
           className="theme"
           aria-pressed={theme === 'dark'}
@@ -665,8 +708,8 @@ export default function Simulation() {
 
       {!comparing && (
         <nav className="experience-switch" aria-label={t('Experience mode')}>
-          <button aria-pressed={live} onClick={() => { setLive(true); setPlaying(false) }}>{t('● Live chat')}</button>
-          <button aria-pressed={!live} onClick={() => setLive(false)}>{t('▶ Guided replay')}</button>
+          <button data-guia="live" aria-pressed={live} onClick={() => { setLive(true); setPlaying(false) }}>{t('● Live chat')}</button>
+          <button data-guia="replay" aria-pressed={!live} onClick={() => setLive(false)}>{t('▶ Guided replay')}</button>
           <span role="status" className={live ? (liveConnected ? 'is-connected' : 'is-disconnected') : 'is-local'}>
             {live ? t(liveConnected ? 'Backend connected' : 'Backend disconnected') : t('Local replay · no connection required')}
           </span>
@@ -910,6 +953,7 @@ export default function Simulation() {
             {(live || count === 1) && !(live && authExigida && !liberado) && (
               <form
                 className="composer"
+                data-guia="compose"
                 onSubmit={(event) => {
                   event.preventDefault()
                   send()
@@ -1072,6 +1116,19 @@ export default function Simulation() {
             <PortaoConta t={t} aoLiberar={liberarConta} aoAbrirPrivacidade={() => setPrivacidadeAberta(true)} compacto />
           </div>
         </div>
+      )}
+
+      {guia !== null && PASSOS[guia] && (
+        <Guia
+          t={t}
+          passo={PASSOS[guia]}
+          indice={guia}
+          total={PASSOS.length}
+          chave={temChave}
+          exa={temExa}
+          aoAvancar={() => setGuia((i) => (i === null ? null : Math.min(i + 1, PASSOS.length - 1)))}
+          aoFechar={fecharGuia}
+        />
       )}
 
       {privacidadeAberta && <BannerPrivacidade t={t} aoFechar={() => setPrivacidadeAberta(false)} />}

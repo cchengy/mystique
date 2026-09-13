@@ -96,3 +96,36 @@ test('a new account inherits nothing from the browser', () => {
   assert.doesNotMatch(api, /importSession/)
   assert.match(ui, /localStorage\.removeItem\('mystique\.live\.v1\.messages'\)/)
 })
+
+test('the tour covers every control, in order, and is translated', () => {
+  const guia = readFileSync(new URL('./Guia.tsx', import.meta.url), 'utf8')
+  const ui = readFileSync(new URL('./Simulation.tsx', import.meta.url), 'utf8')
+  const pt = readFileSync(new URL('./pt.ts', import.meta.url), 'utf8')
+
+  const inicio = guia.indexOf('= [', guia.indexOf('export const PASSOS'))
+  const lista = guia.slice(inicio, guia.indexOf(']', inicio))
+  const ordem = [...lista.matchAll(/\{ id: '([^']+)'/g)].map((m) => m[1])
+  assert.deepEqual(ordem, ['intro-1', 'intro-2', 'good', 'evil', 'replay', 'live', 'compare', 'compose'])
+  // Compare comes before the composer: you are told what the endings are before
+  // you are asked to produce one.
+  assert.ok(ordem.indexOf('compare') < ordem.indexOf('compose'))
+
+  // Every control the tour points at must actually be marked in the interface.
+  // good/evil come from the mode list, so they are marked by expression.
+  assert.match(ui, /data-guia=\{m\}/)
+  for (const alvo of ['replay', 'live', 'compare', 'compose']) {
+    assert.match(ui, new RegExp(`data-guia="${alvo}"`), `no control marked ${alvo}`)
+  }
+  // and every line it says must have a Portuguese counterpart
+  for (const [, linha] of guia.matchAll(/^\s+'([A-Z][^']{20,})',?$/gm)) {
+    assert.ok(pt.includes(`'${linha}'`), `untranslated tour line: ${linha}`)
+  }
+})
+
+test('the tour is remembered on the account, and can be replayed', () => {
+  const ui = readFileSync(new URL('./Simulation.tsx', import.meta.url), 'utf8')
+  const api = readFileSync(new URL('./conta.ts', import.meta.url), 'utf8')
+  assert.match(api, /api\/conta\/onboarding/)
+  assert.match(ui, /if \(!dados\.onboarding_visto\) setGuia\(0\)/)
+  assert.match(ui, /className="theme guia-botao" onClick=\{abrirGuia\}/)
+})

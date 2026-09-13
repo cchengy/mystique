@@ -126,6 +126,25 @@ def guardar_modelo(sub: str, modelo: str) -> None:
     gravar_conta(sub, conta)
 
 
+ONBOARDING = "v1"
+
+
+def onboarding_visto(sub: str) -> bool:
+    """Whether this account has already been walked through the interface.
+
+    Kept on the account, not in the browser: the tour belongs to the person, so
+    it does not reappear on a second device and is not lost by clearing a cache.
+    """
+    return ler_conta(sub).get("onboarding") == ONBOARDING
+
+
+def marcar_onboarding(sub: str, visto: bool = True) -> bool:
+    conta = ler_conta(sub)
+    conta["onboarding"] = ONBOARDING if visto else None
+    gravar_conta(sub, conta)
+    return visto
+
+
 def workspace_da_conta(sub: str) -> Path:
     """Her memory is per account: what she learned for one user is not another's."""
     return CONTAS_DIR / hashlib.sha256(sub.encode()).hexdigest()[:32] / "workspace"

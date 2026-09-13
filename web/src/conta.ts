@@ -32,6 +32,7 @@ export type Eu = {
   exa: Credencial
   modelo: string
   ciclo?: { ultimo_acesso?: string; apagar_em?: string; dias_inatividade: number }
+  onboarding_visto?: boolean
 }
 
 export type Credencial = { tem: boolean; expirada?: boolean; origem?: string; criada_em?: string; expira_em?: string }
@@ -58,6 +59,16 @@ export async function lerEu(token?: string): Promise<Eu> {
   const r = await fetch(`${API_BASE}/api/eu`, { headers: comToken(token) })
   if (!r.ok) throw new Error(String(r.status))
   return r.json()
+}
+
+/** The tour is remembered on the account, so it does not come back on the next
+ *  device and is not lost with the browser's storage. */
+export async function marcarOnboarding(visto: boolean, token?: string): Promise<void> {
+  await fetch(`${API_BASE}/api/conta/onboarding`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...(comToken(token) ?? {}) },
+    body: JSON.stringify({ visto }),
+  })
 }
 
 export async function estadoDaChave(token?: string): Promise<EstadoChave> {
