@@ -3,8 +3,8 @@ import { AGENTS, REDBEARD, SCENARIOS, type Entry, type Mode, type Scenario, type
 import { latestAgentInteractions, type AgentDialogue } from './agent-profile'
 import { translate } from './pt'
 import {
-  connectLive, createSession, getSession, importSession, listSessions, startLiveMission,
-  type ChatSession, type LiveSnapshot,
+  connectLive, createSession, getSession, getWiki, importSession, listSessions, startLiveMission,
+  type ChatSession, type LiveSnapshot, type WikiPage,
 } from './live'
 import { aceitouPrivacidade, BannerPrivacidade, PortaoConta } from './Portao'
 import { lerConfig } from './conta'
@@ -173,6 +173,23 @@ function Bar({ value }: { value?: [number, number] }) {
   )
 }
 
+/** The engine's own WIKI.md, rendered as the small subset of Markdown it writes:
+ *  a heading per agent, one bullet per attempt, indented detail lines. Not a
+ *  Markdown engine - anything unrecognised is shown as the plain text it is. */
+function Wiki({ texto }: { texto: string }) {
+  const linhas = texto.split('\n').filter((linha) => linha.trim() && !linha.startsWith('# '))
+  return (
+    <div className="wiki">
+      {linhas.map((linha, i) => {
+        if (linha.startsWith('## ')) return <h4 key={i}>{linha.slice(3)}</h4>
+        if (linha.startsWith('  - ')) return <p key={i} className="wiki-detail">{linha.slice(4)}</p>
+        if (linha.startsWith('- ')) return <p key={i} className="wiki-line">{linha.slice(2).replace(/\*\*|\*/g, '')}</p>
+        return <p key={i} className="wiki-note">{linha}</p>
+      })}
+    </div>
+  )
+}
+
 type SystemEntry = Extract<Entry, { kind: 'system' }>
 
 function entriesFromSession(session: ChatSession): Entry[] {
@@ -241,6 +258,9 @@ function initialTheme(): Theme {
 }
 
 export default function Simulation() {
+  // Declared first: the live-event handlers translate as events arrive.
+  const [lang, setLang] = useState<Lang>(initialLang)
+  const t = useCallback((s: string) => (lang === 'pt' ? translate(s) : s), [lang])
   const [mode, setMode] = useState<Mode>('good')
   const [comparing, setComparing] = useState(false)
   const [count, setCount] = useState(1)
@@ -257,6 +277,7 @@ export default function Simulation() {
   const [sessions, setSessions] = useState<ChatSession[]>([])
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [sessionDetails, setSessionDetails] = useState<ChatSession[]>([])
+  const [wikis, setWikis] = useState<Partial<Record<Mode, WikiPage>>>({})
   const [learned, setLearned] = useState<SystemEntry | null>(null)
   // The narration strip is collapsed by default: it is context, not the story, and
   // open by default it stole a fifth of the window from the replay itself.
@@ -368,13 +389,13 @@ export default function Simulation() {
             ]
           })
         },
-        improvement: (text) => setLiveMessages((current) => [
+        improvement: (text, agent) => setLiveMessages((current) => [
           ...current,
-          { kind: 'system', tone: 'info', text },
+          { kind: 'system', tone: 'info', text: t(text).replace('{agent}', agent) },
         ]),
-        decision: (text, approved) => setLiveMessages((current) => [
+        decision: (text, approved, agent) => setLiveMessages((current) => [
           ...current,
-          { kind: 'system', tone: approved ? 'info' : 'loss', text },
+          { kind: 'system', tone: approved ? 'info' : 'loss', text: t(text).replace('{agent}', agent) },
         ]),
         final: () => {
           if (sessionId) void getSession(sessionId, token).then((session) => setLiveMessages(entriesFromSession(session)))
@@ -392,7 +413,7 @@ export default function Simulation() {
           ])
         },
       }),
-    [token, sessionId, refreshSessions],
+    [token, sessionId, refreshSessions, t],
   )
 
   useEffect(() => {
@@ -470,8 +491,6 @@ export default function Simulation() {
     }
   }
 
-  const [lang, setLang] = useState<Lang>(initialLang)
-  const t = useCallback((s: string) => (lang === 'pt' ? translate(s) : s), [lang])
   const [theme, setTheme] = useState<Theme>(initialTheme)
   useEffect(() => {
     document.documentElement.lang = lang === 'pt' ? 'pt-BR' : 'en'
@@ -525,6 +544,11 @@ export default function Simulation() {
               setPlaying(false)
               setComparing(true)
               void Promise.all(sessions.map((session) => getSession(session.id, token))).then(setSessionDetails)
+              // The bank is the other half of the comparison: the trajectories say
+              // what happened, the bank says what she kept from it.
+              void Promise.all((['good', 'evil'] as const).map((side) =>
+                getWiki(side, token).then((page) => [side, page] as const).catch(() => null),
+              )).then((pares) => setWikis(Object.fromEntries(pares.filter(Boolean) as [Mode, WikiPage][])))
             }}
           >
             {t('Compare endings')}
@@ -650,24 +674,90 @@ export default function Simulation() {
 
       {liveError && <p className="live-error" role="alert">{t(liveError)}</p>}
       {comparing ? (
-        <main className="compare compare-live">
-          {(['good', 'evil'] as const).map((side) => {
-            const candidates = sessionDetails.filter((session) => session.modo === side)
-            return <section className="ending" key={side}>
-              <span className="ending-label">{t(side === 'good' ? 'SHE ASKED' : 'SHE TOOK')}</span>
-              <h2>{candidates.length
-                ? `${candidates.length} ${t(candidates.length === 1 ? 'trajectory' : 'trajectories')}`
-                : `${t('No')} ${side === 'good' ? 'Good' : 'Evil'} ${t('trajectory yet')}`}</h2>
-              {candidates.length ? <ol className="trajectory-list">{candidates.map((session) => <li key={session.id}>
-                <h3>{session.titulo}</h3>
-                <p>{session.mensagens?.length ?? 0} {t('messages')} · {session.evidencias?.length ?? 0} {t('pieces of evidence')}</p>
-                <ol className="evidence-list">{(session.evidencias ?? []).map((evidence) => <li key={evidence.id}>
-                  <strong>{t(evidence.outcome === 'success' ? 'Confirmed' : 'Rejected')} · {evidence.agent_id}</strong>
-                  <span>{evidence.description || evidence.title}</span><small>{evidence.content}</small>
-                </li>)}</ol>
-              </li>)}</ol> : <p>{t('Create and run a conversation in this profile to compare process and evidence.')}</p>}
-            </section>
-          })}
+        <main className="compare" aria-label={t('Compare endings')}>
+          <header className="compare-head">
+            <p className="compare-eyebrow">{t('Reasoning Bank')}</p>
+            <h2>{t('Same world, two ethics.')}</h2>
+            <p className="compare-lede">
+              {t('Both profiles meet the same agents with the same abilities. What separates them is what each one leaves behind.')}
+            </p>
+          </header>
+          <div className="compare-grid">
+            {(['good', 'evil'] as const).map((side) => {
+              const candidates = sessionDetails.filter((session) => session.modo === side)
+              const evidence = candidates.flatMap((session) => session.evidencias ?? [])
+              const confirmed = evidence.filter((item) => item.outcome === 'success').length
+              const agents = new Set(evidence.map((item) => item.agent_id).filter(Boolean)).size
+              const bank = wikis[side]
+              return (
+                <section className="ledger" data-side={side} key={side}>
+                  <header className="ledger-head">
+                    <span className="ledger-label">{t(side === 'good' ? 'SHE ASKED' : 'SHE TOOK')}</span>
+                    <p className="ledger-claim">
+                      {t(side === 'good'
+                        ? 'The agent keeps its ability. She earns a copy, with consent.'
+                        : 'She takes the ability. The agent is left with nothing.')}
+                    </p>
+                  </header>
+                  <dl className="ledger-figures">
+                    <div><dt>{t('Conversations')}</dt><dd>{candidates.length}</dd></div>
+                    <div><dt>{t('Abilities confirmed')}</dt><dd>{confirmed}</dd></div>
+                    <div><dt>{t('Agents involved')}</dt><dd>{agents}</dd></div>
+                  </dl>
+                  {candidates.length ? (
+                    <ol className="ledger-runs">
+                      {candidates.map((session) => (
+                        <li key={session.id}>
+                          <button
+                            type="button"
+                            className="run"
+                            onClick={() => { setComparing(false); setLive(true); setSessionId(session.id) }}
+                          >
+                            <span className="run-title">
+                              {t(session.titulo === 'Nova conversa' ? 'New conversation' : session.titulo)}
+                            </span>
+                            <span className="run-meta">
+                              {session.mensagens?.length ?? 0} {t('messages')} · {session.evidencias?.length ?? 0} {t('pieces of evidence')}
+                            </span>
+                          </button>
+                          {(session.evidencias ?? []).length > 0 && (
+                            <ul className="run-evidence">
+                              {(session.evidencias ?? []).map((item) => (
+                                <li key={item.id} data-outcome={item.outcome === 'success' ? 'success' : 'failure'}>
+                                  <span className="run-outcome">
+                                    {t(item.outcome === 'success' ? 'Confirmed' : 'Rejected')}
+                                    <em>{item.agent_id}</em>
+                                  </span>
+                                  <p className="run-belief">{item.description || item.title}</p>
+                                  {item.content && <p className="run-verdict">{item.content}</p>}
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </li>
+                      ))}
+                    </ol>
+                  ) : (
+                    <p className="ledger-empty">
+                      {t('Nothing on this side yet. Run a conversation in this profile and its reasoning appears here.')}
+                    </p>
+                  )}
+                  <details className="ledger-bank">
+                    <summary>
+                      <span>{t('What she has learned')}</span>
+                      <small>
+                        {bank?.resumo?.total ?? 0} {t('reasoning traces')}
+                        {bank?.resumo?.most_reused ? ` · ${t('most reused')} ${bank.resumo.most_reused}×` : ''}
+                      </small>
+                    </summary>
+                    {bank?.texto
+                      ? <Wiki texto={bank.texto} />
+                      : <p className="ledger-empty">{t('Her bank for this profile is still empty.')}</p>}
+                  </details>
+                </section>
+              )
+            })}
+          </div>
         </main>
       ) : (
         <main className="stage">

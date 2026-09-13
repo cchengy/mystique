@@ -116,7 +116,7 @@ export function PortaoConta({ t, aoLiberar }: { t: (s: string) => string; aoLibe
           <strong>{t('Before you continue')}</strong>
           <ul>
             <li>{t('Provider keys are encrypted in a separate credential container and erased after 24 hours.')}</li>
-            <li>{t('Conversations and Mystique memory are erased after 60 days without a successful sign-in.')}</li>
+            <li>{t('Conversations and Mystique memory are erased after 60 days without using Mystique.')}</li>
             <li>{t('This is defense in depth on a standard VPS, not zero-knowledge: the server operator could technically access running systems.')}</li>
           </ul>
         </div>
@@ -236,7 +236,7 @@ export function PortaoConta({ t, aoLiberar }: { t: (s: string) => string; aoLibe
 
       <section className="account-lifecycle" aria-labelledby="account-lifecycle-title">
         <h3 id="account-lifecycle-title">{t('Your data lifecycle')}</h3>
-        <p>{t('Mystique permanently deletes conversations, Reasoning Bank history, learned profiles and settings after 60 days without a successful sign-in. Provider keys follow the shorter 24-hour rule above.')}</p>
+        <p>{t('Mystique permanently deletes conversations, Reasoning Bank history, learned profiles and settings after 60 days without using Mystique. Provider keys follow the shorter 24-hour rule above.')}</p>
         {eu?.ciclo?.apagar_em && <p className="deletion-date">
           {t('Current deletion deadline')}: <strong>{new Intl.DateTimeFormat(undefined, { dateStyle: 'long' }).format(new Date(eu.ciclo.apagar_em))}</strong>
         </p>}

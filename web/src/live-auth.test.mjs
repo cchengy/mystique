@@ -4,7 +4,7 @@ import test from 'node:test'
 
 test('reconnects the live stream after Auth0 supplies an access token', () => {
   const source = readFileSync(new URL('./Simulation.tsx', import.meta.url), 'utf8')
-  assert.match(source, /connectLive\([\s\S]*?\),\s*\[token, sessionId, refreshSessions\],\s*\)/)
+  assert.match(source, /connectLive\([\s\S]*?\),\s*\[token, sessionId, refreshSessions, t\],\s*\)/)
   assert.match(readFileSync(new URL('./live.ts', import.meta.url), 'utf8'), /Authorization: `Bearer \$\{handlers\.token\}`/)
 })
 
@@ -18,7 +18,7 @@ test('shows and saves an OpenRouter model selection', () => {
 test('discloses both retention windows and Exa BYOK before use', () => {
   const source = readFileSync(new URL('./Portao.tsx', import.meta.url), 'utf8')
   assert.match(source, /erased after 24 hours/)
-  assert.match(source, /60 days without a successful sign-in/)
+  assert.match(source, /60 days without using Mystique/)
   assert.match(source, /not zero-knowledge/)
   assert.match(source, /guardarExa\(/)
 })

@@ -261,6 +261,28 @@ def criar_app(mundos: Mundos, persona: str, extras: FerramentasExtras) -> FastAP
             raise HTTPException(404, "Session not found")
         return sessao
 
+    @app.get("/api/wiki")
+    async def wiki(request: Request, modo: str | None = None) -> dict:
+        """What she has learned, in the page the engine already writes.
+
+        It was the documented traceability surface and nobody could read it. The
+        account's own bank only: never another account's, and never the engine's
+        shared world unless that is what this deployment runs.
+        """
+        sub = await _sub_do_pedido(request)
+        mundo = mundos.para(sub, modo)
+        banco = getattr(mundo, "banco", None)
+        if banco is None:
+            return {"modo": modo or mundos.modo, "texto": "", "resumo": {}}
+        caminho = banco.publicar()
+        texto = ""
+        if caminho is not None:
+            try:
+                texto = caminho.read_text(encoding="utf-8")
+            except OSError:
+                texto = ""
+        return {"modo": modo or mundos.modo, "texto": texto, "resumo": banco.resumo()}
+
     @app.post("/api/missoes", status_code=202)
     async def iniciar_missao(corpo: MissaoBody, request: Request) -> dict:
         authorization = request.headers.get("authorization")
@@ -268,6 +290,11 @@ def criar_app(mundos: Mundos, persona: str, extras: FerramentasExtras) -> FastAP
         sessao = sessoes.obter(sub, corpo.sessao_id)
         if sessao is None:
             raise HTTPException(404, "Session not found")
+        # One mission at a time per account. Two share a single Mundo, and the
+        # first to finish tears down the provider configuration in its `finally`,
+        # pulling the model out from under the second.
+        if any(not tarefa.done() for tarefa in tarefas_por_conta.get(sub, set())):
+            raise HTTPException(409, "A mission is already running for this account.")
         modo = sessao["modo"]
         mundo = mundos.para(sub, modo)
         contexto = sessoes.contexto(sub, corpo.sessao_id)
@@ -307,6 +334,7 @@ def criar_app(mundos: Mundos, persona: str, extras: FerramentasExtras) -> FastAP
                     texto, erro = finalizar_ui()
                     sessoes.adicionar(sub, corpo.sessao_id, "system" if erro else "assistant", texto)
                     if banco is not None:
+                        banco.publicar()   # one wiki rebuild per mission, not per write
                         for evidencia in banco.todos():
                             anterior = evidencias_antes.get(evidencia.get("id"))
                             if anterior is None or anterior.get("usage_count") != evidencia.get("usage_count"):

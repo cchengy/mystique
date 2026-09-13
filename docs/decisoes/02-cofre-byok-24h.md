@@ -32,7 +32,10 @@ aplicação no momento da conexão ainda pode capturar o segredo.
 
 - **Credenciais de provedores:** 24 horas desde a conexão, sem extensão automática.
 - **Sessões, conversas, Reasoning Bank, perfis, adaptações, auditorias e preferências:**
-  60 dias desde o último login Auth0 bem-sucedido.
+  60 dias desde o último uso autenticado. O prazo é gravado a partir de `auth_time`/`iat`
+  do access token, então a renovação silenciosa do Auth0 também o move: na prática é
+  inatividade, não "último login". A UI diz exatamente isso — ver
+  [`docs/auditorias/2026-09-13-learning-and-accounts.md`](../auditorias/2026-09-13-learning-and-accounts.md), item 9.
 - **Exclusão manual:** apaga imediatamente credenciais e todos os dados da aplicação.
   A identidade Auth0 continua separada, salvo integração futura explícita com a
   Management API.

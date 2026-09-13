@@ -18,8 +18,9 @@ Two things make this a bank and not a log:
     so what actually gets reused is visible.
 
 Storage is one JSON file per entry under <workspace>/bank/, plus a human-readable
-WIKI.md rebuilt on every write - the wiki is the traceable surface a person reads,
-the JSON is what the agent queries.
+WIKI.md - the wiki is the traceable surface a person reads, the JSON is what the
+agent queries. Writes are atomic and owner-only, the wiki is flushed once per
+mission by `publicar()`, and the bank is bounded per agent.
 """
 
 import json
@@ -58,10 +59,33 @@ def _agora() -> str:
     return time.strftime("%Y-%m-%dT%H:%M:%S%z")
 
 
+# Traces are cheap to write and cheap to read, but not free: the wiki is rebuilt
+# from all of them, and recall reads all of them. Past this many for one agent the
+# oldest failures that have already been superseded by a success are pruned - what
+# recall needs is the recent failures, and the success ends the line of enquiry.
+MAX_POR_AGENTE = 40
+
+
 class Banco:
     def __init__(self, workspace: Path) -> None:
         self.pasta = workspace / "bank"
         self.pasta.mkdir(parents=True, exist_ok=True)
+        # Corrupt files are skipped on read. Counting them means a trace that
+        # vanished is visible in the summary instead of silently gone.
+        self.ilegiveis = 0
+        self._wiki_suja = False
+
+    # --- disco -----------------------------------------------------------
+    def _escrever(self, destino: Path, dados: dict) -> None:
+        """Atomic, and owner-only - the same contract as sessions and accounts.
+
+        A direct write leaves a half-written trace behind after a crash, and
+        `todos()` would then skip it without a word.
+        """
+        temporario = destino.with_suffix(".tmp")
+        temporario.write_text(json.dumps(dados, ensure_ascii=False, indent=2), encoding="utf-8")
+        temporario.replace(destino)
+        destino.chmod(0o600)
 
     # --- escrita ---------------------------------------------------------
     def registrar(self, *, agent_id: str, source_kind: str, outcome: str, title: str,
@@ -74,19 +98,35 @@ class Banco:
             evidence_refs=[{"kind": "judge_verdict", "text": content[:500]}],
             judge_score=judge_score, confidence=confidence, created_at=_agora(),
         )
-        (self.pasta / f"{t.id}.json").write_text(
-            json.dumps(asdict(t), ensure_ascii=False, indent=2), encoding="utf-8")
-        self._reescrever_wiki()
+        self._escrever(self.pasta / f"{t.id}.json", asdict(t))
+        self._podar(agent_id)
+        self._wiki_suja = True
+        self.publicar()
         return t
+
+    def _podar(self, agent_id: str) -> None:
+        """Keep the bank bounded without losing what recall actually reads."""
+        itens = [t for t in self.todos() if t.get("agent_id") == agent_id]
+        if len(itens) <= MAX_POR_AGENTE:
+            return
+        itens.sort(key=lambda t: t.get("created_at", ""))
+        # Failures before the newest success are answered questions; drop those
+        # first, oldest first, and only then the oldest entries of any kind.
+        sucesso = max((i for i, t in enumerate(itens) if t.get("outcome") == "success"), default=-1)
+        descartaveis = [t for t in itens[:sucesso] if t.get("outcome") == "failure"] or itens
+        for t in descartaveis[: len(itens) - MAX_POR_AGENTE]:
+            (self.pasta / f"{t['id']}.json").unlink(missing_ok=True)
 
     # --- leitura ---------------------------------------------------------
     def todos(self) -> list[dict]:
         saida = []
+        ilegiveis = 0
         for arquivo in sorted(self.pasta.glob("*.json")):
             try:
                 saida.append(json.loads(arquivo.read_text(encoding="utf-8")))
             except (json.JSONDecodeError, OSError):
-                continue  # a corrupted entry must not break recall
+                ilegiveis += 1  # a corrupted entry must not break recall, but it is not invisible
+        self.ilegiveis = ilegiveis
         return saida
 
     def recordar(self, agent_id: str, limite: int = 5) -> str:
@@ -112,11 +152,11 @@ class Banco:
     def _usar(self, t: dict) -> None:
         t["usage_count"] = int(t.get("usage_count", 0)) + 1
         try:
-            (self.pasta / f"{t['id']}.json").write_text(
-                json.dumps(t, ensure_ascii=False, indent=2), encoding="utf-8")
+            self._escrever(self.pasta / f"{t['id']}.json", t)
         except OSError:
             pass
-        self._reescrever_wiki()
+        # Deferred: recalling five traces used to rebuild the whole wiki five times.
+        self._wiki_suja = True
 
     def resumo(self) -> dict:
         itens = self.todos()
@@ -127,9 +167,26 @@ class Banco:
             "source_kinds": {k: sum(1 for t in itens if t.get("source_kind") == k)
                              for k in {t.get("source_kind") for t in itens}},
             "most_reused": max((t.get("usage_count", 0) for t in itens), default=0),
+            "unreadable": self.ilegiveis,
         }
 
     # --- wiki ------------------------------------------------------------
+    def publicar(self) -> Path | None:
+        """Flush the wiki if anything changed since the last flush.
+
+        Writing it on every single change made the cost quadratic in the size of
+        the bank. Callers mark it dirty and flush once, at the end of a mission.
+        """
+        if not self._wiki_suja:
+            return self.wiki if self.wiki.exists() else None
+        self._reescrever_wiki()
+        self._wiki_suja = False
+        return self.wiki if self.wiki.exists() else None
+
+    @property
+    def wiki(self) -> Path:
+        return self.pasta.parent / "WIKI.md"
+
     def _reescrever_wiki(self) -> None:
         """A human-readable page, rebuilt on every write. This is the traceability
         surface: what was learned, from whom, and whether it held up."""
@@ -138,9 +195,10 @@ class Banco:
         for t in itens:
             por_agente.setdefault(t.get("agent_id", "?"), []).append(t)
         r = self.resumo()
+        ilegiveis = f" · unreadable: {r['unreadable']}" if r.get("unreadable") else ""
         linhas = [
             "# What Mystique has learned", "",
-            f"{r['total']} reasoning traces · outcomes: {r['outcomes']} · most reused: {r['most_reused']}×", "",
+            f"{r['total']} reasoning traces · outcomes: {r['outcomes']} · most reused: {r['most_reused']}×{ilegiveis}", "",
             "Written automatically. Each entry is an attempt she made, the judge's verdict,",
             "and whether it held. Failures are kept on purpose: they are what she reads first.", "",
         ]
@@ -153,6 +211,7 @@ class Banco:
                 linhas.append(f"  - reused {t.get('usage_count',0)}× · confidence {t.get('confidence')}")
             linhas.append("")
         try:
-            (self.pasta.parent / "WIKI.md").write_text("\n".join(linhas), encoding="utf-8")
+            self.wiki.write_text("\n".join(linhas), encoding="utf-8")
+            self.wiki.chmod(0o600)
         except OSError:
             pass

@@ -41,8 +41,10 @@ type LiveHandlers = {
   status: (value: string) => void
   dialogue: (from: string, to: string, text: string) => void
   token?: string
-  improvement: (value: string) => void
-  decision: (value: string, approved: boolean) => void
+  // The server sends the English source string as the key plus the agent name,
+  // so the browser translates and only then fills the name in.
+  improvement: (value: string, agent: string) => void
+  decision: (value: string, approved: boolean, agent: string) => void
   final: (value: string, error: boolean) => void
   mission: (running: boolean, message?: string) => void
 }
@@ -69,11 +71,12 @@ export function connectLive(handlers: LiveHandlers): () => void {
       handlers.dialogue(value.de, value.para, value.texto)
     }
     if (event.type === 'CUSTOM' && event.name === 'melhoria') {
-      handlers.improvement((event.value as { texto: string }).texto)
+      const value = event.value as { texto: string; agente?: string }
+      handlers.improvement(value.texto, value.agente ?? '')
     }
     if (event.type === 'CUSTOM' && event.name === 'decisao_automatica') {
-      const value = event.value as { texto: string; aprovado: boolean }
-      handlers.decision(value.texto, value.aprovado)
+      const value = event.value as { texto: string; aprovado: boolean; agente?: string }
+      handlers.decision(value.texto, value.aprovado, value.agente ?? '')
     }
     if (event.type === 'CUSTOM' && event.name === 'resposta_final') {
       const value = event.value as { texto: string; erro?: boolean }
@@ -167,4 +170,20 @@ export async function resolveLiveReceipt(id: string, decision: 'aprovar' | 'reje
     body: JSON.stringify({ decisao: decision }),
   })
   if (!response.ok) throw new Error(`Decision was refused (${response.status})`)
+}
+
+export type WikiPage = {
+  modo: string
+  texto: string
+  resumo: { total?: number; outcomes?: Record<string, number>; most_reused?: number; unreadable?: number }
+}
+
+/** What she has learned, as the engine itself writes it: one page per profile.
+ *  Read-only, and only ever this account's own bank. */
+export async function getWiki(modo: 'good' | 'evil', token?: string): Promise<WikiPage> {
+  const response = await fetch(`${API_BASE}/api/wiki?modo=${modo}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+  })
+  if (!response.ok) throw new Error(String(response.status))
+  return response.json()
 }

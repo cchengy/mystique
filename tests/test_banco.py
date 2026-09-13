@@ -89,8 +89,40 @@ def test_the_wiki_is_written_next_to_the_bank() -> None:
         assert "she thought this" in texto and "byte" in texto
 
 
+def test_writes_are_atomic_owner_only_and_bounded() -> None:
+    from mystique.banco import MAX_POR_AGENTE
+    with tempfile.TemporaryDirectory() as folder:
+        banco = __import__("mystique.banco", fromlist=["Banco"]).Banco(Path(folder))
+        for i in range(MAX_POR_AGENTE + 5):
+            banco.registrar(agent_id="byte", source_kind="identificacao", outcome="failure",
+                            title=f"t{i}", description=f"guess {i}", content="verdict")
+        arquivos = list((Path(folder) / "bank").glob("*.json"))
+        assert len(arquivos) <= MAX_POR_AGENTE, "the bank must stay bounded per agent"
+        assert not list((Path(folder) / "bank").glob("*.tmp")), "no half-written traces left behind"
+        for arquivo in arquivos:
+            assert oct(arquivo.stat().st_mode)[-3:] == "600"
+        assert oct((Path(folder) / "WIKI.md").stat().st_mode)[-3:] == "600"
+
+
+def test_recall_does_not_rebuild_the_wiki_once_per_trace() -> None:
+    """Recall used to rewrite the whole wiki once for every trace it read."""
+    with tempfile.TemporaryDirectory() as folder:
+        banco = __import__("mystique.banco", fromlist=["Banco"]).Banco(Path(folder))
+        for i in range(5):
+            banco.registrar(agent_id="byte", source_kind="identificacao", outcome="failure",
+                            title=f"t{i}", description=f"guess {i}", content="verdict")
+        banco.publicar()
+        antes = banco.wiki.stat().st_mtime_ns
+        banco.recordar("byte")
+        assert banco.wiki.stat().st_mtime_ns == antes, "recall must defer the wiki, not rewrite it per trace"
+        banco.publicar()
+        assert banco.wiki.stat().st_mtime_ns != antes, "publicar() is the flush point"
+
+
 if __name__ == "__main__":
     test_recall_reaches_mystique_and_not_the_judge()
     test_usage_count_only_grows_when_the_trace_is_actually_reused()
     test_the_wiki_is_written_next_to_the_bank()
+    test_writes_are_atomic_owner_only_and_bounded()
+    test_recall_does_not_rebuild_the_wiki_once_per_trace()
     print("OK    bank: recall reaches Mystique, never the judge; reuse is counted honestly")

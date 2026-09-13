@@ -42,16 +42,19 @@ def _evento_publico(texto: str) -> tuple[str, dict]:
     baixo = limpo.casefold()
     if "adapter" in baixo or "absorbs the essence" in baixo or "steals [" in baixo:
         agente = re.search(r"(?:with|from|of)\s+([^·]+)", limpo)
-        nome = agente.group(1).strip() if agente else "um agente"
-        return "melhoria", {"texto": f"Mystique melhorou ao aprender com {nome}."}
+        nome = agente.group(1).strip() if agente else "an agent"
+        # The text IS the translation key: the browser looks it up and fills in
+        # {agent}. Everything a person reads is written in English here and
+        # translated in the client - see web/src/pt.ts.
+        return "melhoria", {"texto": "Mystique improved by learning from {agent}.", "agente": nome}
     if "searched the web" in baixo:
-        status = "Consultando fontes"
+        status = "Consulting sources"
     elif "audit" in baixo or "judge" in baixo or "attempt failed" in baixo:
-        status = "Verificando a resposta"
+        status = "Checking the answer"
     elif limpo.startswith("⚠"):
         return "erro", {"texto": limpo.removeprefix("⚠").strip()}
     else:
-        status = "Pensando"
+        status = "Thinking"
     return "status", {"texto": status}
 
 
@@ -143,7 +146,7 @@ class InterrompivelMixin:
             return self._resposta_publica, False
         if self._erro_publico:
             return self._erro_publico, True
-        return "A missão terminou sem uma resposta final.", True
+        return "The mission ended without a final answer.", True
 
     def snapshot(self) -> dict:
         return _construir_snapshot(self)
@@ -160,15 +163,15 @@ class InterrompivelMixin:
     ) -> bool:
         aprovado = poder is not None
         if not aprovado:
-            poder_id = descricao or "capacidade não identificada"
+            poder_id = descricao or "unidentified capability"
             self._ultimos_vereditos[(agente.id, poder_id)] = (False, motivo)
             self._eventos.publicar_nowait(evento_snapshot(self.snapshot()))
         self._eventos.publicar_nowait(evento_custom("decisao_automatica", {
             "agente": agente.nome,
             "aprovado": aprovado,
             "texto": (
-                f"Mystique aprovou o aprendizado com {agente.nome}."
-                if aprovado else f"Mystique rejeitou este aprendizado com {agente.nome}."
+                "Mystique approved learning from {agent}."
+                if aprovado else "Mystique rejected this learning from {agent}."
             ),
         }))
         return aprovado

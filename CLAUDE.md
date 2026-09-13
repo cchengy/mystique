@@ -131,8 +131,9 @@ provider is BYOK. Only `credential-broker` may mount the credential volume or re
 `MYSTIQUE_VAULT_KEY`; the main application must use its authenticated internal proxies.
 
 Provider credentials expire exactly 24 hours after connection, without sliding renewal.
-Sessions and all other account information expire after 60 days without a successful
-login. Both rules must be explicit in onboarding and settings. Never describe this
+Sessions and all other account information expire after 60 days without authenticated
+use (the deadline moves with `auth_time`/`iat`, so silent refresh moves it too; the copy
+says "without using Mystique" for that reason). Both rules must be explicit in onboarding and settings. Never describe this
 standard-VPS design as zero-knowledge or protected against root/Docker/operator access.
 Never add a server-wide provider-key fallback for authenticated users.
 Production must set `MYSTIQUE_REQUIRE_AUTH=true` and fail at startup if Auth0 is incomplete.

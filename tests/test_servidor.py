@@ -13,6 +13,7 @@ from fastapi.testclient import TestClient
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from mystique.banco import Banco  # noqa: E402
 from servidor.app import criar_app  # noqa: E402
 from servidor import contas  # noqa: E402
 from servidor.mundo_servidor import _evento_publico  # noqa: E402
@@ -68,7 +69,7 @@ def test_user_can_delete_all_application_account_data() -> None:
 
 
 def test_public_stream_keeps_dialogue_and_redacts_internal_traces() -> None:
-    assert _evento_publico("🔧 usar_poder({secret})") == ("status", {"texto": "Pensando"})
+    assert _evento_publico("🔧 usar_poder({secret})") == ("status", {"texto": "Thinking"})
     assert _evento_publico("💬 Mystique → Byte: Can you inspect this?") == (
         "dialogo", {"de": "Mystique", "para": "Byte", "texto": "Can you inspect this?"}
     )
@@ -99,6 +100,43 @@ def test_mission_is_scheduled_on_the_application_event_loop() -> None:
 
     assert response.status_code == 202
     executar.assert_awaited_once()
+
+
+def test_a_second_mission_is_refused_while_one_is_running() -> None:
+    """Two missions share one Mundo, and the first to finish tears down the
+    provider configuration in its `finally` - under the second one's feet."""
+    mundo = SimpleNamespace(modo="good")
+    mundos = SimpleNamespace(modo="good", para=lambda _sub, _modo=None: mundo,
+                             contexto=lambda _modo=None: ("persona", lambda _: []))
+    parado = asyncio.Event()
+
+    async def executar_lento(*_a, **_k):
+        await parado.wait()
+
+    app = criar_app(mundos, "persona", lambda _: [])
+    with patch("servidor.app.executar", executar_lento), TestClient(app, raise_server_exceptions=False) as client:
+        sessao = client.post("/api/sessoes", json={"titulo": "Test", "modo": "good"}).json()
+        primeira = client.post("/api/missoes", json={"mensagem": "one", "sessao_id": sessao["id"]})
+        segunda = client.post("/api/missoes", json={"mensagem": "two", "sessao_id": sessao["id"]})
+        parado.set()
+
+    assert primeira.status_code == 202
+    assert segunda.status_code == 409
+
+
+def test_the_account_can_read_its_own_wiki() -> None:
+    with tempfile.TemporaryDirectory() as pasta:
+        banco = Banco(Path(pasta))
+        banco.registrar(agent_id="byte", source_kind="identificacao", outcome="failure",
+                        title="t", description="she thought this", content="verdict")
+        mundo = SimpleNamespace(modo="good", banco=banco)
+        mundos = SimpleNamespace(modo="good", para=lambda _sub, _modo=None: mundo,
+                                 contexto=lambda _modo=None: ("persona", lambda _: []))
+        app = criar_app(mundos, "persona", lambda _: [])
+        with TestClient(app) as client:
+            corpo = client.get("/api/wiki").json()
+    assert "she thought this" in corpo["texto"]
+    assert corpo["resumo"]["total"] == 1
 
 
 def test_authenticated_mission_uses_the_broker_without_loading_the_provider_key() -> None:
@@ -225,12 +263,15 @@ if __name__ == "__main__":
     test_user_can_delete_all_application_account_data()
     test_public_stream_keeps_dialogue_and_redacts_internal_traces()
     test_mission_is_scheduled_on_the_application_event_loop()
+    test_a_second_mission_is_refused_while_one_is_running()
+    test_the_account_can_read_its_own_wiki()
     test_authenticated_mission_uses_the_broker_without_loading_the_provider_key()
     test_local_frontend_origins_are_allowed_by_default()
     test_server_loads_provider_environment_before_importing_the_engine()
     test_server_can_serve_the_built_main_ui()
     print("OK    server: public stream keeps dialogue and redacts internal traces")
     print("OK    server: mission is scheduled on the application event loop")
+    print("OK    server: a second concurrent mission is refused, and the wiki is readable")
     print("OK    server: both local frontend origins are allowed by default")
     print("OK    server: provider environment is loaded before the engine")
     print("OK    server: built main UI is served by the same process")
